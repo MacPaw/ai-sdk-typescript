@@ -9,4 +9,5 @@ tsconfig.json
 .github/
 coverage/
 node_modules/
+.pnpm-store/
 .turbo/
