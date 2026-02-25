@@ -93,6 +93,7 @@
     "url": "https://github.com/niceplaces/ai-gateway-sdk/issues"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "@nestjs/common": "^11.1.14",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
