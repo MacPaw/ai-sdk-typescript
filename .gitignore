@@ -5,6 +5,7 @@
 
 # pnpm
 .pnpm-store
+/.pnpm-store
 
 # Logs
 logs
