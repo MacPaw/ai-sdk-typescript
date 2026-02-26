@@ -1,0 +1,127 @@
+{
+  "name": "@macpaw/ai",
+  "version": "0.1.0",
+  "description": "Commercial Web SDK for AI Gateway - universal TypeScript client for browser and Node.js",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./core": {
+      "import": {
+        "types": "./dist/core/index.d.ts",
+        "default": "./dist/core/index.js"
+      },
+      "require": {
+        "types": "./dist/core/index.d.cts",
+        "default": "./dist/core/index.cjs"
+      }
+    },
+    "./provider": {
+      "import": {
+        "types": "./dist/provider/index.d.ts",
+        "default": "./dist/provider/index.js"
+      },
+      "require": {
+        "types": "./dist/provider/index.d.cts",
+        "default": "./dist/provider/index.cjs"
+      }
+    },
+    "./nestjs": {
+      "import": {
+        "types": "./dist/nestjs/index.d.ts",
+        "default": "./dist/nestjs/index.js"
+      },
+      "require": {
+        "types": "./dist/nestjs/index.d.cts",
+        "default": "./dist/nestjs/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint 'src/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' --fix",
+    "format": "prettier --write 'src/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts'",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "ai",
+    "ai-sdk",
+    "gateway",
+    "macpaw",
+    "setapp",
+    "openai",
+    "streaming",
+    "sse",
+    "typescript",
+    "vercel-ai-sdk",
+    "nestjs"
+  ],
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niceplaces/ai-gateway-sdk.git"
+  },
+  "homepage": "https://github.com/niceplaces/ai-gateway-sdk#readme",
+  "bugs": {
+    "url": "https://github.com/niceplaces/ai-gateway-sdk/issues"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@nestjs/common": "^11.1.14",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "eslint": "^9.39.3",
+    "prettier": "^3.8.1",
+    "rxjs": "^7.8.2",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
+  },
+  "peerDependencies": {
+    "@ai-sdk/openai": ">=1.0.0",
+    "@nestjs/common": ">=10.0.0",
+    "ai": ">=4.0.0",
+    "rxjs": ">=7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@ai-sdk/openai": {
+      "optional": true
+    },
+    "ai": {
+      "optional": true
+    },
+    "@nestjs/common": {
+      "optional": true
+    },
+    "rxjs": {
+      "optional": true
+    }
+  }
+}

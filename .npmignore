@@ -1,0 +1,13 @@
+src/
+*.spec.ts
+*.test.ts
+vitest.config.ts
+tsup.config.ts
+tsconfig.json
+.eslintrc.*
+.prettierrc*
+.github/
+coverage/
+node_modules/
+.pnpm-store/
+.turbo/
