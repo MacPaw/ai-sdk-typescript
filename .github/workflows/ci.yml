@@ -110,15 +110,22 @@ jobs:
             });
             const marker = '<!-- sdk-publish-dry-run -->';
             const existing = comments.find(c => c.body?.includes(marker));
+            const split = (s) => {
+              const [k, ...v] = (s || '').split(':');
+              return [k.trim(), v.join(':').trim()];
+            };
+            const [sizeK, sizeV] = split(process.env.PKG_SIZE);
+            const [unpackK, unpackV] = split(process.env.UNPACKED);
+            const [totalK, totalV] = split(process.env.TOTAL);
             const body = [
               marker,
               '### 📦 Publish dry run',
               '',
-              `| Metric | Value |`,
-              `|--------|-------|`,
-              `| ${process.env.PKG_SIZE} |`,
-              `| ${process.env.UNPACKED} |`,
-              `| ${process.env.TOTAL} |`,
+              '| Metric | Value |',
+              '|--------|-------|',
+              `| ${sizeK} | ${sizeV} |`,
+              `| ${unpackK} | ${unpackV} |`,
+              `| ${totalK} | ${totalV} |`,
               '',
               `Commit: \`${context.sha.slice(0, 7)}\``,
             ].join('\n');
