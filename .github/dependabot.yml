@@ -31,8 +31,8 @@ updates:
       linting:
         patterns:
           - "eslint"
-          - "eslint-*"
-          - "@typescript-eslint/*"
+          - "@eslint/*"
+          - "typescript-eslint"
           - "prettier"
       semantic-release:
         patterns:
