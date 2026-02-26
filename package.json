@@ -106,6 +106,7 @@
     "semantic-release": "^24.2.3",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
+    "@vitest/coverage-v8": "^2.1.9",
     "vitest": "^2.1.9"
   },
   "peerDependencies": {
