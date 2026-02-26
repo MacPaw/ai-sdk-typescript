@@ -55,8 +55,9 @@
   ],
   "sideEffects": false,
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=18.0.0"
   },
+  "packageManager": "pnpm@10.15.1",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -93,13 +94,16 @@
     "url": "https://github.com/niceplaces/ai-gateway-sdk/issues"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
     "@nestjs/common": "^11.1.14",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
     "eslint": "^9.39.3",
     "prettier": "^3.8.1",
     "rxjs": "^7.8.2",
+    "semantic-release": "^24.2.3",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^2.1.9"
