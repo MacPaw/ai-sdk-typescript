@@ -1,0 +1,67 @@
+/**
+ * Retry with exponential backoff + jitter.
+ * Only retries on 429, 5xx and network errors; never on 4xx (401, 402, etc.).
+ *
+ * Jitter prevents thundering herd when many clients retry simultaneously.
+ * Respects Retry-After metadata from 429 responses.
+ */
+
+import type { RetryConfig } from './config';
+import { DEFAULT_RETRY } from './config';
+import type { AIGatewayError } from './errors';
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableStatus(status: number, retryableStatuses: number[]): boolean {
+  return retryableStatuses.includes(status) || (status >= 500 && status < 600);
+}
+
+/** Add random jitter: 0-25% of the base delay to avoid thundering herd */
+function addJitter(delayMs: number): number {
+  const jitter = delayMs * 0.25 * Math.random();
+  return delayMs + jitter;
+}
+
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: {
+    retryConfig: RetryConfig;
+    isNetworkError?: (err: unknown) => boolean;
+    onRetry?: (attempt: number, error: unknown) => void | Promise<void>;
+  }
+): Promise<T> {
+  const { maxAttempts, initialDelayMs, maxDelayMs, retryableStatuses } = {
+    ...DEFAULT_RETRY,
+    ...options.retryConfig,
+  };
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (attempt === maxAttempts) break;
+      const status = (err as { statusCode?: number })?.statusCode;
+      const isRetryable =
+        status != null
+          ? isRetryableStatus(status, retryableStatuses)
+          : options.isNetworkError?.(err) ?? false;
+      if (!isRetryable) throw err;
+
+      // Respect Retry-After from 429 responses if available
+      const retryAfterSeconds = (err as AIGatewayError)?.retryAfter;
+      let backoff: number;
+      if (retryAfterSeconds != null && retryAfterSeconds > 0) {
+        backoff = retryAfterSeconds * 1000;
+      } else {
+        backoff = Math.min(initialDelayMs * Math.pow(2, attempt - 1), maxDelayMs);
+      }
+
+      await options.onRetry?.(attempt, err);
+      await delay(addJitter(backoff));
+    }
+  }
+  throw lastError;
+}

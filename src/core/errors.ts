@@ -5,9 +5,9 @@
  * so that `instanceof` checks work correctly in consumer code.
  */
 
-import type { BFFErrorResponse, OpenAIErrorResponse, BFFErrorItem } from './types.js';
-import { ErrorCode, BFFCode } from './types.js';
-import type { ErrorCode as ErrorCodeType } from './types.js';
+import type { BFFErrorResponse, OpenAIErrorResponse, BFFErrorItem } from './types';
+import { ErrorCode, BFFCode } from './types';
+import type { ErrorCode as ErrorCodeType } from './types';
 
 /**
  * @deprecated Use `ErrorCode` from `@macpaw/ai-sdk` instead.

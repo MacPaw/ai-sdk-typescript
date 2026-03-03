@@ -2,7 +2,7 @@
  * Configuration types for AI Gateway SDK client.
  */
 
-import type { RequestOptions } from './types.js';
+import type { RequestOptions } from './types';
 
 export type Environment = 'production';
 
