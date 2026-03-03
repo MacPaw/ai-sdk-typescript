@@ -1,0 +1,48 @@
+name: Feature request
+description: Suggest a new feature or improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem does this feature solve? What's the use case?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe how you'd like this to work. Include API examples if possible.
+      render: typescript
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Any alternative solutions or workarounds you've considered.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Core client
+        - Chat API
+        - Responses API
+        - Embeddings API
+        - Images API
+        - Audio API
+        - Models API
+        - Streaming / SSE
+        - Error handling
+        - Retry / resilience
+        - Middleware
+        - NestJS integration
+        - Vercel AI SDK provider
+        - Other
+    validations:
+      required: true
