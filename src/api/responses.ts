@@ -6,9 +6,8 @@ import type { ResolvedConfig } from '../core/config';
 import { runRequest } from '../core/request';
 import { parseSSEAsJSON } from '../core/sse';
 import { validateResponseRequest } from '../core/validation';
+import { API_PATHS } from '../core/paths';
 import type { CreateResponseRequest, ResponseObject, ResponseStreamEvent, RequestOptions } from '../core/types';
-
-const PATH = '/api/v1/responses';
 
 export async function createResponse(
   config: ResolvedConfig,
@@ -17,7 +16,7 @@ export async function createResponse(
 ): Promise<ResponseObject | { data: ResponseObject; response: Response }> {
   validateResponseRequest(request);
   const body = JSON.stringify(request);
-  const response = await runRequest(config, PATH, { method: 'POST', body }, options);
+  const response = await runRequest(config, API_PATHS.Responses, { method: 'POST', body }, options);
   const data = (await response.json()) as ResponseObject;
   if (options?.withResponse) return { data, response };
   return data;
@@ -31,7 +30,7 @@ export async function* createResponseStream(
   validateResponseRequest(request);
   const streamRequest = { ...request, stream: true };
   const body = JSON.stringify(streamRequest);
-  const response = await runRequest(config, PATH, { method: 'POST', body }, options);
+  const response = await runRequest(config, API_PATHS.Responses, { method: 'POST', body }, options);
   const stream = response.body;
   if (!stream) throw new Error('No response body');
   yield* parseSSEAsJSON<ResponseStreamEvent>(stream, config.logger);

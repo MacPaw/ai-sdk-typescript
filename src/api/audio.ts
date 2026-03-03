@@ -7,6 +7,7 @@ import type { ResolvedConfig } from '../core/config';
 import { runRequest } from '../core/request';
 import { parseSSEAsJSON } from '../core/sse';
 import { validateTranscriptionRequest, validateTranslationRequest } from '../core/validation';
+import { API_PATHS } from '../core/paths';
 import type {
   CreateTranscriptionRequest,
   TranscriptionResponse,
@@ -15,9 +16,6 @@ import type {
   TranslationResponse,
   RequestOptions,
 } from '../core/types';
-
-const TRANSCRIPTIONS_PATH = '/api/v1/audio/transcriptions';
-const TRANSLATIONS_PATH = '/api/v1/audio/translations';
 
 function buildTranscriptionFormData(request: CreateTranscriptionRequest): FormData {
   const formData = new FormData();
@@ -43,7 +41,7 @@ export async function createTranscription(
 ): Promise<TranscriptionResponse | { data: TranscriptionResponse; response: Response }> {
   validateTranscriptionRequest(request);
   const formData = buildTranscriptionFormData(request);
-  const response = await runRequest(config, TRANSCRIPTIONS_PATH, { method: 'POST', body: formData }, options);
+  const response = await runRequest(config, API_PATHS.AudioTranscriptions, { method: 'POST', body: formData }, options);
   const data = (await response.json()) as TranscriptionResponse;
   if (options?.withResponse) return { data, response };
   return data;
@@ -57,7 +55,7 @@ export async function* createTranscriptionStream(
   validateTranscriptionRequest(request);
   const streamRequest = { ...request, stream: true as const };
   const formData = buildTranscriptionFormData(streamRequest);
-  const response = await runRequest(config, TRANSCRIPTIONS_PATH, { method: 'POST', body: formData }, options);
+  const response = await runRequest(config, API_PATHS.AudioTranscriptions, { method: 'POST', body: formData }, options);
   const stream = response.body;
   if (!stream) throw new Error('No response body');
   yield* parseSSEAsJSON<TranscriptionStreamEvent>(stream, config.logger);
@@ -76,7 +74,7 @@ export async function createTranslation(
   if (request.response_format) formData.append('response_format', request.response_format);
   if (request.temperature != null) formData.append('temperature', String(request.temperature));
 
-  const response = await runRequest(config, TRANSLATIONS_PATH, { method: 'POST', body: formData }, options);
+  const response = await runRequest(config, API_PATHS.AudioTranslations, { method: 'POST', body: formData }, options);
   const data = (await response.json()) as TranslationResponse;
   if (options?.withResponse) return { data, response };
   return data;

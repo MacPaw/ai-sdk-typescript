@@ -6,14 +6,13 @@ import type { ResolvedConfig } from '../core/config';
 import { runRequest } from '../core/request';
 import { parseSSEAsJSON } from '../core/sse';
 import { validateChatCompletionRequest } from '../core/validation';
+import { API_PATHS } from '../core/paths';
 import type {
   CreateChatCompletionRequest,
   ChatCompletion,
   ChatCompletionChunk,
   RequestOptions,
 } from '../core/types';
-
-const PATH = '/api/v1/chat/completions';
 
 export async function createChatCompletion(
   config: ResolvedConfig,
@@ -22,7 +21,7 @@ export async function createChatCompletion(
 ): Promise<ChatCompletion | { data: ChatCompletion; response: Response }> {
   validateChatCompletionRequest(request);
   const body = JSON.stringify(request);
-  const response = await runRequest(config, PATH, { method: 'POST', body }, options);
+  const response = await runRequest(config, API_PATHS.ChatCompletions, { method: 'POST', body }, options);
   const data = (await response.json()) as ChatCompletion;
   if (options?.withResponse) return { data, response };
   return data;
@@ -36,7 +35,7 @@ export async function* createChatCompletionStream(
   validateChatCompletionRequest(request);
   const streamRequest = { ...request, stream: true };
   const body = JSON.stringify(streamRequest);
-  const response = await runRequest(config, PATH, { method: 'POST', body }, options);
+  const response = await runRequest(config, API_PATHS.ChatCompletions, { method: 'POST', body }, options);
   const contentType = response.headers.get('Content-Type') ?? '';
   if (!contentType.includes('text/event-stream') && !contentType.includes('application/json')) {
     const text = await response.text();
