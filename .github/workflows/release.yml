@@ -65,7 +65,7 @@ jobs:
         run: |
           echo "## 🚀 Released v${{ steps.semantic.outputs.new_release_version }}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **npm**: [@macpaw/ai-sdk@${{ steps.semantic.outputs.new_release_version }}](https://www.npmjs.com/package/@macpaw/ai-sdk/v/${{ steps.semantic.outputs.new_release_version }})" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **npm**: [@macpaw/ai@${{ steps.semantic.outputs.new_release_version }}](https://www.npmjs.com/package/@macpaw/ai-sdk/v/${{ steps.semantic.outputs.new_release_version }})" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Tag**: [v${{ steps.semantic.outputs.new_release_version }}](${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.semantic.outputs.new_release_version }})" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Branch**: \`${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Commit**: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
