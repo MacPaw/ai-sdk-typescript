@@ -143,7 +143,6 @@ describe('runRequest', () => {
   });
 
   it('retries on 401 when autoRefreshToken is true', async () => {
-    let callCount = 0;
     const transport = {
       request: vi.fn()
         .mockResolvedValueOnce(new Response(
