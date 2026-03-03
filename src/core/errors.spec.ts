@@ -10,7 +10,6 @@ import {
   AIGatewayErrorCodes,
   isAIGatewayError,
 } from './errors';
-import { ErrorCode } from './types';
 
 describe('parseErrorResponse', () => {
   it('parses BFF format and throws AIGatewayError with normalized code', () => {
@@ -25,7 +24,7 @@ describe('parseErrorResponse', () => {
     try {
       parseErrorResponse(401, body);
     } catch (e) {
-      expect((e as AIGatewayError).code).toBe(ErrorCode.AuthRequired);
+      expect((e as AIGatewayError).code).toBe('AUTH_REQUIRED');
       expect((e as AIGatewayError).statusCode).toBe(401);
       expect((e as AIGatewayError).message).toBe('Unauthorized access');
     }
@@ -46,7 +45,7 @@ describe('parseErrorResponse', () => {
     try {
       parseErrorResponse(402, body);
     } catch (e) {
-      expect((e as AIGatewayError).code).toBe(ErrorCode.InsufficientCredits);
+      expect((e as AIGatewayError).code).toBe('INSUFFICIENT_CREDITS');
       expect((e as AIGatewayError).paymentUrl).toBe('https://setapp.com/payment');
     }
   });
@@ -60,7 +59,7 @@ describe('parseErrorResponse', () => {
     try {
       parseErrorResponse(403, body);
     } catch (e) {
-      expect((e as AIGatewayError).code).toBe(ErrorCode.ModelNotAllowed);
+      expect((e as AIGatewayError).code).toBe('MODEL_NOT_ALLOWED');
     }
   });
 
@@ -74,7 +73,7 @@ describe('parseErrorResponse', () => {
     try {
       parseErrorResponse(429, body);
     } catch (e) {
-      expect((e as AIGatewayError).code).toBe(ErrorCode.RateLimited);
+      expect((e as AIGatewayError).code).toBe('RATE_LIMITED');
       expect((e as AIGatewayError).retryAfter).toBe(60);
     }
   });
@@ -87,15 +86,15 @@ describe('parseErrorResponse', () => {
     try {
       parseErrorResponse(401, body);
     } catch (e) {
-      expect((e as AIGatewayError).code).toBe(ErrorCode.AuthRequired);
+      expect((e as AIGatewayError).code).toBe('AUTH_REQUIRED');
       expect((e as AIGatewayError).requestId).toBe('req_123');
     }
   });
 
   it('exports stable error codes (deprecated alias)', () => {
-    expect(AIGatewayErrorCodes.AuthRequired).toBe(ErrorCode.AuthRequired);
-    expect(AIGatewayErrorCodes.InsufficientCredits).toBe(ErrorCode.InsufficientCredits);
-    expect(AIGatewayErrorCodes.RateLimited).toBe(ErrorCode.RateLimited);
+    expect(AIGatewayErrorCodes.AuthRequired).toBe('AUTH_REQUIRED');
+    expect(AIGatewayErrorCodes.InsufficientCredits).toBe('INSUFFICIENT_CREDITS');
+    expect(AIGatewayErrorCodes.RateLimited).toBe('RATE_LIMITED');
   });
 });
 
@@ -120,7 +119,7 @@ describe('error subclass instanceof', () => {
     } catch (e) {
       expect(e).toBeInstanceOf(CreditsError);
       expect(e).toBeInstanceOf(AIGatewayError);
-      expect((e as CreditsError).code).toBe(ErrorCode.InsufficientCredits);
+      expect((e as CreditsError).code).toBe('INSUFFICIENT_CREDITS');
     }
   });
 
@@ -172,7 +171,7 @@ describe('error subclass instanceof', () => {
 
 describe('toJSON', () => {
   it('serializes AIGatewayError to a plain object', () => {
-    const err = new AIGatewayError('Something failed', ErrorCode.BadRequest, 400, {
+    const err = new AIGatewayError('Something failed', 'BAD_REQUEST', 400, {
       requestId: 'req-1',
       path: '/api/v1/test',
     });
@@ -180,7 +179,7 @@ describe('toJSON', () => {
     expect(json).toEqual({
       name: 'AIGatewayError',
       message: 'Something failed',
-      code: ErrorCode.BadRequest,
+      code: 'BAD_REQUEST',
       statusCode: 400,
       metadata: { requestId: 'req-1', path: '/api/v1/test' },
     });
@@ -190,25 +189,25 @@ describe('toJSON', () => {
     const err = new AuthError('Unauthorized', 401, { requestId: 'req-2' });
     const parsed = JSON.parse(JSON.stringify(err));
     expect(parsed.name).toBe('AuthError');
-    expect(parsed.code).toBe(ErrorCode.AuthRequired);
+    expect(parsed.code).toBe('AUTH_REQUIRED');
     expect(parsed.statusCode).toBe(401);
     expect(parsed.metadata.requestId).toBe('req-2');
   });
 
   it('includes subclass name', () => {
-    const err = new CreditsError('No credits', 402, ErrorCode.InsufficientCredits);
+    const err = new CreditsError('No credits', 402, 'INSUFFICIENT_CREDITS');
     expect(err.toJSON().name).toBe('CreditsError');
   });
 });
 
 describe('isAIGatewayError', () => {
   it('returns true for AIGatewayError', () => {
-    expect(isAIGatewayError(new AIGatewayError('test', ErrorCode.BadRequest, 400))).toBe(true);
+    expect(isAIGatewayError(new AIGatewayError('test', 'BAD_REQUEST', 400))).toBe(true);
   });
 
   it('returns true for subclasses', () => {
     expect(isAIGatewayError(new AuthError('test', 401))).toBe(true);
-    expect(isAIGatewayError(new CreditsError('test', 402, ErrorCode.InsufficientCredits))).toBe(true);
+    expect(isAIGatewayError(new CreditsError('test', 402, 'INSUFFICIENT_CREDITS'))).toBe(true);
   });
 
   it('returns false for regular errors', () => {
