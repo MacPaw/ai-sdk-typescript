@@ -4803,7 +4803,7 @@ snapshots:
     dependencies:
       tagged-tag: 1.0.0
 
-  typescript-eslint@8.56.1(eslint@9.39.3)(typescript@5.9.3):
+  typescript-eslint@8.56.1(eslint@10.0.2)(typescript@5.9.3):
     dependencies:
       '@typescript-eslint/eslint-plugin': 8.56.1(@typescript-eslint/parser@8.56.1(eslint@10.0.2)(typescript@5.9.3))(eslint@10.0.2)(typescript@5.9.3)
       '@typescript-eslint/parser': 8.56.1(eslint@10.0.2)(typescript@5.9.3)
