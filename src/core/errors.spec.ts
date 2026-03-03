@@ -7,7 +7,6 @@ import {
   RateLimitError,
   ModelNotAllowedError,
   ValidationError,
-  AIGatewayErrorCodes,
   isAIGatewayError,
 } from './errors';
 
@@ -91,11 +90,6 @@ describe('parseErrorResponse', () => {
     }
   });
 
-  it('exports stable error codes (deprecated alias)', () => {
-    expect(AIGatewayErrorCodes.AuthRequired).toBe('AUTH_REQUIRED');
-    expect(AIGatewayErrorCodes.InsufficientCredits).toBe('INSUFFICIENT_CREDITS');
-    expect(AIGatewayErrorCodes.RateLimited).toBe('RATE_LIMITED');
-  });
 });
 
 describe('error subclass instanceof', () => {
