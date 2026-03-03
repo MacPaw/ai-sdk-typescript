@@ -62,7 +62,7 @@ describe('parseSSE', () => {
       'data: not-json',
     ]);
     await expect(async () => {
-      for await (const _chunk of parseSSE(stream)) { /* noop */ }
+      for await (const chunk of parseSSE(stream)) void chunk;
     }).rejects.toThrow(AIGatewayError);
   });
 });
