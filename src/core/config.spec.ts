@@ -93,6 +93,49 @@ describe('resolveConfig', () => {
     expect(t2).toBe('token-2');
   });
 
+  it('deduplicates concurrent token fetches (no thundering herd)', async () => {
+    let callCount = 0;
+    let resolveToken: ((v: string) => void) | undefined;
+    const resolved = resolveConfig({
+      ...baseConfig,
+      getAuthToken: async () => {
+        callCount++;
+        return new Promise<string>((r) => { resolveToken = r; });
+      },
+      tokenCacheTTL: 60_000,
+    });
+
+    const p1 = resolved.getAuthToken();
+    const p2 = resolved.getAuthToken();
+    const p3 = resolved.getAuthToken();
+    expect(callCount).toBe(1);
+
+    resolveToken!('shared-token');
+    const [t1, t2, t3] = await Promise.all([p1, p2, p3]);
+    expect(t1).toBe('shared-token');
+    expect(t2).toBe('shared-token');
+    expect(t3).toBe('shared-token');
+    expect(callCount).toBe(1);
+  });
+
+  it('clears pending promise on token fetch error so next call retries', async () => {
+    let callCount = 0;
+    const resolved = resolveConfig({
+      ...baseConfig,
+      getAuthToken: async () => {
+        callCount++;
+        if (callCount === 1) throw new Error('auth failed');
+        return 'recovered-token';
+      },
+      tokenCacheTTL: 60_000,
+    });
+
+    await expect(resolved.getAuthToken()).rejects.toThrow('auth failed');
+    const token = await resolved.getAuthToken();
+    expect(token).toBe('recovered-token');
+    expect(callCount).toBe(2);
+  });
+
   it('defaults apiPaths to v1', () => {
     const resolved = resolveConfig(baseConfig);
     expect(resolved.apiPaths.ChatCompletions).toBe('/api/v1/chat/completions');
