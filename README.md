@@ -383,23 +383,15 @@ const client = createAIGatewayClient({
 
 ## Vercel AI SDK integration
 
-For React apps using Vercel AI SDK (`useChat`, `useCompletion`, `generateText`, `streamText`):
-
-### Install
-
-```bash
-pnpm add @macpaw/ai @ai-sdk/openai ai
-```
+For React apps using Vercel AI SDK (`useChat`, `useCompletion`, `generateText`, `streamText`).
+Everything is included — no extra packages needed.
 
 ### Option A: High-level provider (recommended)
 
 ```ts
-import { createOpenAI } from '@ai-sdk/openai';
-import { createAIGatewayProvider } from '@macpaw/ai/provider';
-import { generateText, streamText } from 'ai';
+import { createAIGatewayProvider, generateText, streamText } from '@macpaw/ai/provider';
 
 const gateway = createAIGatewayProvider({
-  createOpenAI,
   getAuthToken: async () => (await getSetappSession()).accessToken,
   env: 'production',
 });
@@ -438,6 +430,9 @@ const openai = createOpenAI({
   apiKey: 'unused',
 });
 ```
+
+> **Note:** `@ai-sdk/openai` and `ai` are bundled as dependencies of `@macpaw/ai`.
+> You can still import them directly if needed (e.g. `import { createOpenAI } from '@ai-sdk/openai'`).
 
 ### React hooks
 
@@ -698,7 +693,7 @@ AIGatewayModule.forRootAsync({
 |---|---|
 | `@macpaw/ai` | Main client, types, errors, `ErrorCode` enum |
 | `@macpaw/ai/core` | Core types, errors, config, retry, SSE parser |
-| `@macpaw/ai/provider` | Vercel AI SDK provider integration |
+| `@macpaw/ai/provider` | Vercel AI SDK provider + re-exports (`generateText`, `streamText`, …) |
 | `@macpaw/ai/nestjs` | NestJS module, decorator, exception filter |
 
 ## License
