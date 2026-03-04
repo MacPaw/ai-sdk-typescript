@@ -694,6 +694,233 @@ AIGatewayModule.forRootAsync({
 })
 ```
 
+## Testing
+
+The SDK ships a dedicated `@macpaw/ai/testing` entry point with a fully-mocked client, framework-agnostic mock functions, and streaming helpers.
+
+```ts
+import {
+  createMockAIGatewayClient,
+  createMockChatCompletion,
+  createMockStreamTextResult,
+  createMockStreamResponseResult,
+} from '@macpaw/ai/testing';
+```
+
+### Mock client
+
+`createMockAIGatewayClient()` returns a `MockAIGatewayClient` where every API method is a `MockFn` — no test framework dependency required.
+
+```ts
+const client = createMockAIGatewayClient();
+
+// Use fixture helpers — no boilerplate
+client.chat.completions.create.mockResolvedValue(
+  createMockChatCompletion({ content: 'Hi!' }),
+);
+
+// Use in code under test
+const result = await client.chat.completions.create({ model: 'gpt-4.1-nano', messages: [] });
+
+// Assert
+expect(client.chat.completions.create.callCount).toBe(1);
+expect(client.chat.completions.create.wasCalled).toBe(true);
+expect(client.chat.completions.create.wasCalledWith({ model: 'gpt-4.1-nano', messages: [] })).toBe(true);
+```
+
+All endpoints are covered:
+
+| Namespace | Mock methods |
+|---|---|
+| `chat.completions` | `create`, `stream` |
+| `responses` | `create`, `createStream`, `stream` |
+| `embeddings` | `create` |
+| `models` | `getInfo` |
+| `images` | `generate`, `edit` |
+| `audio.transcriptions` | `create` |
+| `audio.translations` | `create` |
+| (root) | `use` |
+
+### Response fixture helpers
+
+Pre-built factories that eliminate boilerplate — just pass the fields you care about:
+
+```ts
+import {
+  createMockChatCompletion,
+  createMockResponseObject,
+  createMockEmbeddingResponse,
+  createMockImageResponse,
+  createMockTranscriptionResponse,
+  createMockTranslationResponse,
+  createMockModelInfoResponse,
+} from '@macpaw/ai/testing';
+
+client.chat.completions.create.mockResolvedValue(createMockChatCompletion({ content: 'Hello' }));
+client.responses.create.mockResolvedValue(createMockResponseObject({ content: 'World' }));
+client.embeddings.create.mockResolvedValue(createMockEmbeddingResponse({ embeddings: [[0.1, 0.2]] }));
+client.images.generate.mockResolvedValue(createMockImageResponse({ urls: ['https://example.com/cat.png'] }));
+client.audio.transcriptions.create.mockResolvedValue(createMockTranscriptionResponse({ text: 'Hello world' }));
+client.audio.translations.create.mockResolvedValue(createMockTranslationResponse({ text: 'Translated' }));
+client.models.getInfo.mockResolvedValue(createMockModelInfoResponse({ models: [{ name: 'gpt-4.1-nano' }] }));
+```
+
+All fixtures return fully-typed objects with sensible defaults — call with no arguments for a valid default.
+
+### MockFn API
+
+Each mock method exposes:
+
+| Property / Method | Description |
+|---|---|
+| `.calls` | Array of all calls (each entry = arguments array) |
+| `.callCount` | Number of times called |
+| `.lastCall` | Arguments of the last call |
+| `.wasCalled` | `true` if called at least once |
+| `.wasCalledWith(...args)` | `true` if any call matched the given arguments |
+| `.mockReturnValue(v)` | Set a fixed synchronous return value |
+| `.mockReturnValueOnce(v)` | Set return value for the *next* call only |
+| `.mockResolvedValue(v)` | Set a fixed promised return value |
+| `.mockResolvedValueOnce(v)` | Set resolved value for the *next* call only |
+| `.mockRejectedValue(e)` | Set a fixed rejected promise |
+| `.mockRejectedValueOnce(e)` | Set rejected value for the *next* call only |
+| `.mockImplementation(fn)` | Custom implementation |
+| `.mockImplementationOnce(fn)` | Custom implementation for the *next* call only |
+| `.mockClear()` | Clear call history, keep implementation |
+| `.mockReset()` | Clear history, once-queue, and implementation |
+
+#### Sequential return values
+
+```ts
+client.chat.completions.create
+  .mockResolvedValueOnce(createMockChatCompletion({ content: 'first' }))
+  .mockResolvedValueOnce(createMockChatCompletion({ content: 'second' }))
+  .mockResolvedValue(createMockChatCompletion({ content: 'default' }));
+
+// 1st call → 'first', 2nd → 'second', 3rd+ → 'default'
+```
+
+#### Error testing
+
+```ts
+import { AuthError } from '@macpaw/ai';
+
+client.chat.completions.create.mockRejectedValue(
+  new AuthError('Token expired', 401, 'AUTH_REQUIRED'),
+);
+
+await expect(service.complete(messages)).rejects.toThrow('Token expired');
+```
+
+### Stream mocks
+
+For testing streaming code paths, use the stream helpers:
+
+```ts
+// Chat streaming
+client.chat.completions.stream.mockReturnValue(
+  createMockStreamTextResult({ text: ['Hello', ' world'], usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 } }),
+);
+
+const result = client.chat.completions.stream({ model: 'm', messages: [] });
+for await (const delta of result.textStream) {
+  console.log(delta); // 'Hello', ' world'
+}
+const fullText = await result.text; // 'Hello world'
+
+// Response streaming
+client.responses.stream.mockReturnValue(
+  createMockStreamResponseResult('Streamed response'),
+);
+```
+
+Both helpers accept a simple string for quick tests or an options object for custom chunking and usage stats.
+
+The returned object extends the standard result with an `aborted` flag for cancellation assertions:
+
+```ts
+const streamResult = createMockStreamTextResult('test');
+streamResult.abort();
+expect(streamResult.aborted).toBe(true);
+```
+
+### Reset and clear
+
+```ts
+client.mockResetAll();  // clears calls, once-queues, and implementations for ALL endpoints
+
+// Per-method:
+client.chat.completions.create.mockClear();  // clears calls only, keeps implementation
+client.chat.completions.create.mockReset();  // clears calls + resets implementation
+```
+
+### Mock transport (integration tests)
+
+For integration tests where you want the **real client pipeline** (auth, middleware, retry) but **no network**, use `createMockTransport()`:
+
+```ts
+import { createAIGatewayClient } from '@macpaw/ai';
+import { createMockTransport } from '@macpaw/ai/testing';
+
+const transport = createMockTransport();
+const client = createAIGatewayClient({
+  env: 'production',
+  getAuthToken: async () => 'test-token',
+  transport,
+});
+
+// Production code — works without network
+const completion = await client.chat.completions.create({
+  model: 'openai/gpt-4.1-nano',
+  messages: [{ role: 'user', content: 'Hi' }],
+});
+console.log(completion.choices[0]?.message?.content); // 'Mock response'
+
+// Inspect captured requests
+console.log(transport.requestCount);    // 1
+console.log(transport.requests[0].body); // { model: '...', messages: [...] }
+```
+
+Every endpoint returns a sensible default fixture automatically. Override specific routes when needed:
+
+```ts
+// Simulate a 503 for chat
+transport.onRoute('/chat/completions', () =>
+  new Response(JSON.stringify({ error: 'overloaded' }), { status: 503 }),
+);
+
+// Catch-all fallback for unmatched routes
+transport.onAny((_config, body) =>
+  new Response(JSON.stringify({ echo: body }), { status: 200 }),
+);
+
+// Reset handlers and request history
+transport.reset();
+```
+
+### NestJS testing
+
+For NestJS integration tests, use the mock client with the injection token:
+
+```ts
+import { Test } from '@nestjs/testing';
+import { AI_GATEWAY_CLIENT } from '@macpaw/ai/nestjs';
+import { createMockAIGatewayClient } from '@macpaw/ai/testing';
+
+const mockClient = createMockAIGatewayClient();
+
+const module = await Test.createTestingModule({
+  providers: [
+    ChatService,
+    { provide: AI_GATEWAY_CLIENT, useValue: mockClient },
+  ],
+}).compile();
+
+const service = module.get(ChatService);
+mockClient.chat.completions.create.mockResolvedValue({ /* ... */ });
+const result = await service.complete([{ role: 'user', content: 'Hi' }]);
+```
+
 ## Subpath exports
 
 | Import path | Content |
@@ -702,6 +929,7 @@ AIGatewayModule.forRootAsync({
 | `@macpaw/ai/core` | Core types, errors, config, retry, SSE parser |
 | `@macpaw/ai/provider` | Vercel AI SDK provider + re-exports (`generateText`, `streamText`, …) |
 | `@macpaw/ai/nestjs` | NestJS module, decorator, exception filter |
+| `@macpaw/ai/testing` | Mock client, `MockFn`, fixtures, stream helpers, mock transport |
 
 ## License
 
