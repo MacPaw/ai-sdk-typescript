@@ -99,6 +99,9 @@ const client = createAIGatewayClient({
 
   // Auto-generate X-Request-ID header (default: true)
   generateRequestId: true,
+
+  // API version prefix (default: 'v1' → /api/v1/...)
+  // apiVersion: 'v2',
 });
 ```
 
