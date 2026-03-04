@@ -24,6 +24,11 @@ describe('AIGatewayModule', () => {
       expect(clientProvider.useFactory).toBeTypeOf('function');
     });
 
+    it('supports isGlobal: false', () => {
+      const mod = AIGatewayModule.forRoot({ ...baseOptions, isGlobal: false });
+      expect(mod.global).toBe(false);
+    });
+
     it('useFactory creates a working client', () => {
       const mod = AIGatewayModule.forRoot(baseOptions);
       const clientProvider = (mod.providers as any[]).find(

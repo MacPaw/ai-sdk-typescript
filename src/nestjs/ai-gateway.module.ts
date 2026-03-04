@@ -28,14 +28,15 @@ export class AIGatewayModule {
    * ```
    */
   static forRoot(options: AIGatewayModuleOptions): DynamicModule {
+    const { isGlobal, ...clientConfig } = options;
     const clientProvider: Provider<AIGatewayClient> = {
       provide: AI_GATEWAY_CLIENT,
-      useFactory: () => createAIGatewayClient(options),
+      useFactory: () => createAIGatewayClient(clientConfig),
     };
 
     return {
       module: AIGatewayModule,
-      global: true,
+      global: isGlobal ?? true,
       providers: [clientProvider],
       exports: [clientProvider],
     };

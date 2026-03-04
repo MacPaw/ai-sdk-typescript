@@ -5,7 +5,10 @@ import type { AIGatewayClientConfig } from '../core/config';
  * Synchronous module configuration.
  * Used with `AIGatewayModule.forRoot(options)`.
  */
-export type AIGatewayModuleOptions = AIGatewayClientConfig;
+export interface AIGatewayModuleOptions extends AIGatewayClientConfig {
+  /** Whether the module is global (available without importing in every module). Default: true. */
+  isGlobal?: boolean;
+}
 
 /**
  * Factory interface for creating options dynamically.

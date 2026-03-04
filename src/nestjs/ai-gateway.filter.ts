@@ -25,14 +25,20 @@ export class AIGatewayExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse();
 
     const status = this.mapStatusCode(exception.statusCode);
-    const body = {
+    const body: Record<string, unknown> = {
       statusCode: status,
       error: exception.code,
       message: exception.message,
-      ...(exception.metadata?.retryAfter != null && { retryAfter: exception.metadata.retryAfter }),
     };
 
+    if (exception.metadata?.requestId != null) body.requestId = exception.metadata.requestId;
+    if (exception.metadata?.paymentUrl != null) body.paymentUrl = exception.metadata.paymentUrl;
+    if (exception.metadata?.retryAfter != null) body.retryAfter = exception.metadata.retryAfter;
+
     if (typeof response.status === 'function' && typeof response.json === 'function') {
+      if (exception.metadata?.retryAfter != null && typeof response.header === 'function') {
+        response.header('Retry-After', String(exception.metadata.retryAfter));
+      }
       response.status(status).json(body);
     } else {
       throw new HttpException(body, status);
