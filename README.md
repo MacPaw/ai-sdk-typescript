@@ -18,7 +18,7 @@ Commercial Web SDK for the AI Gateway. Universal TypeScript client for browser a
 - **Request ID tracking** — Automatic `X-Request-ID` generation
 - **AbortController** — Per-request signal and configurable timeout
 - **Typed** — Full TypeScript types, const-object enums for all codes/roles
-- **Tree-shakeable** — Zero runtime dependencies, ESM + CJS
+- **Tree-shakeable** — ESM + CJS with minimal runtime dependencies
 - **Vercel AI SDK** — First-class provider integration
 
 ## Install
