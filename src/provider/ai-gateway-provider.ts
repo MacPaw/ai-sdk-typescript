@@ -25,6 +25,8 @@ import { createOpenAI as builtinCreateOpenAI } from '@ai-sdk/openai';
 import { createAIGatewayFetch } from './create-fetch';
 import type { Environment } from '../core/config';
 import { DEFAULT_BASE_URLS } from '../core/config';
+import type { ApiVersion } from '../core/paths';
+import { DEFAULT_API_VERSION } from '../core/paths';
 
 type CreateOpenAIFn = (config: {
   baseURL: string;
@@ -53,6 +55,8 @@ export interface AIGatewayProviderOptions {
   getAuthToken: () => Promise<string | null>;
   /** Extra headers for every request. */
   headers?: Record<string, string>;
+  /** API version prefix (e.g. `'v1'`, `'v2'`). Default: `'v1'`. */
+  apiVersion?: ApiVersion;
 }
 
 /**
@@ -81,7 +85,7 @@ export function createAIGatewayProvider(options: AIGatewayProviderOptions): Crea
   const factory = options.createOpenAI ?? (builtinCreateOpenAI as unknown as CreateOpenAIFn);
 
   return factory({
-    baseURL: `${baseURL.replace(/\/$/, '')}/api/v1`,
+    baseURL: `${baseURL.replace(/\/$/, '')}/api/${options.apiVersion ?? DEFAULT_API_VERSION}`,
     fetch: customFetch as unknown as typeof globalThis.fetch,
     apiKey: 'unused',
   });

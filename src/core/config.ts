@@ -146,11 +146,18 @@ export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string 
   let cachedToken: string | null = null;
   let cacheExpiresAt = 0;
   let pendingRefresh: Promise<string | null> | null = null;
+  let pendingIsForced = false;
 
   const getAuthToken = tokenCacheTTL > 0
     ? async (forceRefresh?: boolean): Promise<string | null> => {
         if (!forceRefresh && Date.now() < cacheExpiresAt) return cachedToken;
+        // If a forced refresh is requested but the pending promise was from a
+        // non-forced call, discard it so we actually call rawGetAuthToken(true).
+        if (forceRefresh && pendingRefresh && !pendingIsForced) {
+          pendingRefresh = null;
+        }
         if (!pendingRefresh) {
+          pendingIsForced = !!forceRefresh;
           pendingRefresh = rawGetAuthToken(forceRefresh).then(
             (token) => {
               cachedToken = token;

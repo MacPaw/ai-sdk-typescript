@@ -118,6 +118,32 @@ describe('resolveConfig', () => {
     expect(callCount).toBe(1);
   });
 
+  it('forceRefresh=true invalidates a pending non-forced refresh', async () => {
+    let callCount = 0;
+    const resolvers: Array<(v: string) => void> = [];
+    const resolved = resolveConfig({
+      ...baseConfig,
+      getAuthToken: async (_forceRefresh) => {
+        callCount++;
+        return new Promise<string>((r) => { resolvers.push(r); });
+      },
+      tokenCacheTTL: 60_000,
+    });
+
+    // Start a non-forced refresh
+    void resolved.getAuthToken(false);
+    expect(callCount).toBe(1);
+
+    // Force refresh while non-forced is pending — must start a NEW call
+    const p2 = resolved.getAuthToken(true);
+    expect(callCount).toBe(2);
+
+    // Resolve both
+    resolvers[0]('stale-token');
+    resolvers[1]('fresh-token');
+    expect(await p2).toBe('fresh-token');
+  });
+
   it('clears pending promise on token fetch error so next call retries', async () => {
     let callCount = 0;
     const resolved = resolveConfig({
