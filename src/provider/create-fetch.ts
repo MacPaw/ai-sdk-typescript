@@ -17,8 +17,8 @@ export interface CreateAIGatewayFetchOptions {
  * Use with Vercel AI SDK:
  *
  * @example
- * import { createOpenAI } from '@ai-sdk/openai';
  * import { createAIGatewayFetch } from '@macpaw/ai/provider';
+ * import { createOpenAI } from '@ai-sdk/openai';
  *
  * const fetch = createAIGatewayFetch({
  *   baseURL: 'https://api.macpaw.com/ai',
@@ -26,8 +26,9 @@ export interface CreateAIGatewayFetchOptions {
  * });
  *
  * const openai = createOpenAI({
- *   baseURL: 'https://api.macpaw.com/ai/api',  // BFF uses /api/v1/...
+ *   baseURL: 'https://api.macpaw.com/ai/api/v1',
  *   fetch,
+ *   apiKey: 'unused',
  * });
  */
 export function createAIGatewayFetch(options: CreateAIGatewayFetchOptions): (input: string | URL | { url: string }, init?: RequestInit) => Promise<Response> {

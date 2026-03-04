@@ -7,12 +7,9 @@
  *
  * @example
  * ```ts
- * import { createOpenAI } from '@ai-sdk/openai';
- * import { createAIGatewayProvider } from '@macpaw/ai/provider';
- * import { generateText } from 'ai';
+ * import { createAIGatewayProvider, generateText } from '@macpaw/ai/provider';
  *
  * const gateway = createAIGatewayProvider({
- *   createOpenAI,
  *   getAuthToken: async () => myToken,
  *   env: 'production',
  * });
@@ -24,6 +21,7 @@
  * ```
  */
 
+import { createOpenAI as builtinCreateOpenAI } from '@ai-sdk/openai';
 import { createAIGatewayFetch } from './create-fetch';
 import type { Environment } from '../core/config';
 import { DEFAULT_BASE_URLS } from '../core/config';
@@ -43,13 +41,10 @@ type CreateOpenAIReturn = ((modelId: string, settings?: Record<string, unknown>)
 
 export interface AIGatewayProviderOptions {
   /**
-   * The createOpenAI function from @ai-sdk/openai.
-   * Pass it directly to avoid SDK depending on @ai-sdk/openai.
-   *
-   * @example
-   * import { createOpenAI } from '@ai-sdk/openai';
+   * Optional override for the OpenAI provider factory.
+   * Uses `createOpenAI` from `@ai-sdk/openai` by default.
    */
-  createOpenAI: CreateOpenAIFn;
+  createOpenAI?: CreateOpenAIFn;
   /** Base URL of the AI Gateway BFF. Required if env is not set. */
   baseURL?: string;
   /** Environment: 'production' selects the default base URL. For non-production, use baseURL instead. */
@@ -83,7 +78,9 @@ export function createAIGatewayProvider(options: AIGatewayProviderOptions): Crea
     headers: options.headers,
   });
 
-  return options.createOpenAI({
+  const factory = options.createOpenAI ?? (builtinCreateOpenAI as unknown as CreateOpenAIFn);
+
+  return factory({
     baseURL: `${baseURL.replace(/\/$/, '')}/api/v1`,
     fetch: customFetch as unknown as typeof globalThis.fetch,
     apiKey: 'unused',
