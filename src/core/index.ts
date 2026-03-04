@@ -1,4 +1,5 @@
 export * from './types';
+export { API_PATHS } from './paths';
 export * from './errors';
 export * from './config';
 export * from './retry';
