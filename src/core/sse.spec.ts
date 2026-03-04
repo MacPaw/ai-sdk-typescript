@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseSSE, parseSSEAsJSON } from './sse';
-import { AIGatewayError } from './errors';
+import { AIGatewayError, AuthError, RateLimitError } from './errors';
 
 function streamFromStrings(lines: string[]): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
@@ -64,6 +64,34 @@ describe('parseSSE', () => {
     await expect(async () => {
       for await (const chunk of parseSSE(stream)) void chunk;
     }).rejects.toThrow(AIGatewayError);
+  });
+
+  it('throws typed AuthError subclass for UNAUTHORIZED stream error', async () => {
+    const stream = streamFromStrings([
+      'event: error',
+      'data: {"message":"Token expired","code":"UNAUTHORIZED","statusCode":401}',
+    ]);
+    try {
+      for await (const chunk of parseSSE(stream)) void chunk;
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(AuthError);
+      expect((err as AuthError).code).toBe('AUTH_REQUIRED');
+    }
+  });
+
+  it('throws typed RateLimitError subclass for RATE_LIMIT_EXCEEDED stream error', async () => {
+    const stream = streamFromStrings([
+      'event: error',
+      'data: {"message":"Slow down","code":"RATE_LIMIT_EXCEEDED","statusCode":429,"metadata":{"retryAfter":30}}',
+    ]);
+    try {
+      for await (const chunk of parseSSE(stream)) void chunk;
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(RateLimitError);
+      expect((err as RateLimitError).retryAfter).toBe(30);
+    }
   });
 
   it('throws AIGatewayError when trailing buffer is an error event without trailing newline', async () => {

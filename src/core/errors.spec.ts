@@ -161,6 +161,25 @@ describe('error subclass instanceof', () => {
       expect(e).not.toBeInstanceOf(CreditsError);
     }
   });
+
+  it('fallback throws AuthError for 401 with unexpected body format', () => {
+    try {
+      parseErrorResponse(401, { unexpected: 'format' });
+    } catch (e) {
+      expect(e).toBeInstanceOf(AuthError);
+      expect((e as AuthError).code).toBe('AUTH_REQUIRED');
+      expect((e as AuthError).statusCode).toBe(401);
+    }
+  });
+
+  it('fallback throws RateLimitError for 429 with unexpected body format', () => {
+    try {
+      parseErrorResponse(429, 'plain text');
+    } catch (e) {
+      expect(e).toBeInstanceOf(RateLimitError);
+      expect((e as RateLimitError).code).toBe('RATE_LIMITED');
+    }
+  });
 });
 
 describe('toJSON', () => {

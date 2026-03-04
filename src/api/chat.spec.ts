@@ -86,4 +86,20 @@ describe('createChatCompletionStream', () => {
     expect(chunks[0].choices[0].delta?.role).toBe('assistant');
     expect(chunks[1].choices[0].delta?.content).toBe('Hi');
   });
+
+  it('throws clear error when server returns JSON instead of SSE stream', async () => {
+    const errorBody = { error: { message: 'Model overloaded', type: 'api_error' } };
+    const response = new Response(JSON.stringify(errorBody), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const config = createMockConfig(response);
+
+    await expect(async () => {
+      for await (const _chunk of createChatCompletionStream(config, {
+        model: 'm',
+        messages: [{ role: 'user', content: 'x' }],
+      })) { /* consume */ }
+    }).rejects.toThrow('Expected SSE stream but received JSON response');
+  });
 });
