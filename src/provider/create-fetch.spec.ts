@@ -67,4 +67,53 @@ describe('createAIGatewayFetch', () => {
     const headers = fetchCall[1].headers as Headers;
     expect(headers.has('Authorization')).toBe(false);
   });
+
+  it('does not prefix absolute URLs to a different host', async () => {
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'tok',
+    });
+
+    await customFetch('https://other.example.com/v1/models');
+
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(fetchCall[0]).toBe('https://other.example.com/v1/models');
+  });
+
+  it('does not set Content-Type for FormData body', async () => {
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => null,
+    });
+
+    const form = new FormData();
+    form.append('file', new Blob(['audio']), 'audio.mp3');
+
+    await customFetch('https://api.macpaw.com/ai/test', {
+      method: 'POST',
+      body: form,
+    });
+
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const headers = fetchCall[1].headers as Headers;
+    expect(headers.has('Content-Type')).toBe(false);
+  });
+
+  it('does not set Content-Type for Blob body', async () => {
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => null,
+    });
+
+    const blob = new Blob(['binary data'], { type: 'application/octet-stream' });
+
+    await customFetch('https://api.macpaw.com/ai/test', {
+      method: 'POST',
+      body: blob,
+    });
+
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const headers = fetchCall[1].headers as Headers;
+    expect(headers.has('Content-Type')).toBe(false);
+  });
 });

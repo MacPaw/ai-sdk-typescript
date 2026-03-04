@@ -4,7 +4,6 @@
 
 import type { ResolvedConfig } from '../core/config';
 import { runRequest } from '../core/request';
-import { API_PATHS } from '../core/paths';
 import type { ModelInfoResponse, RequestOptions } from '../core/types';
 
 export async function getModelInfo(
@@ -15,7 +14,7 @@ export async function getModelInfo(
   const query = params?.litellm_model_id
     ? `?litellm_model_id=${encodeURIComponent(params.litellm_model_id)}`
     : '';
-  const response = await runRequest(config, `${API_PATHS.ModelInfo}${query}`, { method: 'GET' }, options);
+  const response = await runRequest(config, `${config.apiPaths.ModelInfo}${query}`, { method: 'GET' }, options);
   const data = (await response.json()) as ModelInfoResponse;
   if (options?.withResponse) return { data, response };
   return data;

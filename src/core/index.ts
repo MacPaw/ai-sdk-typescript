@@ -7,3 +7,4 @@ export * from './sse';
 export * from './validation';
 export { runRequest, setDefaultTransport } from './request';
 export { createStreamTextResult, createStreamResponseResult } from './stream-result';
+export { anySignal } from './abort';

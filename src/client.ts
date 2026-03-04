@@ -12,6 +12,7 @@ import * as imagesApi from './api/images';
 import * as audioApi from './api/audio';
 import { createStreamTextResult, createStreamResponseResult } from './core/stream-result';
 import type { StreamTextResult, StreamResponseResult } from './core/stream-result';
+import { anySignal } from './core/abort';
 import type {
   CreateChatCompletionRequest,
   ChatCompletion,
@@ -261,9 +262,17 @@ function buildChatCompletions(config: ResolvedConfig): ChatCompletionsAPI {
         ? anySignal([options.signal, ac.signal])
         : ac.signal,
     };
+    const fullRequest: CreateChatCompletionRequest = {
+      ...(request as CreateChatCompletionRequest),
+      stream: true,
+      stream_options: {
+        include_usage: true,
+        ...((request as Record<string, unknown>).stream_options as object | undefined),
+      },
+    };
     const generator = chatApi.createChatCompletionStream(
       config,
-      { ...request, stream: true } as CreateChatCompletionRequest,
+      fullRequest,
       mergedOptions,
     );
     return createStreamTextResult(generator, ac);
@@ -350,21 +359,6 @@ function buildAudio(config: ResolvedConfig): AudioAPI {
 }
 
 /**
- * Combine multiple AbortSignals into one that aborts when ANY of them fires.
- */
-function anySignal(signals: AbortSignal[]): AbortSignal {
-  const controller = new AbortController();
-  for (const signal of signals) {
-    if (signal.aborted) {
-      controller.abort(signal.reason);
-      return controller.signal;
-    }
-    signal.addEventListener('abort', () => controller.abort(signal.reason), { once: true });
-  }
-  return controller.signal;
-}
-
-/**
  * Create an AI Gateway client instance.
  *
  * @param config - Client configuration including auth, base URL, and optional retry/middleware settings.
@@ -375,7 +369,7 @@ function anySignal(signals: AbortSignal[]): AbortSignal {
  * const client = createAIGatewayClient({
  *   env: 'production',
  *   getAuthToken: async () => (await getSession()).accessToken,
- *   retry: { maxRetries: 3 },
+ *   retry: { maxAttempts: 3 },
  * });
  * ```
  */

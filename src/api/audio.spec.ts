@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createTranscription, createTranscriptionStream, createTranslation } from './audio';
 import type { ResolvedConfig } from '../core/config';
+import { API_PATHS } from '../core/paths';
 
 function createMockConfig(response: Response): ResolvedConfig {
   return {
@@ -15,6 +16,7 @@ function createMockConfig(response: Response): ResolvedConfig {
     logger: {},
     hooks: {},
     generateRequestId: false,
+    apiPaths: API_PATHS,
   };
 }
 
