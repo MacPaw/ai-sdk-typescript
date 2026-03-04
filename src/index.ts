@@ -92,6 +92,10 @@ export type {
 } from './core/config';
 export { DEFAULT_RETRY, DEFAULT_BASE_URLS, resolveConfig } from './core/config';
 
+// API paths & versioning
+export type { ApiVersion, ApiPaths } from './core/paths';
+export { API_PATHS, DEFAULT_API_VERSION, buildApiPaths } from './core/paths';
+
 // Transport
 export { createFetchTransport } from './transport/fetch';
 export type { FetchTransportOptions } from './transport/fetch';

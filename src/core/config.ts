@@ -3,6 +3,7 @@
  */
 
 import type { RequestOptions } from './types';
+import { buildApiPaths } from './paths';
 
 export type Environment = 'production';
 
@@ -84,6 +85,8 @@ export interface AIGatewayClientConfig {
   hooks?: LifecycleHooks;
   /** Generate X-Request-ID header for each request. Default true. */
   generateRequestId?: boolean;
+  /** API version prefix (e.g. `'v1'`, `'v2'`). Default: `'v1'`. */
+  apiVersion?: import('./paths').ApiVersion;
 }
 
 export interface RequestConfig {
@@ -118,6 +121,7 @@ export interface ResolvedConfig {
   logger: Logger;
   hooks: LifecycleHooks;
   generateRequestId: boolean;
+  apiPaths: import('./paths').ApiPaths;
 }
 
 export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string }): ResolvedConfig {
@@ -144,6 +148,8 @@ export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string 
       }
     : rawGetAuthToken;
 
+  const apiPaths = buildApiPaths(config.apiVersion);
+
   return {
     baseURL: config.baseURL,
     getAuthToken,
@@ -158,6 +164,7 @@ export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string 
     logger,
     hooks,
     generateRequestId,
+    apiPaths,
   };
 }
 
