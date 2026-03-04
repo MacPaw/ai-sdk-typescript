@@ -41,4 +41,13 @@ describe('withRetry', () => {
     ).rejects.toBe(err);
     expect(fn).toHaveBeenCalledTimes(2);
   });
+
+  it('respects custom retryableStatuses — does not retry 500 when only 429 is listed', async () => {
+    const err = Object.assign(new Error('server error'), { statusCode: 500 });
+    const fn = vi.fn().mockRejectedValue(err);
+    await expect(
+      withRetry(fn, { retryConfig: { maxAttempts: 3, retryableStatuses: [429] } })
+    ).rejects.toBe(err);
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
 });
