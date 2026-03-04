@@ -8,7 +8,7 @@
  * @example
  * ```ts
  * import { createOpenAI } from '@ai-sdk/openai';
- * import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
+ * import { createAIGatewayProvider } from '@macpaw/ai/provider';
  * import { generateText } from 'ai';
  *
  * const gateway = createAIGatewayProvider({

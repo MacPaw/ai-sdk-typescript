@@ -18,7 +18,7 @@ export interface CreateAIGatewayFetchOptions {
  *
  * @example
  * import { createOpenAI } from '@ai-sdk/openai';
- * import { createAIGatewayFetch } from '@macpaw/ai-sdk/provider';
+ * import { createAIGatewayFetch } from '@macpaw/ai/provider';
  *
  * const fetch = createAIGatewayFetch({
  *   baseURL: 'https://api.macpaw.com/ai',

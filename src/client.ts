@@ -208,7 +208,7 @@ export interface AudioAPI {
  *
  * @example
  * ```ts
- * import { createAIGatewayClient } from '@macpaw/ai-sdk';
+ * import { createAIGatewayClient } from '@macpaw/ai';
  *
  * const client = createAIGatewayClient({
  *   env: 'production',
