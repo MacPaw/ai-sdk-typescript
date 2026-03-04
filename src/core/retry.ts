@@ -50,17 +50,17 @@ export async function withRetry<T>(
           : options.isNetworkError?.(err) ?? false;
       if (!isRetryable) throw err;
 
-      // Respect Retry-After from 429 responses if available
       const retryAfterSeconds = (err as AIGatewayError)?.retryAfter;
       let backoff: number;
       if (retryAfterSeconds != null && retryAfterSeconds > 0) {
+        // Server-specified delay — use exactly, no jitter (contract compliance).
         backoff = retryAfterSeconds * 1000;
       } else {
-        backoff = Math.min(initialDelayMs * Math.pow(2, attempt - 1), maxDelayMs);
+        backoff = addJitter(Math.min(initialDelayMs * Math.pow(2, attempt - 1), maxDelayMs));
       }
 
       await options.onRetry?.(attempt, err);
-      await delay(addJitter(backoff));
+      await delay(backoff);
     }
   }
   throw lastError;

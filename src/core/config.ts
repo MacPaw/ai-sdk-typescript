@@ -145,14 +145,26 @@ export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string 
   const rawGetAuthToken = config.getAuthToken;
   let cachedToken: string | null = null;
   let cacheExpiresAt = 0;
+  let pendingRefresh: Promise<string | null> | null = null;
 
   const getAuthToken = tokenCacheTTL > 0
     ? async (forceRefresh?: boolean): Promise<string | null> => {
-        if (forceRefresh || Date.now() >= cacheExpiresAt) {
-          cachedToken = await rawGetAuthToken(forceRefresh);
-          cacheExpiresAt = Date.now() + tokenCacheTTL;
+        if (!forceRefresh && Date.now() < cacheExpiresAt) return cachedToken;
+        if (!pendingRefresh) {
+          pendingRefresh = rawGetAuthToken(forceRefresh).then(
+            (token) => {
+              cachedToken = token;
+              cacheExpiresAt = Date.now() + tokenCacheTTL;
+              pendingRefresh = null;
+              return token;
+            },
+            (err) => {
+              pendingRefresh = null;
+              throw err;
+            },
+          );
         }
-        return cachedToken;
+        return pendingRefresh;
       }
     : rawGetAuthToken;
 

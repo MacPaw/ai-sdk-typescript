@@ -9,6 +9,7 @@ import type { ResolvedConfig, RequestConfig, Transport } from './config';
 import type { RequestOptions } from './types';
 import { AuthError, parseErrorResponse } from './errors';
 import { withRetry } from './retry';
+import { anySignal } from './abort';
 
 let requestIdCounter = 0;
 
@@ -93,24 +94,9 @@ async function executeRequest(
       timeoutMs,
     );
 
-    let signal: AbortSignal;
-    if (userSignal) {
-      const combined = new AbortController();
-      const onAbort = (reason: unknown) => combined.abort(reason);
-      if (userSignal.aborted) {
-        combined.abort(userSignal.reason);
-      } else {
-        userSignal.addEventListener('abort', () => onAbort(userSignal.reason), { once: true });
-      }
-      if (timeoutController.signal.aborted) {
-        combined.abort(timeoutController.signal.reason);
-      } else {
-        timeoutController.signal.addEventListener('abort', () => onAbort(timeoutController.signal.reason), { once: true });
-      }
-      signal = combined.signal;
-    } else {
-      signal = timeoutController.signal;
-    }
+    const signal = userSignal
+      ? anySignal([userSignal, timeoutController.signal])
+      : timeoutController.signal;
 
     const requestConfig: RequestConfig = {
       url,
@@ -211,4 +197,9 @@ let customDefaultTransport: Transport | undefined;
  */
 export function setDefaultTransport(transport: Transport): void {
   customDefaultTransport = transport;
+}
+
+/** Remove the custom default transport, reverting to the built-in fetch transport. */
+export function resetDefaultTransport(): void {
+  customDefaultTransport = undefined;
 }

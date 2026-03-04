@@ -99,7 +99,7 @@ export { API_PATHS, DEFAULT_API_VERSION, buildApiPaths } from './core/paths';
 // Transport
 export { createFetchTransport } from './transport/fetch';
 export type { FetchTransportOptions } from './transport/fetch';
-export { setDefaultTransport } from './core/request';
+export { setDefaultTransport, resetDefaultTransport } from './core/request';
 
 // Abort / signals
 export { anySignal } from './core/abort';
