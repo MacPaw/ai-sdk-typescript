@@ -263,6 +263,12 @@ const completion = await client.chat.completions.create(
     headers: { 'X-Trace-Id': 'abc-123' },
   },
 );
+
+// Combine multiple abort signals (e.g. user cancel + timeout) — use anySignal from @macpaw/ai
+const completion2 = await client.chat.completions.create(
+  { model: 'openai/gpt-4.1-nano', messages: [] },
+  { signal: anySignal([controller.signal, AbortSignal.timeout(30_000)]) },
+);
 ```
 
 ## Middleware
@@ -928,7 +934,7 @@ const result = await service.complete([{ role: 'user', content: 'Hi' }]);
 
 | Import path | Content |
 |---|---|
-| `@macpaw/ai` | Main client, types, errors, `ErrorCode` enum |
+| `@macpaw/ai` | Main client, types, errors, `ErrorCode` enum, `anySignal` |
 | `@macpaw/ai/core` | Core types, errors, config, retry, SSE parser |
 | `@macpaw/ai/provider` | Vercel AI SDK provider + re-exports (`generateText`, `streamText`, …) |
 | `@macpaw/ai/nestjs` | NestJS module, decorator, exception filter |
@@ -936,4 +942,4 @@ const result = await service.complete([{ role: 'user', content: 'Hi' }]);
 
 ## License
 
-Proprietary.
+MIT © 2026 [MacPaw Way Ltd](https://macpaw.com). See [LICENSE](LICENSE) for details.
