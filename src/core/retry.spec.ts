@@ -42,6 +42,25 @@ describe('withRetry', () => {
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
+  it('aborts delay immediately when signal fires during backoff', async () => {
+    const ac = new AbortController();
+    const fn = vi
+      .fn()
+      .mockRejectedValue(Object.assign(new Error('rate limit'), { statusCode: 429 }));
+
+    const promise = withRetry(fn, {
+      retryConfig: { maxAttempts: 3, initialDelayMs: 60_000 },
+      signal: ac.signal,
+    });
+
+    // Let the first attempt fail and enter backoff, then abort
+    await new Promise((r) => setTimeout(r, 50));
+    ac.abort(new Error('user cancelled'));
+
+    await expect(promise).rejects.toThrow('user cancelled');
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
   it('respects custom retryableStatuses — does not retry 500 when only 429 is listed', async () => {
     const err = Object.assign(new Error('server error'), { statusCode: 500 });
     const fn = vi.fn().mockRejectedValue(err);

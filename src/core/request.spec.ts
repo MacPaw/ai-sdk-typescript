@@ -77,6 +77,15 @@ describe('runRequest', () => {
     expect(req.headers['X-Request-ID']).toBeUndefined();
   });
 
+  it('does not duplicate X-Request-ID when user passes x-request-id (case-insensitive)', async () => {
+    const transport = createMockTransport();
+    const config = createMockConfig({ transport });
+    await runRequest(config, '/test', { method: 'GET', headers: { 'x-request-id': 'user-id-123' } });
+    const req = transport.request.mock.calls[0][0];
+    expect(req.headers['x-request-id']).toBe('user-id-123');
+    expect(req.headers['X-Request-ID']).toBeUndefined();
+  });
+
   it('merges extra headers from config and per-request options', async () => {
     const transport = createMockTransport();
     const config = createMockConfig({
@@ -96,6 +105,24 @@ describe('runRequest', () => {
     );
     const config = createMockConfig({ transport, autoRefreshToken: false });
     await expect(runRequest(config, '/test', { method: 'GET' })).rejects.toThrow('Unauthorized');
+  });
+
+  it('injects Retry-After from HTTP header into error metadata', async () => {
+    const transport = {
+      request: vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ statusCode: 429, message: 'Too Many', code: 'RATE_LIMIT_EXCEEDED' }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json', 'Retry-After': '30' },
+        }),
+      ),
+    };
+    const config = createMockConfig({ transport, autoRefreshToken: false });
+    try {
+      await runRequest(config, '/test', { method: 'GET' });
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect((err as { retryAfter?: number }).retryAfter).toBe(30);
+    }
   });
 
   it('calls onRequest hook before transport', async () => {

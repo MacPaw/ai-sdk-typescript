@@ -10,8 +10,15 @@ import type { RetryConfig } from './config';
 import { DEFAULT_RETRY } from './config';
 import type { AIGatewayError } from './errors';
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function delay(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) { reject(signal.reason); return; }
+    const timer = setTimeout(resolve, ms);
+    signal?.addEventListener('abort', () => {
+      clearTimeout(timer);
+      reject(signal.reason);
+    }, { once: true });
+  });
 }
 
 function isRetryableStatus(status: number, retryableStatuses: number[]): boolean {
@@ -28,6 +35,7 @@ export async function withRetry<T>(
   fn: () => Promise<T>,
   options: {
     retryConfig: RetryConfig;
+    signal?: AbortSignal;
     isNetworkError?: (err: unknown) => boolean;
     onRetry?: (attempt: number, error: unknown) => void | Promise<void>;
   }
@@ -60,7 +68,7 @@ export async function withRetry<T>(
       }
 
       await options.onRetry?.(attempt, err);
-      await delay(backoff);
+      await delay(backoff, options.signal);
     }
   }
   throw lastError;

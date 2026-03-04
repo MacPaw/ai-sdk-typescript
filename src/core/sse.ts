@@ -46,6 +46,14 @@ export async function assertSSEResponse(response: Response): Promise<ReadableStr
   return stream;
 }
 
+/**
+ * Extract field value after `field:` prefix.
+ * Per SSE spec: if there's a space after the colon, strip it (only the first one).
+ */
+function extractFieldValue(line: string, colonOffset: number): string {
+  return (line[colonOffset] === ' ' ? line.slice(colonOffset + 1) : line.slice(colonOffset)).trim();
+}
+
 export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenerator<string, void, undefined> {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
@@ -59,12 +67,12 @@ export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenera
       const lines = buffer.split(/\r\n|\r|\n/);
       buffer = lines.pop() ?? '';
       for (const line of lines) {
-        if (line.startsWith('event: ')) {
-          currentEvent = line.slice(7).trim();
+        if (line.startsWith('event:')) {
+          currentEvent = extractFieldValue(line, 6);
           continue;
         }
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6).trim();
+        if (line.startsWith('data:')) {
+          const data = extractFieldValue(line, 5);
           if (data === '[DONE]') return;
 
           if (currentEvent === 'error') {
@@ -80,8 +88,8 @@ export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenera
         }
       }
     }
-    if (buffer.startsWith('data: ')) {
-      const data = buffer.slice(6).trim();
+    if (buffer.startsWith('data:')) {
+      const data = extractFieldValue(buffer, 5);
       if (data === '[DONE]') return;
       if (currentEvent === 'error') throwStreamError(data);
       yield data;

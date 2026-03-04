@@ -7,7 +7,7 @@
 
 import type { ResolvedConfig, RequestConfig, Transport } from './config';
 import type { RequestOptions } from './types';
-import { AuthError, parseErrorResponse } from './errors';
+import { AIGatewayError, AuthError, parseErrorResponse } from './errors';
 import { withRetry } from './retry';
 import { anySignal } from './abort';
 import { createFetchTransport } from '../transport/fetch';
@@ -27,6 +27,21 @@ function isNetworkError(err: unknown): boolean {
   const code = (err as { code?: string })?.code;
   if (typeof code === 'string' && NODE_NETWORK_CODES.has(code)) return true;
   return false;
+}
+
+/**
+ * Parse the standard HTTP Retry-After header into seconds.
+ * Supports both delay-seconds (`120`) and HTTP-date formats.
+ */
+function parseRetryAfterHeader(value: string): number | undefined {
+  const seconds = Number(value);
+  if (!Number.isNaN(seconds) && seconds >= 0) return seconds;
+  const date = Date.parse(value);
+  if (!Number.isNaN(date)) {
+    const delta = Math.ceil((date - Date.now()) / 1000);
+    return delta > 0 ? delta : 0;
+  }
+  return undefined;
 }
 
 let requestIdCounter = 0;
@@ -93,7 +108,7 @@ async function executeRequest(
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  if (config.generateRequestId && !headers['X-Request-ID']) {
+  if (config.generateRequestId && !Object.keys(headers).some(k => k.toLowerCase() === 'x-request-id')) {
     headers['X-Request-ID'] = generateRequestId();
   }
 
@@ -163,6 +178,13 @@ async function executeRequest(
         try {
           parseErrorResponse(response.status, body);
         } catch (err) {
+          if (err instanceof AIGatewayError && err.retryAfter == null) {
+            const raw = response.headers.get('Retry-After');
+            if (raw) {
+              const seconds = parseRetryAfterHeader(raw);
+              if (seconds != null) err.metadata.retryAfter = seconds;
+            }
+          }
           await hooks.onError?.(err, requestConfig);
           throw err;
         }
@@ -179,6 +201,7 @@ async function executeRequest(
   if (config.retry) {
     return withRetry(doRequest, {
       retryConfig: config.retry,
+      signal: userSignal,
       isNetworkError: isNetworkError,
       onRetry: async (attempt, err) => {
         logger.info?.('[ai-gateway-sdk] retrying', attempt, err);

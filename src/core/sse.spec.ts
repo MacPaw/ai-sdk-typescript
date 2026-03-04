@@ -32,6 +32,25 @@ describe('parseSSE', () => {
     expect(chunks).toEqual(['hello']);
   });
 
+  it('handles data: without trailing space (spec-compliant)', async () => {
+    const stream = streamFromStrings(['data:{"compact":true}', 'data: [DONE]']);
+    const chunks: string[] = [];
+    for await (const chunk of parseSSE(stream)) {
+      chunks.push(chunk);
+    }
+    expect(chunks).toEqual(['{"compact":true}']);
+  });
+
+  it('handles event: without trailing space', async () => {
+    const stream = streamFromStrings([
+      'event:error',
+      'data: {"message":"fail","statusCode":500}',
+    ]);
+    await expect(async () => {
+      for await (const chunk of parseSSE(stream)) void chunk;
+    }).rejects.toThrow(AIGatewayError);
+  });
+
   it('ignores non-data lines', async () => {
     const stream = streamFromStrings(['event: ping', 'data: {"ok":true}', 'data: [DONE]']);
     const chunks: string[] = [];
