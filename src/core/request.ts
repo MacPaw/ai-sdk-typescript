@@ -7,8 +7,42 @@
 
 import type { ResolvedConfig, RequestConfig, Transport } from './config';
 import type { RequestOptions } from './types';
-import { AuthError, parseErrorResponse } from './errors';
+import { AIGatewayError, AuthError, parseErrorResponse } from './errors';
 import { withRetry } from './retry';
+import { anySignal } from './abort';
+import { createFetchTransport } from '../transport/fetch';
+
+const NODE_NETWORK_CODES = new Set([
+  'ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND', 'EPIPE',
+  'ETIMEDOUT', 'ENETUNREACH', 'EAI_AGAIN', 'UND_ERR_CONNECT_TIMEOUT',
+]);
+
+/**
+ * Detect network errors across runtimes. Per the Fetch spec, a `TypeError`
+ * is thrown for network failures — message text varies by engine so we
+ * avoid matching on it. Also recognises Node.js system error codes.
+ */
+function isNetworkError(err: unknown): boolean {
+  if (err instanceof TypeError) return true;
+  const code = (err as { code?: string })?.code;
+  if (typeof code === 'string' && NODE_NETWORK_CODES.has(code)) return true;
+  return false;
+}
+
+/**
+ * Parse the standard HTTP Retry-After header into seconds.
+ * Supports both delay-seconds (`120`) and HTTP-date formats.
+ */
+function parseRetryAfterHeader(value: string): number | undefined {
+  const seconds = Number(value);
+  if (!Number.isNaN(seconds) && seconds >= 0) return seconds;
+  const date = Date.parse(value);
+  if (!Number.isNaN(date)) {
+    const delta = Math.ceil((date - Date.now()) / 1000);
+    return delta > 0 ? delta : 0;
+  }
+  return undefined;
+}
 
 let requestIdCounter = 0;
 
@@ -74,52 +108,37 @@ async function executeRequest(
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  if (config.generateRequestId && !headers['X-Request-ID']) {
+  if (config.generateRequestId && !Object.keys(headers).some(k => k.toLowerCase() === 'x-request-id')) {
     headers['X-Request-ID'] = generateRequestId();
   }
 
   const timeoutMs = options?.timeout ?? config.timeout;
-
   const userSignal = options?.signal ?? init.signal;
-  const timeoutController = new AbortController();
-  const timeoutId = setTimeout(
-    () => timeoutController.abort(new Error(`Request timed out after ${timeoutMs}ms`)),
-    timeoutMs,
-  );
-
-  let signal: AbortSignal;
-  if (userSignal) {
-    // Combine user signal with timeout: abort if either fires
-    const combined = new AbortController();
-    const onAbort = (reason: unknown) => combined.abort(reason);
-    if (userSignal.aborted) {
-      combined.abort(userSignal.reason);
-    } else {
-      userSignal.addEventListener('abort', () => onAbort(userSignal.reason), { once: true });
-    }
-    if (timeoutController.signal.aborted) {
-      combined.abort(timeoutController.signal.reason);
-    } else {
-      timeoutController.signal.addEventListener('abort', () => onAbort(timeoutController.signal.reason), { once: true });
-    }
-    signal = combined.signal;
-  } else {
-    signal = timeoutController.signal;
-  }
-
-  const requestConfig: RequestConfig = {
-    url,
-    method: init.method,
-    headers,
-    body: init.body,
-    signal,
-  };
-
   const transport = config.transport ?? customDefaultTransport ?? builtinFetchTransport;
 
-  logger.debug?.('[ai-gateway-sdk] request', requestConfig.method, requestConfig.url);
+  logger.debug?.('[ai-gateway-sdk] request', init.method, url);
 
   async function doRequest(): Promise<Response> {
+    // Timeout is created per attempt so each retry gets a full timeout window,
+    // not the remainder from the previous attempt.
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(
+      () => timeoutController.abort(new Error(`Request timed out after ${timeoutMs}ms`)),
+      timeoutMs,
+    );
+
+    const signal = userSignal
+      ? anySignal([userSignal, timeoutController.signal])
+      : timeoutController.signal;
+
+    const requestConfig: RequestConfig = {
+      url,
+      method: init.method,
+      headers,
+      body: init.body,
+      signal,
+    };
+
     const { middleware } = config;
     let index = 0;
     const next = async (req: RequestConfig): Promise<Response> => {
@@ -132,70 +151,68 @@ async function executeRequest(
       return transport.request(req);
     };
 
-    let response: Response;
     try {
-      response = await next(requestConfig);
-    } catch (err) {
-      await hooks.onError?.(err, requestConfig);
-      throw err;
-    }
-
-    if (!response.ok) {
-      const contentType = response.headers.get('Content-Type') ?? '';
-      let body: unknown;
-      if (contentType.includes('application/json')) {
-        try {
-          body = await response.json();
-        } catch {
-          body = { message: response.statusText };
-        }
-      } else {
-        body = { message: await response.text().catch(() => response.statusText) };
-      }
-
-      logger.warn?.('[ai-gateway-sdk] error response', response.status, body);
-
+      let response: Response;
       try {
-        parseErrorResponse(response.status, body);
+        response = await next(requestConfig);
       } catch (err) {
         await hooks.onError?.(err, requestConfig);
         throw err;
       }
-    }
 
-    logger.debug?.('[ai-gateway-sdk] response', response.status, requestConfig.url);
-    await hooks.onResponse?.(requestConfig, response);
-    return response;
+      if (!response.ok) {
+        const contentType = response.headers.get('Content-Type') ?? '';
+        let body: unknown;
+        if (contentType.includes('application/json')) {
+          try {
+            body = await response.json();
+          } catch {
+            body = { message: response.statusText };
+          }
+        } else {
+          body = { message: await response.text().catch(() => response.statusText) };
+        }
+
+        logger.warn?.('[ai-gateway-sdk] error response', response.status, body);
+
+        try {
+          parseErrorResponse(response.status, body);
+        } catch (err) {
+          if (err instanceof AIGatewayError && err.retryAfter == null) {
+            const raw = response.headers.get('Retry-After');
+            if (raw) {
+              const seconds = parseRetryAfterHeader(raw);
+              if (seconds != null) err.metadata.retryAfter = seconds;
+            }
+          }
+          await hooks.onError?.(err, requestConfig);
+          throw err;
+        }
+      }
+
+      logger.debug?.('[ai-gateway-sdk] response', response.status, requestConfig.url);
+      await hooks.onResponse?.(requestConfig, response);
+      return response;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
-  try {
-    if (config.retry) {
-      return await withRetry(doRequest, {
-        retryConfig: config.retry,
-        isNetworkError: (err) =>
-          err instanceof TypeError && (err.message === 'Failed to fetch' || err.message.includes('fetch')),
-        onRetry: async (attempt, err) => {
-          logger.info?.('[ai-gateway-sdk] retrying', attempt, err);
-          await hooks.onRetry?.(attempt, err, requestConfig);
-        },
-      });
-    }
-    return await doRequest();
-  } finally {
-    clearTimeout(timeoutId);
+  if (config.retry) {
+    return withRetry(doRequest, {
+      retryConfig: config.retry,
+      signal: userSignal,
+      isNetworkError: isNetworkError,
+      onRetry: async (attempt, err) => {
+        logger.info?.('[ai-gateway-sdk] retrying', attempt, err);
+        await hooks.onRetry?.(attempt, err, { url, method: init.method, headers, body: init.body, signal: userSignal });
+      },
+    });
   }
+  return doRequest();
 }
 
-const builtinFetchTransport: Transport = {
-  async request(options) {
-    return fetch(options.url, {
-      method: options.method,
-      headers: options.headers,
-      body: options.body,
-      signal: options.signal,
-    });
-  },
-};
+const builtinFetchTransport: Transport = createFetchTransport();
 
 let customDefaultTransport: Transport | undefined;
 
@@ -205,4 +222,9 @@ let customDefaultTransport: Transport | undefined;
  */
 export function setDefaultTransport(transport: Transport): void {
   customDefaultTransport = transport;
+}
+
+/** Remove the custom default transport, reverting to the built-in fetch transport. */
+export function resetDefaultTransport(): void {
+  customDefaultTransport = undefined;
 }

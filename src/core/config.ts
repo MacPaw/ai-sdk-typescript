@@ -3,6 +3,8 @@
  */
 
 import type { RequestOptions } from './types';
+import type { ApiVersion, ApiPaths } from './paths';
+import { buildApiPaths } from './paths';
 
 export type Environment = 'production';
 
@@ -24,6 +26,13 @@ export const DEFAULT_RETRY: Required<RetryConfig> = {
   retryableStatuses: [429, 500, 502, 503, 504],
 };
 
+/**
+ * Optional logger for SDK diagnostics.
+ *
+ * **Security:** The SDK never passes the `Authorization` header value to
+ * the logger. If you implement a custom logger, do not log raw request
+ * headers — they may contain sensitive tokens in other contexts.
+ */
 export interface Logger {
   debug?(message: string, ...args: unknown[]): void;
   info?(message: string, ...args: unknown[]): void;
@@ -84,6 +93,8 @@ export interface AIGatewayClientConfig {
   hooks?: LifecycleHooks;
   /** Generate X-Request-ID header for each request. Default true. */
   generateRequestId?: boolean;
+  /** API version prefix (e.g. `'v1'`, `'v2'`). Default: `'v1'`. */
+  apiVersion?: ApiVersion;
 }
 
 export interface RequestConfig {
@@ -118,6 +129,7 @@ export interface ResolvedConfig {
   logger: Logger;
   hooks: LifecycleHooks;
   generateRequestId: boolean;
+  apiPaths: ApiPaths;
 }
 
 export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string }): ResolvedConfig {
@@ -133,16 +145,37 @@ export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string 
   const rawGetAuthToken = config.getAuthToken;
   let cachedToken: string | null = null;
   let cacheExpiresAt = 0;
+  let pendingRefresh: Promise<string | null> | null = null;
+  let pendingIsForced = false;
 
   const getAuthToken = tokenCacheTTL > 0
     ? async (forceRefresh?: boolean): Promise<string | null> => {
-        if (forceRefresh || Date.now() >= cacheExpiresAt) {
-          cachedToken = await rawGetAuthToken(forceRefresh);
-          cacheExpiresAt = Date.now() + tokenCacheTTL;
+        if (!forceRefresh && Date.now() < cacheExpiresAt) return cachedToken;
+        // If a forced refresh is requested but the pending promise was from a
+        // non-forced call, discard it so we actually call rawGetAuthToken(true).
+        if (forceRefresh && pendingRefresh && !pendingIsForced) {
+          pendingRefresh = null;
         }
-        return cachedToken;
+        if (!pendingRefresh) {
+          pendingIsForced = !!forceRefresh;
+          pendingRefresh = rawGetAuthToken(forceRefresh).then(
+            (token) => {
+              cachedToken = token;
+              cacheExpiresAt = Date.now() + tokenCacheTTL;
+              pendingRefresh = null;
+              return token;
+            },
+            (err) => {
+              pendingRefresh = null;
+              throw err;
+            },
+          );
+        }
+        return pendingRefresh;
       }
     : rawGetAuthToken;
+
+  const apiPaths = buildApiPaths(config.apiVersion);
 
   return {
     baseURL: config.baseURL,
@@ -158,6 +191,7 @@ export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string 
     logger,
     hooks,
     generateRequestId,
+    apiPaths,
   };
 }
 

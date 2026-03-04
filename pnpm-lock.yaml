@@ -9,10 +9,10 @@ importers:
   .:
     dependencies:
       '@ai-sdk/openai':
-        specifier: '>=1.0.0'
+        specifier: ^3.0.0
         version: 3.0.33(zod@4.3.6)
       ai:
-        specifier: '>=4.0.0'
+        specifier: ^6.0.0
         version: 6.0.99(zod@4.3.6)
     devDependencies:
       '@eslint/js':
