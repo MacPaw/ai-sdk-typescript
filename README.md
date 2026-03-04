@@ -956,7 +956,7 @@ const result = await service.complete([{ role: 'user', content: 'Hi' }]);
 | Import path | Content |
 |---|---|
 | `@macpaw/ai` | Main client, types, errors, `ErrorCode` enum, `anySignal` |
-| `@macpaw/ai/core` | Core types, errors, config, retry, SSE parser |
+| `@macpaw/ai/core` | Core types, errors, config, retry, SSE parser (**advanced** — internal APIs, may change between minor versions) |
 | `@macpaw/ai/provider` | Vercel AI SDK provider + re-exports (`generateText`, `streamText`, …) |
 | `@macpaw/ai/nestjs` | NestJS module, decorator, exception filter |
 | `@macpaw/ai/testing` | Mock client, `MockFn`, fixtures, stream helpers, mock transport |

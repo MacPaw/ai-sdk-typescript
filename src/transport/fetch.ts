@@ -15,6 +15,12 @@ export function createFetchTransport(options?: FetchTransportOptions): Transport
   const extraOptions = options?.fetchOptions ?? {};
   return {
     async request(config: RequestConfig): Promise<Response> {
+      if (typeof fetch === 'undefined') {
+        throw new Error(
+          '@macpaw/ai requires a global `fetch` implementation. '
+          + 'Use Node.js 18+ or install a polyfill like `undici`.',
+        );
+      }
       return fetch(config.url, {
         ...extraOptions,
         method: config.method,

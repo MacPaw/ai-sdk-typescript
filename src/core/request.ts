@@ -10,6 +10,7 @@ import type { RequestOptions } from './types';
 import { AuthError, parseErrorResponse } from './errors';
 import { withRetry } from './retry';
 import { anySignal } from './abort';
+import { createFetchTransport } from '../transport/fetch';
 
 let requestIdCounter = 0;
 
@@ -165,29 +166,14 @@ async function executeRequest(
         err instanceof TypeError && (err.message === 'Failed to fetch' || err.message.includes('fetch')),
       onRetry: async (attempt, err) => {
         logger.info?.('[ai-gateway-sdk] retrying', attempt, err);
-        await hooks.onRetry?.(attempt, err, { url, method: init.method, headers, body: init.body, signal: userSignal ?? new AbortController().signal });
+        await hooks.onRetry?.(attempt, err, { url, method: init.method, headers, body: init.body, signal: userSignal });
       },
     });
   }
   return doRequest();
 }
 
-const builtinFetchTransport: Transport = {
-  async request(options) {
-    if (typeof fetch === 'undefined') {
-      throw new Error(
-        '@macpaw/ai requires a global `fetch` implementation. '
-        + 'Use Node.js 18+ or install a polyfill like `undici`.',
-      );
-    }
-    return fetch(options.url, {
-      method: options.method,
-      headers: options.headers,
-      body: options.body,
-      signal: options.signal,
-    });
-  },
-};
+const builtinFetchTransport: Transport = createFetchTransport();
 
 let customDefaultTransport: Transport | undefined;
 
