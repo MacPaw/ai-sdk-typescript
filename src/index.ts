@@ -101,6 +101,9 @@ export { createFetchTransport } from './transport/fetch';
 export type { FetchTransportOptions } from './transport/fetch';
 export { setDefaultTransport } from './core/request';
 
+// Abort / signals
+export { anySignal } from './core/abort';
+
 // Helpers
 export {
   extractChatDelta,
