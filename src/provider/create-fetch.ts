@@ -8,6 +8,15 @@
 
 export interface CreateAIGatewayFetchOptions {
   baseURL: string;
+  /**
+   * Returns the Bearer token for each request.
+   *
+   * **Note:** Unlike the main `createAIGatewayClient`, this fetch wrapper does
+   * **not** support automatic 401 retry with `forceRefresh`. If the token expires
+   * mid-session, the consumer (e.g. Vercel AI SDK) will receive a 401 error.
+   * Handle token refresh in your `getAuthToken` implementation or use the main
+   * client with `autoRefreshToken: true` for full retry support.
+   */
   getAuthToken: () => Promise<string | null>;
   headers?: Record<string, string>;
 }
@@ -44,9 +53,17 @@ export function createAIGatewayFetch(options: CreateAIGatewayFetchOptions): (inp
     const headers = new Headers(init?.headers);
     if (token) headers.set('Authorization', `Bearer ${token}`);
     Object.entries(extraHeaders).forEach(([k, v]) => headers.set(k, v));
-    if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+    const body = init?.body;
+    if (body != null && !headers.has('Content-Type')) {
+      const isFormDataLike = typeof FormData !== 'undefined' && body instanceof FormData;
+      const isBlobLike = typeof Blob !== 'undefined' && body instanceof Blob;
+      if (!isFormDataLike && !isBlobLike) {
+        headers.set('Content-Type', 'application/json');
+      }
+    }
 
-    const resolvedUrl = url.startsWith(base) ? url : `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+    const isAbsoluteUrl = url.startsWith('http://') || url.startsWith('https://');
+    const resolvedUrl = isAbsoluteUrl ? url : `${base}${url.startsWith('/') ? '' : '/'}${url}`;
     return fetch(resolvedUrl, { ...init, headers });
   };
 }

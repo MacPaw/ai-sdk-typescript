@@ -10,8 +10,15 @@ import type { RetryConfig } from './config';
 import { DEFAULT_RETRY } from './config';
 import type { AIGatewayError } from './errors';
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function delay(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) { reject(signal.reason); return; }
+    const timer = setTimeout(resolve, ms);
+    signal?.addEventListener('abort', () => {
+      clearTimeout(timer);
+      reject(signal.reason);
+    }, { once: true });
+  });
 }
 
 function isRetryableStatus(status: number, retryableStatuses: number[]): boolean {
@@ -28,6 +35,7 @@ export async function withRetry<T>(
   fn: () => Promise<T>,
   options: {
     retryConfig: RetryConfig;
+    signal?: AbortSignal;
     isNetworkError?: (err: unknown) => boolean;
     onRetry?: (attempt: number, error: unknown) => void | Promise<void>;
   }
@@ -50,17 +58,17 @@ export async function withRetry<T>(
           : options.isNetworkError?.(err) ?? false;
       if (!isRetryable) throw err;
 
-      // Respect Retry-After from 429 responses if available
       const retryAfterSeconds = (err as AIGatewayError)?.retryAfter;
       let backoff: number;
       if (retryAfterSeconds != null && retryAfterSeconds > 0) {
+        // Server-specified delay — use exactly, no jitter (contract compliance).
         backoff = retryAfterSeconds * 1000;
       } else {
-        backoff = Math.min(initialDelayMs * Math.pow(2, attempt - 1), maxDelayMs);
+        backoff = addJitter(Math.min(initialDelayMs * Math.pow(2, attempt - 1), maxDelayMs));
       }
 
       await options.onRetry?.(attempt, err);
-      await delay(addJitter(backoff));
+      await delay(backoff, options.signal);
     }
   }
   throw lastError;

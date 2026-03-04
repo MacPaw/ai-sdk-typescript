@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { parseSSE, parseSSEAsJSON } from './sse';
-import { AIGatewayError } from './errors';
+import { AIGatewayError, AuthError, RateLimitError } from './errors';
 
 function streamFromStrings(lines: string[]): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
@@ -32,6 +32,25 @@ describe('parseSSE', () => {
     expect(chunks).toEqual(['hello']);
   });
 
+  it('handles data: without trailing space (spec-compliant)', async () => {
+    const stream = streamFromStrings(['data:{"compact":true}', 'data: [DONE]']);
+    const chunks: string[] = [];
+    for await (const chunk of parseSSE(stream)) {
+      chunks.push(chunk);
+    }
+    expect(chunks).toEqual(['{"compact":true}']);
+  });
+
+  it('handles event: without trailing space', async () => {
+    const stream = streamFromStrings([
+      'event:error',
+      'data: {"message":"fail","statusCode":500}',
+    ]);
+    await expect(async () => {
+      for await (const chunk of parseSSE(stream)) void chunk;
+    }).rejects.toThrow(AIGatewayError);
+  });
+
   it('ignores non-data lines', async () => {
     const stream = streamFromStrings(['event: ping', 'data: {"ok":true}', 'data: [DONE]']);
     const chunks: string[] = [];
@@ -39,6 +58,32 @@ describe('parseSSE', () => {
       chunks.push(chunk);
     }
     expect(chunks).toEqual(['{"ok":true}']);
+  });
+
+  it('handles \\r\\n line endings', async () => {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode('data: {"a":1}\r\ndata: {"a":2}\r\ndata: [DONE]\r\n'));
+        controller.close();
+      },
+    });
+    const chunks: string[] = [];
+    for await (const chunk of parseSSE(stream)) chunks.push(chunk);
+    expect(chunks).toEqual(['{"a":1}', '{"a":2}']);
+  });
+
+  it('handles bare \\r line endings', async () => {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode('data: {"a":1}\rdata: {"a":2}\rdata: [DONE]\r'));
+        controller.close();
+      },
+    });
+    const chunks: string[] = [];
+    for await (const chunk of parseSSE(stream)) chunks.push(chunk);
+    expect(chunks).toEqual(['{"a":1}', '{"a":2}']);
   });
 
   it('throws AIGatewayError on error events', async () => {
@@ -61,6 +106,48 @@ describe('parseSSE', () => {
       'event: error',
       'data: not-json',
     ]);
+    await expect(async () => {
+      for await (const chunk of parseSSE(stream)) void chunk;
+    }).rejects.toThrow(AIGatewayError);
+  });
+
+  it('throws typed AuthError subclass for UNAUTHORIZED stream error', async () => {
+    const stream = streamFromStrings([
+      'event: error',
+      'data: {"message":"Token expired","code":"UNAUTHORIZED","statusCode":401}',
+    ]);
+    try {
+      for await (const chunk of parseSSE(stream)) void chunk;
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(AuthError);
+      expect((err as AuthError).code).toBe('AUTH_REQUIRED');
+    }
+  });
+
+  it('throws typed RateLimitError subclass for RATE_LIMIT_EXCEEDED stream error', async () => {
+    const stream = streamFromStrings([
+      'event: error',
+      'data: {"message":"Slow down","code":"RATE_LIMIT_EXCEEDED","statusCode":429,"metadata":{"retryAfter":30}}',
+    ]);
+    try {
+      for await (const chunk of parseSSE(stream)) void chunk;
+      expect.unreachable('should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(RateLimitError);
+      expect((err as RateLimitError).retryAfter).toBe(30);
+    }
+  });
+
+  it('throws AIGatewayError when trailing buffer is an error event without trailing newline', async () => {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        // No trailing \n after the data line — forces it into the buffer path
+        controller.enqueue(encoder.encode('event: error\ndata: {"message":"final error","statusCode":503}'));
+        controller.close();
+      },
+    });
     await expect(async () => {
       for await (const chunk of parseSSE(stream)) void chunk;
     }).rejects.toThrow(AIGatewayError);
