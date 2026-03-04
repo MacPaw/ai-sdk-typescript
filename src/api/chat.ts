@@ -36,7 +36,15 @@ export async function* createChatCompletionStream(
   const body = JSON.stringify(streamRequest);
   const response = await runRequest(config, config.apiPaths.ChatCompletions, { method: 'POST', body }, options);
   const contentType = response.headers.get('Content-Type') ?? '';
-  if (!contentType.includes('text/event-stream') && !contentType.includes('application/json')) {
+  if (contentType.includes('application/json')) {
+    const body = await response.json();
+    throw new Error(
+      `Expected SSE stream but received JSON response. `
+      + `This usually means the server rejected the streaming request. `
+      + `Body: ${JSON.stringify(body).slice(0, 300)}`,
+    );
+  }
+  if (!contentType.includes('text/event-stream')) {
     const text = await response.text();
     throw new Error(`Unexpected content type: ${contentType}. Body: ${text.slice(0, 200)}`);
   }

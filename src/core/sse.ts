@@ -4,14 +4,24 @@
  *
  * Handles:
  * - Standard data: lines with [DONE] terminator
- * - Error events (event: error) thrown as AIGatewayError
+ * - Error events (event: error) thrown as normalized AIGatewayError subclasses
  * - Proper reader cleanup on abort/break
  * - Logging of malformed JSON chunks
  */
 
 import type { Logger } from './config';
-import { AIGatewayError } from './errors';
+import { AIGatewayError, parseStreamErrorPayload } from './errors';
 import { ErrorCode } from './types';
+
+function throwStreamError(data: string): never {
+  try {
+    const payload = JSON.parse(data);
+    throw parseStreamErrorPayload(payload);
+  } catch (err) {
+    if (err instanceof AIGatewayError) throw err;
+    throw new AIGatewayError('Stream error', ErrorCode.InternalServerError, 500);
+  }
+}
 
 export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenerator<string, void, undefined> {
   const reader = stream.getReader();
@@ -35,24 +45,8 @@ export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenera
           if (data === '[DONE]') return;
 
           if (currentEvent === 'error') {
-            // event: error + data: {...} — parse and throw. Reset currentEvent before
-            // throwing so it doesn't leak into subsequent iterations if we ever
-            // restructure to continue instead of throw.
             currentEvent = '';
-            try {
-              const errorPayload = JSON.parse(data);
-              throw new AIGatewayError(
-                errorPayload.message ?? 'Stream error',
-                errorPayload.code ?? ErrorCode.InternalServerError,
-                errorPayload.statusCode ?? 500,
-                errorPayload.metadata ?? {},
-              );
-            } catch (err) {
-              // Re-throw AIGatewayError from our throw above; wrap JSON.parse
-              // failures in a generic error so the stream always surfaces something useful.
-              if (err instanceof AIGatewayError) throw err;
-              throw new AIGatewayError('Stream error', ErrorCode.InternalServerError, 500);
-            }
+            throwStreamError(data);
           }
 
           currentEvent = '';
@@ -66,22 +60,7 @@ export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenera
     if (buffer.startsWith('data: ')) {
       const data = buffer.slice(6).trim();
       if (data === '[DONE]') return;
-
-      if (currentEvent === 'error') {
-        try {
-          const errorPayload = JSON.parse(data);
-          throw new AIGatewayError(
-            errorPayload.message ?? 'Stream error',
-            errorPayload.code ?? ErrorCode.InternalServerError,
-            errorPayload.statusCode ?? 500,
-            errorPayload.metadata ?? {},
-          );
-        } catch (err) {
-          if (err instanceof AIGatewayError) throw err;
-          throw new AIGatewayError('Stream error', ErrorCode.InternalServerError, 500);
-        }
-      }
-
+      if (currentEvent === 'error') throwStreamError(data);
       yield data;
     }
   } finally {

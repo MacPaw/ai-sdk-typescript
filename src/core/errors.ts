@@ -179,6 +179,31 @@ function createTypedError(
 }
 
 /**
+ * Normalize an SSE `event: error` payload into a typed AIGatewayError subclass.
+ * Uses the same code-mapping and subclass logic as `parseErrorResponse` so that
+ * `instanceof AuthError`, `instanceof RateLimitError` etc. work consistently
+ * in both streaming and non-streaming paths.
+ */
+export function parseStreamErrorPayload(payload: {
+  message?: string;
+  code?: string;
+  statusCode?: number;
+  metadata?: Record<string, unknown>;
+}): AIGatewayError {
+  const statusCode = payload.statusCode ?? 500;
+  const rawCode = payload.code ?? 'INTERNAL_SERVER_ERROR';
+  const message = payload.message ?? 'Stream error';
+  const meta: NormalizedErrorMetadata = {};
+  if (payload.metadata) {
+    if (typeof payload.metadata.paymentUrl === 'string') meta.paymentUrl = payload.metadata.paymentUrl;
+    if (typeof payload.metadata.retryAfter === 'number') meta.retryAfter = payload.metadata.retryAfter;
+    if (typeof payload.metadata.requestId === 'string') meta.requestId = payload.metadata.requestId;
+  }
+  const normalizedCode = mapBFFCodeToNormalized(rawCode, statusCode);
+  return createTypedError(message, normalizedCode, statusCode, meta);
+}
+
+/**
  * Parse error response body and throw appropriate AIGatewayError subclass.
  * Handles both BFF format and OpenAI proxy format.
  */
@@ -221,15 +246,17 @@ export function parseErrorResponse(
     throw createTypedError(oai.error.message, code, statusCode, meta);
   }
 
-  // Fallback
+  // Fallback — map status to a reasonable error code
   const message =
     typeof (body as { message?: string })?.message === 'string'
       ? (body as { message: string }).message
       : `Request failed with status ${statusCode}`;
-  throw createTypedError(
-    message,
-    statusCode >= 500 ? ErrorCode.InternalServerError : ErrorCode.BadRequest,
-    statusCode,
-    meta
-  );
+
+  let fallbackCode: ErrorCodeType;
+  if (statusCode === 401) fallbackCode = ErrorCode.AuthRequired;
+  else if (statusCode === 429) fallbackCode = ErrorCode.RateLimited;
+  else if (statusCode >= 500) fallbackCode = ErrorCode.InternalServerError;
+  else fallbackCode = ErrorCode.BadRequest;
+
+  throw createTypedError(message, fallbackCode, statusCode, meta);
 }
