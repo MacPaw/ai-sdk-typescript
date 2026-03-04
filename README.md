@@ -953,10 +953,12 @@ const result = await service.complete([{ role: 'user', content: 'Hi' }]);
 
 ## Subpath exports
 
+> **Note:** `@macpaw/ai/core` exposes internal APIs (config, retry, SSE parser, etc.). Prefer the main `@macpaw/ai` entry point unless you need low-level control. Core APIs may change between minor versions.
+
 | Import path | Content |
 |---|---|
 | `@macpaw/ai` | Main client, types, errors, `ErrorCode` enum, `anySignal` |
-| `@macpaw/ai/core` | Core types, errors, config, retry, SSE parser (**advanced** — internal APIs, may change between minor versions) |
+| `@macpaw/ai/core` | Core types, errors, config, retry, SSE parser (**advanced** — internal APIs) |
 | `@macpaw/ai/provider` | Vercel AI SDK provider + re-exports (`generateText`, `streamText`, …) |
 | `@macpaw/ai/nestjs` | NestJS module, decorator, exception filter |
 | `@macpaw/ai/testing` | Mock client, `MockFn`, fixtures, stream helpers, mock transport |
