@@ -93,6 +93,10 @@
   "bugs": {
     "url": "https://github.com/macpaw/ai-sdk/issues"
   },
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.0",
+    "ai": "^6.0.0"
+  },
   "devDependencies": {
     "@nestjs/common": "^11.1.14",
     "@semantic-release/changelog": "^6.0.3",
@@ -110,18 +114,10 @@
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
-    "@ai-sdk/openai": ">=1.0.0",
     "@nestjs/common": ">=10.0.0",
-    "ai": ">=4.0.0",
     "rxjs": ">=7.0.0"
   },
   "peerDependenciesMeta": {
-    "@ai-sdk/openai": {
-      "optional": true
-    },
-    "ai": {
-      "optional": true
-    },
     "@nestjs/common": {
       "optional": true
     },

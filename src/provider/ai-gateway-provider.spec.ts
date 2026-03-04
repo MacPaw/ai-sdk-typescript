@@ -12,7 +12,7 @@ describe('createAIGatewayProvider', () => {
     ).toThrow('requires baseURL or env');
   });
 
-  it('calls createOpenAI with correct baseURL from env', () => {
+  it('calls custom createOpenAI with correct baseURL from env', () => {
     const mockReturn = Object.assign(
       vi.fn(),
       { chat: vi.fn(), completion: vi.fn(), embedding: vi.fn() },
@@ -30,6 +30,18 @@ describe('createAIGatewayProvider', () => {
     expect(config.baseURL).toBe('https://api.macpaw.com/ai/api/v1');
     expect(config.apiKey).toBe('unused');
     expect(typeof config.fetch).toBe('function');
+  });
+
+  it('uses builtin @ai-sdk/openai when createOpenAI is not provided', () => {
+    const provider = createAIGatewayProvider({
+      env: 'production',
+      getAuthToken: async () => 'token',
+    });
+
+    expect(typeof provider).toBe('function');
+    expect(typeof provider.chat).toBe('function');
+    expect(typeof provider.completion).toBe('function');
+    expect(typeof provider.embedding).toBe('function');
   });
 
   it('uses explicit baseURL over env', () => {
