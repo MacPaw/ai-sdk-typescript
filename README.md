@@ -1,3 +1,5 @@
+# ai-sdk
+Official TypeScript SDK for AI Gateway - universal client for browser and Node.js (Chat, Embeddings, Images, Audio, NestJS module)
 # @macpaw/ai
 
 Commercial Web SDK for the AI Gateway. Universal TypeScript client for browser and Node.js with streaming, retry, middleware, observability hooks, and normalized errors.
@@ -651,9 +653,14 @@ The filter returns JSON like:
 {
   "statusCode": 402,
   "error": "INSUFFICIENT_CREDITS",
-  "message": "Not enough credits to complete request"
+  "message": "Not enough credits to complete request",
+  "requestId": "abc-123",
+  "paymentUrl": "https://pay.example.com/upgrade"
 }
 ```
+
+Optional fields (`requestId`, `paymentUrl`, `retryAfter`) are included only when present.
+For 429 responses, the filter also sets the `Retry-After` HTTP header.
 
 #### 4. Custom options factory (useClass)
 
