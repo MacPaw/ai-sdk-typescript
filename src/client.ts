@@ -262,9 +262,17 @@ function buildChatCompletions(config: ResolvedConfig): ChatCompletionsAPI {
         ? anySignal([options.signal, ac.signal])
         : ac.signal,
     };
+    const fullRequest: CreateChatCompletionRequest = {
+      ...(request as CreateChatCompletionRequest),
+      stream: true,
+      stream_options: {
+        include_usage: true,
+        ...((request as Record<string, unknown>).stream_options as object | undefined),
+      },
+    };
     const generator = chatApi.createChatCompletionStream(
       config,
-      { ...request, stream: true } as CreateChatCompletionRequest,
+      fullRequest,
       mergedOptions,
     );
     return createStreamTextResult(generator, ac);

@@ -191,7 +191,12 @@ export interface StreamTextResult {
   readonly textStream: AsyncIterable<string>;
   /** Promise that resolves to the full concatenated text once the stream ends. */
   readonly text: Promise<string>;
-  /** Promise that resolves to token usage from the final chunk (if the API includes it). */
+  /**
+   * Promise that resolves to token usage from the final chunk.
+   * The SDK automatically sends `stream_options: { include_usage: true }` when you
+   * use `.stream()`. If you use `create({ stream: true })` directly, you must pass
+   * `stream_options` yourself or this will resolve to `undefined`.
+   */
   readonly usage: Promise<ChatCompletionUsage | undefined>;
   /** Cancel the underlying request. */
   abort(): void;

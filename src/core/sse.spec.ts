@@ -65,6 +65,20 @@ describe('parseSSE', () => {
       for await (const chunk of parseSSE(stream)) void chunk;
     }).rejects.toThrow(AIGatewayError);
   });
+
+  it('throws AIGatewayError when trailing buffer is an error event without trailing newline', async () => {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        // No trailing \n after the data line — forces it into the buffer path
+        controller.enqueue(encoder.encode('event: error\ndata: {"message":"final error","statusCode":503}'));
+        controller.close();
+      },
+    });
+    await expect(async () => {
+      for await (const chunk of parseSSE(stream)) void chunk;
+    }).rejects.toThrow(AIGatewayError);
+  });
 });
 
 describe('parseSSEAsJSON', () => {

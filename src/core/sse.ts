@@ -65,7 +65,24 @@ export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenera
     }
     if (buffer.startsWith('data: ')) {
       const data = buffer.slice(6).trim();
-      if (data !== '[DONE]') yield data;
+      if (data === '[DONE]') return;
+
+      if (currentEvent === 'error') {
+        try {
+          const errorPayload = JSON.parse(data);
+          throw new AIGatewayError(
+            errorPayload.message ?? 'Stream error',
+            errorPayload.code ?? ErrorCode.InternalServerError,
+            errorPayload.statusCode ?? 500,
+            errorPayload.metadata ?? {},
+          );
+        } catch (err) {
+          if (err instanceof AIGatewayError) throw err;
+          throw new AIGatewayError('Stream error', ErrorCode.InternalServerError, 500);
+        }
+      }
+
+      yield data;
     }
   } finally {
     try {
