@@ -271,6 +271,27 @@ const completion2 = await client.chat.completions.create(
 );
 ```
 
+> **Tip — streaming timeout:** The default timeout (60 s) applies **per retry attempt**,
+> not to the total stream duration. For long-running streams (chat, responses), consider
+> passing a larger `timeout` or using an `AbortSignal.timeout()` via the `signal` option
+> to control the overall lifetime independently.
+
+#### Accessing response headers (`withResponse`)
+
+Pass `{ withResponse: true }` to get the raw `Response` alongside the parsed body:
+
+```ts
+const { data, response } = await client.chat.completions.create(
+  { model: 'openai/gpt-4.1-nano', messages: [{ role: 'user', content: 'Hi' }] },
+  { withResponse: true },
+);
+
+console.log(response.headers.get('x-request-id'));
+console.log(data.choices[0].message.content);
+```
+
+`response` is the native [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) object from the Fetch API.
+
 ## Middleware
 
 Add request interceptors for logging, metrics, auth refresh, etc.
