@@ -96,7 +96,8 @@ describe('createChatCompletionStream', () => {
     const config = createMockConfig(response);
 
     await expect(async () => {
-      for await (const _chunk of createChatCompletionStream(config, {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      for await (const _ of createChatCompletionStream(config, {
         model: 'm',
         messages: [{ role: 'user', content: 'x' }],
       })) { /* consume */ }

@@ -54,10 +54,12 @@ export function createAIGatewayFetch(options: CreateAIGatewayFetchOptions): (inp
     if (token) headers.set('Authorization', `Bearer ${token}`);
     Object.entries(extraHeaders).forEach(([k, v]) => headers.set(k, v));
     const body = init?.body;
-    const isFormDataLike = typeof FormData !== 'undefined' && body instanceof FormData;
-    const isBlobLike = typeof Blob !== 'undefined' && body instanceof Blob;
-    if (!headers.has('Content-Type') && !isFormDataLike && !isBlobLike) {
-      headers.set('Content-Type', 'application/json');
+    if (body != null && !headers.has('Content-Type')) {
+      const isFormDataLike = typeof FormData !== 'undefined' && body instanceof FormData;
+      const isBlobLike = typeof Blob !== 'undefined' && body instanceof Blob;
+      if (!isFormDataLike && !isBlobLike) {
+        headers.set('Content-Type', 'application/json');
+      }
     }
 
     const resolvedUrl = url.startsWith(base) ? url : `${base}${url.startsWith('/') ? '' : '/'}${url}`;
