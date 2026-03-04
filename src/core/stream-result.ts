@@ -14,13 +14,23 @@ import { extractChatDelta, extractResponseDelta } from '../helpers';
 
 // ---------------------------------------------------------------------------
 // Shared pump logic
+//
+// Architecture: a single background pump reads the generator and appends
+// chunks to `items[]`. Multiple independent iterators (`stream`, `textStream`)
+// consume from the same `items[]` array using their own `idx` cursor.
+//
+// When a consumer is ahead of the pump (all buffered items read), it parks
+// a `pendingResolve`/`pendingReject` pair. The pump fulfills it as soon as
+// the next chunk arrives — this avoids busy-waiting and keeps memory flat.
 // ---------------------------------------------------------------------------
 
 interface PumpState<T> {
+  /** Append-only log of all chunks received from the generator. */
   items: T[];
   pumpStarted: boolean;
   pumpDone: boolean;
   pumpError: unknown;
+  /** Resolve/reject for a consumer waiting on the next chunk (at most one waiter at a time). */
   pendingResolve: ((value: IteratorResult<T>) => void) | null;
   pendingReject: ((reason: unknown) => void) | null;
   textResolve: (value: string) => void;
@@ -114,6 +124,11 @@ function createPump<T, U>(
   };
 }
 
+/**
+ * Create an independent async iterator over the shared `state.items[]`.
+ * Each call returns a fresh iterator with its own cursor (`idx`), so
+ * `stream` and `textStream` can be consumed independently or in parallel.
+ */
 function createChunkIterator<T>(
   state: PumpState<T>,
   ensureStarted: () => void,
@@ -142,6 +157,7 @@ function createChunkIterator<T>(
   return iter;
 }
 
+/** Like `createChunkIterator` but yields only the text delta from each chunk. */
 function createDeltaIterator<T>(
   state: PumpState<T>,
   ensureStarted: () => void,

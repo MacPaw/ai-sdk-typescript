@@ -12,6 +12,7 @@ import * as imagesApi from './api/images';
 import * as audioApi from './api/audio';
 import { createStreamTextResult, createStreamResponseResult } from './core/stream-result';
 import type { StreamTextResult, StreamResponseResult } from './core/stream-result';
+import { anySignal } from './core/abort';
 import type {
   CreateChatCompletionRequest,
   ChatCompletion,
@@ -347,21 +348,6 @@ function buildAudio(config: ResolvedConfig): AudioAPI {
       },
     } as AudioTranslationsAPI,
   };
-}
-
-/**
- * Combine multiple AbortSignals into one that aborts when ANY of them fires.
- */
-function anySignal(signals: AbortSignal[]): AbortSignal {
-  const controller = new AbortController();
-  for (const signal of signals) {
-    if (signal.aborted) {
-      controller.abort(signal.reason);
-      return controller.signal;
-    }
-    signal.addEventListener('abort', () => controller.abort(signal.reason), { once: true });
-  }
-  return controller.signal;
 }
 
 /**
