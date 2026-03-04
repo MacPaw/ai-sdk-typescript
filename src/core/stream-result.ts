@@ -18,7 +18,6 @@ import { extractChatDelta, extractResponseDelta } from '../helpers';
 
 interface PumpState<T> {
   items: T[];
-  buffer: T[];
   pumpStarted: boolean;
   pumpDone: boolean;
   pumpError: unknown;
@@ -42,7 +41,6 @@ function createPump<T, U>(
 ): PumpResult<T, U> {
   const state: PumpState<T> = {
     items: [],
-    buffer: [],
     pumpStarted: false,
     pumpDone: false,
     pumpError: undefined,
@@ -83,8 +81,6 @@ function createPump<T, U>(
           state.pendingResolve = null;
           state.pendingReject = null;
           resolve({ value: item, done: false });
-        } else {
-          state.buffer.push(item);
         }
       }
       state.pumpDone = true;
@@ -128,11 +124,6 @@ function createChunkIterator<T>(
     next(): Promise<IteratorResult<T>> {
       if (idx < state.items.length) {
         return Promise.resolve({ value: state.items[idx++], done: false });
-      }
-      if (state.buffer.length > 0) {
-        state.buffer.shift();
-        idx = state.items.length;
-        return Promise.resolve({ value: state.items[idx - 1], done: false });
       }
       if (state.pumpDone) {
         if (state.pumpError) return Promise.reject(state.pumpError);

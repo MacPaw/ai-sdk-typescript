@@ -115,7 +115,7 @@ async function executeRequest(
     signal,
   };
 
-  const transport = config.transport ?? getDefaultTransport();
+  const transport = config.transport ?? customDefaultTransport ?? builtinFetchTransport;
 
   logger.debug?.('[ai-gateway-sdk] request', requestConfig.method, requestConfig.url);
 
@@ -186,25 +186,23 @@ async function executeRequest(
   }
 }
 
-let defaultTransport: Transport | null = null;
+const builtinFetchTransport: Transport = {
+  async request(options) {
+    return fetch(options.url, {
+      method: options.method,
+      headers: options.headers,
+      body: options.body,
+      signal: options.signal,
+    });
+  },
+};
 
-function getDefaultTransport(): Transport {
-  if (!defaultTransport) {
-    defaultTransport = {
-      async request(options) {
-        const res = await fetch(options.url, {
-          method: options.method,
-          headers: options.headers,
-          body: options.body,
-          signal: options.signal,
-        });
-        return res;
-      },
-    };
-  }
-  return defaultTransport;
-}
+let customDefaultTransport: Transport | undefined;
 
+/**
+ * Override the default transport for all clients that don't specify their own.
+ * Prefer passing `transport` in the client config for per-client control.
+ */
 export function setDefaultTransport(transport: Transport): void {
-  defaultTransport = transport;
+  customDefaultTransport = transport;
 }

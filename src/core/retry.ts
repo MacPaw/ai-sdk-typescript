@@ -15,7 +15,7 @@ function delay(ms: number): Promise<void> {
 }
 
 function isRetryableStatus(status: number, retryableStatuses: number[]): boolean {
-  return retryableStatuses.includes(status) || (status >= 500 && status < 600);
+  return retryableStatuses.includes(status);
 }
 
 /** Add random jitter: 0-25% of the base delay to avoid thundering herd */
