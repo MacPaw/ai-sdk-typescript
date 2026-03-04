@@ -940,6 +940,18 @@ const result = await service.complete([{ role: 'user', content: 'Hi' }]);
 | `@macpaw/ai/nestjs` | NestJS module, decorator, exception filter |
 | `@macpaw/ai/testing` | Mock client, `MockFn`, fixtures, stream helpers, mock transport |
 
+## Versioning policy
+
+This project follows [Semantic Versioning](https://semver.org/):
+
+| Change type | Semver | Examples |
+|---|---|---|
+| **Breaking** (major) | `x.0.0` | Removing/renaming exports, changing method signatures, dropping Node version support |
+| **Feature** (minor) | `0.x.0` | New API endpoint, new config option, new testing helper |
+| **Fix** (patch) | `0.0.x` | Bug fix, docs update, internal refactor with no public API change |
+
+Releases are automated via [semantic-release](https://github.com/semantic-release/semantic-release) based on [Conventional Commits](https://www.conventionalcommits.org/). Use `feat:`, `fix:`, `perf:`, and `BREAKING CHANGE:` in commit messages — the CI handles versioning, changelog, npm publish, and GitHub releases.
+
 ## License
 
 MIT © 2026 [MacPaw Way Ltd](https://macpaw.com). See [LICENSE](LICENSE) for details.
