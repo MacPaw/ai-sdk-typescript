@@ -40,19 +40,40 @@ export interface CreateAIGatewayFetchOptions {
  *   apiKey: 'unused',
  * });
  */
-export function createAIGatewayFetch(options: CreateAIGatewayFetchOptions): (input: string | URL | { url: string }, init?: RequestInit) => Promise<Response> {
+export function createAIGatewayFetch(options: CreateAIGatewayFetchOptions): (input: string | URL | Request | { url: string }, init?: RequestInit) => Promise<Response> {
   const { baseURL, getAuthToken, headers: extraHeaders = {} } = options;
   const base = baseURL.replace(/\/$/, '');
 
   return async function aiGatewayFetch(
-    input: string | URL | { url: string },
+    input: string | URL | Request | { url: string },
     init?: RequestInit
   ): Promise<Response> {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-    const token = await getAuthToken();
+    // Derive defaults from Request objects so method/headers/body aren't silently dropped.
+    if (typeof Request !== 'undefined' && input instanceof Request) {
+      init = {
+        method: input.method,
+        headers: input.headers,
+        body: input.body,
+        signal: input.signal,
+        ...init,
+      };
+    }
+
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as { url: string }).url;
+    const isAbsoluteExternal = (url.startsWith('http://') || url.startsWith('https://')) && !url.startsWith(base);
+    const resolvedUrl = (url.startsWith('http://') || url.startsWith('https://'))
+      ? url
+      : `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+
     const headers = new Headers(init?.headers);
-    if (token) headers.set('Authorization', `Bearer ${token}`);
-    Object.entries(extraHeaders).forEach(([k, v]) => headers.set(k, v));
+
+    // Only inject auth + extra headers for requests targeting the configured base.
+    if (!isAbsoluteExternal) {
+      const token = await getAuthToken();
+      if (token) headers.set('Authorization', `Bearer ${token}`);
+      Object.entries(extraHeaders).forEach(([k, v]) => headers.set(k, v));
+    }
+
     const body = init?.body;
     if (body != null && !headers.has('Content-Type')) {
       const isFormDataLike = typeof FormData !== 'undefined' && body instanceof FormData;
@@ -62,8 +83,6 @@ export function createAIGatewayFetch(options: CreateAIGatewayFetchOptions): (inp
       }
     }
 
-    const isAbsoluteUrl = url.startsWith('http://') || url.startsWith('https://');
-    const resolvedUrl = isAbsoluteUrl ? url : `${base}${url.startsWith('/') ? '' : '/'}${url}`;
     return fetch(resolvedUrl, { ...init, headers });
   };
 }

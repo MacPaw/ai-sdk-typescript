@@ -40,7 +40,13 @@ export function validateChatCompletionRequest(request: { model?: unknown; messag
 
 export function validateResponseRequest(request: { model?: unknown; input?: unknown }): void {
   requireString(request.model, 'model');
-  if (request.input == null || (typeof request.input === 'string' && request.input.trim().length === 0)) {
+  if (request.input == null) {
+    throw new SDKValidationError('input', 'input is required and must be a non-empty string or array');
+  }
+  if (typeof request.input === 'string' && request.input.trim().length === 0) {
+    throw new SDKValidationError('input', 'input is required and must be a non-empty string or array');
+  }
+  if (Array.isArray(request.input) && request.input.length === 0) {
     throw new SDKValidationError('input', 'input is required and must be a non-empty string or array');
   }
 }

@@ -5,6 +5,6 @@ export * from './config';
 export * from './retry';
 export * from './sse';
 export * from './validation';
-export { runRequest, setDefaultTransport } from './request';
+export { runRequest, setDefaultTransport, resetDefaultTransport } from './request';
 export { createStreamTextResult, createStreamResponseResult } from './stream-result';
 export { anySignal } from './abort';

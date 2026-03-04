@@ -80,6 +80,21 @@ describe('createAIGatewayFetch', () => {
     expect(fetchCall[0]).toBe('https://other.example.com/v1/models');
   });
 
+  it('does not leak Bearer token to external hosts', async () => {
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'secret-token',
+      headers: { 'X-Internal': 'yes' },
+    });
+
+    await customFetch('https://evil.example.com/steal');
+
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const headers = fetchCall[1].headers as Headers;
+    expect(headers.has('Authorization')).toBe(false);
+    expect(headers.has('X-Internal')).toBe(false);
+  });
+
   it('does not set Content-Type for FormData body', async () => {
     const customFetch = createAIGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',

@@ -50,6 +50,14 @@ describe('validateResponseRequest', () => {
   it('throws on null input', () => {
     expect(() => validateResponseRequest({ model: 'm', input: null })).toThrow(SDKValidationError);
   });
+
+  it('throws on empty array input', () => {
+    expect(() => validateResponseRequest({ model: 'm', input: [] })).toThrow(SDKValidationError);
+  });
+
+  it('passes with non-empty array input', () => {
+    expect(() => validateResponseRequest({ model: 'm', input: [{ role: 'user', content: 'hi' }] })).not.toThrow();
+  });
 });
 
 describe('validateEmbeddingRequest', () => {
