@@ -12,12 +12,26 @@ export function anySignal(signals: AbortSignal[]): AbortSignal {
   }
 
   const controller = new AbortController();
+  const handlers: Array<[AbortSignal, () => void]> = [];
+
+  function cleanup() {
+    for (const [sig, handler] of handlers) {
+      sig.removeEventListener('abort', handler);
+    }
+    handlers.length = 0;
+  }
+
   for (const signal of signals) {
     if (signal.aborted) {
       controller.abort(signal.reason);
       return controller.signal;
     }
-    signal.addEventListener('abort', () => controller.abort(signal.reason), { once: true });
+    const handler = () => {
+      cleanup();
+      controller.abort(signal.reason);
+    };
+    handlers.push([signal, handler]);
+    signal.addEventListener('abort', handler, { once: true });
   }
   return controller.signal;
 }

@@ -19,8 +19,31 @@ function throwStreamError(data: string): never {
     throw parseStreamErrorPayload(payload);
   } catch (err) {
     if (err instanceof AIGatewayError) throw err;
-    throw new AIGatewayError('Stream error', ErrorCode.InternalServerError, 500);
+    throw new AIGatewayError('Stream error', ErrorCode.InternalServerError, 500, {}, { cause: err });
   }
+}
+
+/**
+ * Validate that a streaming response has the expected SSE content type.
+ * Throws a descriptive error if the server returned JSON or an unexpected type.
+ */
+export async function assertSSEResponse(response: Response): Promise<ReadableStream<Uint8Array>> {
+  const contentType = response.headers.get('Content-Type') ?? '';
+  if (contentType.includes('application/json')) {
+    const body = await response.json();
+    throw new Error(
+      `Expected SSE stream but received JSON response. `
+      + `This usually means the server rejected the streaming request. `
+      + `Body: ${JSON.stringify(body).slice(0, 300)}`,
+    );
+  }
+  if (!contentType.includes('text/event-stream')) {
+    const text = await response.text();
+    throw new Error(`Unexpected content type: ${contentType}. Body: ${text.slice(0, 200)}`);
+  }
+  const stream = response.body;
+  if (!stream) throw new Error('No response body');
+  return stream;
 }
 
 export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenerator<string, void, undefined> {
@@ -33,7 +56,7 @@ export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenera
       const { done, value } = await reader.read();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
+      const lines = buffer.split(/\r\n|\r|\n/);
       buffer = lines.pop() ?? '';
       for (const line of lines) {
         if (line.startsWith('event: ')) {

@@ -41,6 +41,32 @@ describe('parseSSE', () => {
     expect(chunks).toEqual(['{"ok":true}']);
   });
 
+  it('handles \\r\\n line endings', async () => {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode('data: {"a":1}\r\ndata: {"a":2}\r\ndata: [DONE]\r\n'));
+        controller.close();
+      },
+    });
+    const chunks: string[] = [];
+    for await (const chunk of parseSSE(stream)) chunks.push(chunk);
+    expect(chunks).toEqual(['{"a":1}', '{"a":2}']);
+  });
+
+  it('handles bare \\r line endings', async () => {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode('data: {"a":1}\rdata: {"a":2}\rdata: [DONE]\r'));
+        controller.close();
+      },
+    });
+    const chunks: string[] = [];
+    for await (const chunk of parseSSE(stream)) chunks.push(chunk);
+    expect(chunks).toEqual(['{"a":1}', '{"a":2}']);
+  });
+
   it('throws AIGatewayError on error events', async () => {
     const stream = streamFromStrings([
       'data: {"x":1}',

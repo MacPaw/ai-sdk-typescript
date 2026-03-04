@@ -72,9 +72,10 @@ export class AIGatewayError extends Error {
     message: string,
     code: ErrorCodeType,
     statusCode: number,
-    metadata: NormalizedErrorMetadata = {}
+    metadata: NormalizedErrorMetadata = {},
+    options?: { cause?: unknown },
   ) {
-    super(message);
+    super(message, options);
     this.name = 'AIGatewayError';
     this.code = code;
     this.statusCode = statusCode;
@@ -107,8 +108,8 @@ export class AIGatewayError extends Error {
 }
 
 export class AuthError extends AIGatewayError {
-  constructor(message: string, statusCode: number, metadata?: NormalizedErrorMetadata) {
-    super(message, ErrorCode.AuthRequired, statusCode, metadata);
+  constructor(message: string, statusCode: number, metadata?: NormalizedErrorMetadata, options?: { cause?: unknown }) {
+    super(message, ErrorCode.AuthRequired, statusCode, metadata, options);
     this.name = 'AuthError';
   }
 }
@@ -118,30 +119,31 @@ export class CreditsError extends AIGatewayError {
     message: string,
     statusCode: number,
     code: typeof ErrorCode.InsufficientCredits | typeof ErrorCode.SubscriptionExpired,
-    metadata?: NormalizedErrorMetadata
+    metadata?: NormalizedErrorMetadata,
+    options?: { cause?: unknown },
   ) {
-    super(message, code, statusCode, metadata);
+    super(message, code, statusCode, metadata, options);
     this.name = 'CreditsError';
   }
 }
 
 export class RateLimitError extends AIGatewayError {
-  constructor(message: string, statusCode: number, metadata?: NormalizedErrorMetadata) {
-    super(message, ErrorCode.RateLimited, statusCode, metadata);
+  constructor(message: string, statusCode: number, metadata?: NormalizedErrorMetadata, options?: { cause?: unknown }) {
+    super(message, ErrorCode.RateLimited, statusCode, metadata, options);
     this.name = 'RateLimitError';
   }
 }
 
 export class ModelNotAllowedError extends AIGatewayError {
-  constructor(message: string, statusCode: number, metadata?: NormalizedErrorMetadata) {
-    super(message, ErrorCode.ModelNotAllowed, statusCode, metadata);
+  constructor(message: string, statusCode: number, metadata?: NormalizedErrorMetadata, options?: { cause?: unknown }) {
+    super(message, ErrorCode.ModelNotAllowed, statusCode, metadata, options);
     this.name = 'ModelNotAllowedError';
   }
 }
 
 export class ValidationError extends AIGatewayError {
-  constructor(message: string, statusCode: number, metadata?: NormalizedErrorMetadata) {
-    super(message, ErrorCode.Validation, statusCode, metadata);
+  constructor(message: string, statusCode: number, metadata?: NormalizedErrorMetadata, options?: { cause?: unknown }) {
+    super(message, ErrorCode.Validation, statusCode, metadata, options);
     this.name = 'ValidationError';
   }
 }
@@ -159,22 +161,23 @@ function createTypedError(
   message: string,
   code: ErrorCodeType,
   statusCode: number,
-  meta: NormalizedErrorMetadata
+  meta: NormalizedErrorMetadata,
+  options?: { cause?: unknown },
 ): AIGatewayError {
   switch (code) {
     case ErrorCode.AuthRequired:
-      return new AuthError(message, statusCode, meta);
+      return new AuthError(message, statusCode, meta, options);
     case ErrorCode.InsufficientCredits:
     case ErrorCode.SubscriptionExpired:
-      return new CreditsError(message, statusCode, code, meta);
+      return new CreditsError(message, statusCode, code, meta, options);
     case ErrorCode.RateLimited:
-      return new RateLimitError(message, statusCode, meta);
+      return new RateLimitError(message, statusCode, meta, options);
     case ErrorCode.ModelNotAllowed:
-      return new ModelNotAllowedError(message, statusCode, meta);
+      return new ModelNotAllowedError(message, statusCode, meta, options);
     case ErrorCode.Validation:
-      return new ValidationError(message, statusCode, meta);
+      return new ValidationError(message, statusCode, meta, options);
     default:
-      return new AIGatewayError(message, code, statusCode, meta);
+      return new AIGatewayError(message, code, statusCode, meta, options);
   }
 }
 
