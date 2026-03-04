@@ -247,6 +247,31 @@ describe('timeout handling', () => {
   });
 });
 
+describe('retry with timeout', () => {
+  it('each retry attempt gets a full timeout window', async () => {
+    const transport = {
+      request: vi.fn()
+        .mockResolvedValueOnce(new Response(
+          JSON.stringify({ statusCode: 503, message: 'Unavailable', code: 'SERVICE_UNAVAILABLE', timestamp: '' }),
+          { status: 503, headers: { 'Content-Type': 'application/json' } },
+        ))
+        .mockResolvedValueOnce(new Response(
+          JSON.stringify({ ok: true }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        )),
+    };
+    const config = createMockConfig({
+      transport,
+      retry: { maxAttempts: 2, initialDelayMs: 20 },
+      timeout: 100,
+    });
+
+    const response = await runRequest(config, '/test', { method: 'GET' });
+    expect(response.status).toBe(200);
+    expect(transport.request).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('network errors', () => {
   it('propagates TypeError for fetch failures', async () => {
     const transport = {

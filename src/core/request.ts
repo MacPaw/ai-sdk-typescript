@@ -85,6 +85,8 @@ async function executeRequest(
   logger.debug?.('[ai-gateway-sdk] request', init.method, url);
 
   async function doRequest(): Promise<Response> {
+    // Timeout is created per attempt so each retry gets a full timeout window,
+    // not the remainder from the previous attempt.
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(
       () => timeoutController.abort(new Error(`Request timed out after ${timeoutMs}ms`)),
