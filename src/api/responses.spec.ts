@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { createResponse, createResponseStream } from './responses';
 import type { ResolvedConfig } from '../core/config';
 import type { ResponseObject } from '../core/types';
+import { API_PATHS } from '../core/paths';
 
 function createMockConfig(response: Response): ResolvedConfig {
   return {
@@ -16,6 +17,7 @@ function createMockConfig(response: Response): ResolvedConfig {
     logger: {},
     hooks: {},
     generateRequestId: false,
+    apiPaths: API_PATHS,
   };
 }
 

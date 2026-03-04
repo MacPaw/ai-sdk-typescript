@@ -18,7 +18,7 @@ Commercial Web SDK for the AI Gateway. Universal TypeScript client for browser a
 - **Request ID tracking** — Automatic `X-Request-ID` generation
 - **AbortController** — Per-request signal and configurable timeout
 - **Typed** — Full TypeScript types, const-object enums for all codes/roles
-- **Tree-shakeable** — Zero runtime dependencies, ESM + CJS
+- **Tree-shakeable** — ESM + CJS with minimal runtime dependencies
 - **Vercel AI SDK** — First-class provider integration
 
 ## Install
@@ -99,6 +99,9 @@ const client = createAIGatewayClient({
 
   // Auto-generate X-Request-ID header (default: true)
   generateRequestId: true,
+
+  // API version prefix (default: 'v1' → /api/v1/...)
+  // apiVersion: 'v2',
 });
 ```
 
@@ -260,7 +263,34 @@ const completion = await client.chat.completions.create(
     headers: { 'X-Trace-Id': 'abc-123' },
   },
 );
+
+// Combine multiple abort signals (e.g. user cancel + timeout) — use anySignal from @macpaw/ai
+const completion2 = await client.chat.completions.create(
+  { model: 'openai/gpt-4.1-nano', messages: [] },
+  { signal: anySignal([controller.signal, AbortSignal.timeout(30_000)]) },
+);
 ```
+
+> **Tip — streaming timeout:** The default timeout (60 s) applies **per retry attempt**,
+> not to the total stream duration. For long-running streams (chat, responses), consider
+> passing a larger `timeout` or using an `AbortSignal.timeout()` via the `signal` option
+> to control the overall lifetime independently.
+
+#### Accessing response headers (`withResponse`)
+
+Pass `{ withResponse: true }` to get the raw `Response` alongside the parsed body:
+
+```ts
+const { data, response } = await client.chat.completions.create(
+  { model: 'openai/gpt-4.1-nano', messages: [{ role: 'user', content: 'Hi' }] },
+  { withResponse: true },
+);
+
+console.log(response.headers.get('x-request-id'));
+console.log(data.choices[0].message.content);
+```
+
+`response` is the native [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) object from the Fetch API.
 
 ## Middleware
 
@@ -559,7 +589,7 @@ export class AppModule {}
 ```ts
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AIGatewayModule } from '@macpaw/ai-sdk/nestjs';
+import { AIGatewayModule } from '@macpaw/ai/nestjs';
 
 @Module({
   imports: [
@@ -806,7 +836,7 @@ client.chat.completions.create
 import { AuthError } from '@macpaw/ai';
 
 client.chat.completions.create.mockRejectedValue(
-  new AuthError('Token expired', 401, 'AUTH_REQUIRED'),
+  new AuthError('Token expired', 401),
 );
 
 await expect(service.complete(messages)).rejects.toThrow('Token expired');
@@ -923,14 +953,28 @@ const result = await service.complete([{ role: 'user', content: 'Hi' }]);
 
 ## Subpath exports
 
+> **Note:** `@macpaw/ai/core` exposes internal APIs (config, retry, SSE parser, etc.). Prefer the main `@macpaw/ai` entry point unless you need low-level control. Core APIs may change between minor versions.
+
 | Import path | Content |
 |---|---|
-| `@macpaw/ai` | Main client, types, errors, `ErrorCode` enum |
-| `@macpaw/ai/core` | Core types, errors, config, retry, SSE parser |
+| `@macpaw/ai` | Main client, types, errors, `ErrorCode` enum, `anySignal` |
+| `@macpaw/ai/core` | Core types, errors, config, retry, SSE parser (**advanced** — internal APIs) |
 | `@macpaw/ai/provider` | Vercel AI SDK provider + re-exports (`generateText`, `streamText`, …) |
 | `@macpaw/ai/nestjs` | NestJS module, decorator, exception filter |
 | `@macpaw/ai/testing` | Mock client, `MockFn`, fixtures, stream helpers, mock transport |
 
+## Versioning policy
+
+This project follows [Semantic Versioning](https://semver.org/):
+
+| Change type | Semver | Examples |
+|---|---|---|
+| **Breaking** (major) | `x.0.0` | Removing/renaming exports, changing method signatures, dropping Node version support |
+| **Feature** (minor) | `0.x.0` | New API endpoint, new config option, new testing helper |
+| **Fix** (patch) | `0.0.x` | Bug fix, docs update, internal refactor with no public API change |
+
+Releases are automated via [semantic-release](https://github.com/semantic-release/semantic-release) based on [Conventional Commits](https://www.conventionalcommits.org/). Use `feat:`, `fix:`, `perf:`, and `BREAKING CHANGE:` in commit messages — the CI handles versioning, changelog, npm publish, and GitHub releases.
+
 ## License
 
-Proprietary.
+MIT © 2026 [MacPaw Way Ltd](https://macpaw.com). See [LICENSE](LICENSE) for details.

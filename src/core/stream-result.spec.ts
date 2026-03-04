@@ -161,6 +161,54 @@ describe('StreamTextResult', () => {
 
     await expect(result.usage).rejects.toThrow('stream exploded');
   });
+
+  it('trims consumed items from memory (GC)', async () => {
+    const ac = new AbortController();
+    const result = createStreamTextResult(chatGen(['A', 'B', 'C', 'D', 'E']), ac);
+
+    const deltas: string[] = [];
+    for await (const d of result.textStream) {
+      deltas.push(d);
+    }
+    expect(deltas).toEqual(['A', 'B', 'C', 'D', 'E']);
+    expect(await result.text).toBe('ABCDE');
+  });
+
+  it('cleans up iterator position on early break', async () => {
+    const ac = new AbortController();
+    const result = createStreamTextResult(chatGen(['A', 'B', 'C', 'D']), ac);
+
+    const deltas: string[] = [];
+    for await (const d of result.textStream) {
+      deltas.push(d);
+      if (d === 'B') break;
+    }
+    expect(deltas).toEqual(['A', 'B']);
+    expect(await result.text).toBe('ABCD');
+  });
+
+  it('parallel consumption of stream and textStream receives all chunks', async () => {
+    const ac = new AbortController();
+    const result = createStreamTextResult(chatGen(['A', 'B', 'C']), ac);
+
+    const [chunks, deltas] = await Promise.all([
+      (async () => {
+        const arr: ChatCompletionChunk[] = [];
+        for await (const c of result.stream) arr.push(c);
+        return arr;
+      })(),
+      (async () => {
+        const arr: string[] = [];
+        for await (const d of result.textStream) arr.push(d);
+        return arr;
+      })(),
+    ]);
+
+    expect(chunks).toHaveLength(3);
+    expect(chunks.map(c => c.choices[0].delta?.content)).toEqual(['A', 'B', 'C']);
+    expect(deltas).toEqual(['A', 'B', 'C']);
+    expect(await result.text).toBe('ABC');
+  });
 });
 
 describe('StreamResponseResult', () => {

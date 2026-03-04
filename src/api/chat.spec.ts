@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createChatCompletion, createChatCompletionStream } from './chat';
 import type { ResolvedConfig } from '../core/config';
+import { API_PATHS } from '../core/paths';
 
 function createMockConfig(response: Response): ResolvedConfig {
   return {
@@ -15,6 +16,7 @@ function createMockConfig(response: Response): ResolvedConfig {
     logger: {},
     hooks: {},
     generateRequestId: false,
+    apiPaths: API_PATHS,
   };
 }
 
@@ -83,5 +85,22 @@ describe('createChatCompletionStream', () => {
     expect(chunks).toHaveLength(2);
     expect(chunks[0].choices[0].delta?.role).toBe('assistant');
     expect(chunks[1].choices[0].delta?.content).toBe('Hi');
+  });
+
+  it('throws clear error when server returns JSON instead of SSE stream', async () => {
+    const errorBody = { error: { message: 'Model overloaded', type: 'api_error' } };
+    const response = new Response(JSON.stringify(errorBody), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const config = createMockConfig(response);
+
+    await expect(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      for await (const _ of createChatCompletionStream(config, {
+        model: 'm',
+        messages: [{ role: 'user', content: 'x' }],
+      })) { /* consume */ }
+    }).rejects.toThrow('Expected SSE stream but received JSON response');
   });
 });
