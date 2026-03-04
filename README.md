@@ -568,7 +568,7 @@ export class AppModule {}
 ```ts
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AIGatewayModule } from '@macpaw/ai-sdk/nestjs';
+import { AIGatewayModule } from '@macpaw/ai/nestjs';
 
 @Module({
   imports: [
