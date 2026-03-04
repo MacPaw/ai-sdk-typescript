@@ -55,6 +55,7 @@ function mapOpenAIErrorToNormalized(type?: string | null, code?: string | null):
 
 export interface NormalizedErrorMetadata {
   paymentUrl?: string;
+  /** Suggested delay before retrying, **in seconds** (from the server's `Retry-After`). */
   retryAfter?: number;
   requestId?: string;
   path?: string;
@@ -85,6 +86,7 @@ export class AIGatewayError extends Error {
     return this.metadata.paymentUrl;
   }
 
+  /** Suggested delay before retrying, **in seconds**. `undefined` if not provided by the server. */
   get retryAfter(): number | undefined {
     return this.metadata.retryAfter;
   }

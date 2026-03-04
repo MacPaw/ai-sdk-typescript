@@ -188,6 +188,12 @@ async function executeRequest(
 
 const builtinFetchTransport: Transport = {
   async request(options) {
+    if (typeof fetch === 'undefined') {
+      throw new Error(
+        '@macpaw/ai requires a global `fetch` implementation. '
+        + 'Use Node.js 18+ or install a polyfill like `undici`.',
+      );
+    }
     return fetch(options.url, {
       method: options.method,
       headers: options.headers,
