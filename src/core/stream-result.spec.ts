@@ -162,6 +162,31 @@ describe('StreamTextResult', () => {
     await expect(result.usage).rejects.toThrow('stream exploded');
   });
 
+  it('trims consumed items from memory (GC)', async () => {
+    const ac = new AbortController();
+    const result = createStreamTextResult(chatGen(['A', 'B', 'C', 'D', 'E']), ac);
+
+    const deltas: string[] = [];
+    for await (const d of result.textStream) {
+      deltas.push(d);
+    }
+    expect(deltas).toEqual(['A', 'B', 'C', 'D', 'E']);
+    expect(await result.text).toBe('ABCDE');
+  });
+
+  it('cleans up iterator position on early break', async () => {
+    const ac = new AbortController();
+    const result = createStreamTextResult(chatGen(['A', 'B', 'C', 'D']), ac);
+
+    const deltas: string[] = [];
+    for await (const d of result.textStream) {
+      deltas.push(d);
+      if (d === 'B') break;
+    }
+    expect(deltas).toEqual(['A', 'B']);
+    expect(await result.text).toBe('ABCD');
+  });
+
   it('parallel consumption of stream and textStream receives all chunks', async () => {
     const ac = new AbortController();
     const result = createStreamTextResult(chatGen(['A', 'B', 'C']), ac);

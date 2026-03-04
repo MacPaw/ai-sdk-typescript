@@ -17,12 +17,17 @@ import { extractChatDelta, extractResponseDelta } from '../helpers';
 //
 // Architecture: a single background pump reads the generator and appends
 // chunks to `items[]`. Multiple independent iterators (`stream`, `textStream`)
-// consume from the same `items[]` array using their own `idx` cursor.
+// consume from the same `items[]` array using their own absolute cursor.
 //
 // When a consumer is ahead of the pump (all buffered items read), it parks
 // a waiter (resolve/reject pair) in the `waiters` queue. The pump wakes ALL
 // parked waiters as soon as the next chunk arrives, so parallel consumers
 // (e.g. `stream` and `textStream` consumed simultaneously) never deadlock.
+//
+// GC: items that ALL active iterators have consumed are trimmed from the
+// front of `items[]`. `trimOffset` tracks how many items have been removed
+// so that absolute cursor positions remain valid. This bounds memory usage
+// for long-running streams (hours of audio, extended chats).
 // ---------------------------------------------------------------------------
 
 interface Waiter<T> {
@@ -30,9 +35,17 @@ interface Waiter<T> {
   reject: (reason: unknown) => void;
 }
 
+/** Tracks absolute read position of a single iterator. */
+interface IteratorPosition {
+  idx: number;
+}
+
 interface PumpState<T> {
-  /** Append-only log of all chunks received from the generator. */
   items: T[];
+  /** Number of items trimmed from the front — absolute index = arrayIndex + trimOffset. */
+  trimOffset: number;
+  /** All live iterators; used to compute GC watermark. */
+  activeIterators: Set<IteratorPosition>;
   pumpStarted: boolean;
   pumpDone: boolean;
   pumpError: unknown;
@@ -56,6 +69,8 @@ function createPump<T, U>(
 ): PumpResult<T, U> {
   const state: PumpState<T> = {
     items: [],
+    trimOffset: 0,
+    activeIterators: new Set(),
     pumpStarted: false,
     pumpDone: false,
     pumpError: undefined,
@@ -128,34 +143,84 @@ function rejectWaiters<T>(state: PumpState<T>, error: unknown): void {
 }
 
 /**
+ * Trim items that all active iterators have already consumed.
+ * Safe to call after every next()/return() — it's a no-op when nothing can be freed.
+ */
+function maybeTrim<T>(state: PumpState<T>): void {
+  if (state.activeIterators.size === 0) {
+    if (state.pumpDone && state.items.length > 0) {
+      state.trimOffset += state.items.length;
+      state.items.length = 0;
+    }
+    return;
+  }
+  let minIdx = Infinity;
+  for (const pos of state.activeIterators) {
+    if (pos.idx < minIdx) minIdx = pos.idx;
+  }
+  const trimCount = minIdx - state.trimOffset;
+  if (trimCount > 0) {
+    state.items.splice(0, trimCount);
+    state.trimOffset += trimCount;
+  }
+}
+
+/**
  * Create an independent async iterator over the shared `state.items[]`.
- * Each call returns a fresh iterator with its own cursor (`idx`), so
+ * Each call returns a fresh iterator with its own cursor, so
  * `stream` and `textStream` can be consumed independently or in parallel.
+ *
+ * Implements `return()` for proper cleanup: when a `for await` loop breaks
+ * early, the iterator is unregistered so its position no longer blocks GC.
  */
 function createChunkIterator<T>(
   state: PumpState<T>,
   ensureStarted: () => void,
 ): AsyncIterableIterator<T> {
-  let idx = 0;
+  const pos: IteratorPosition = { idx: state.trimOffset };
+  state.activeIterators.add(pos);
   ensureStarted();
+
+  function finish(): void {
+    state.activeIterators.delete(pos);
+    maybeTrim(state);
+  }
+
   const iter: AsyncIterableIterator<T> = {
     next(): Promise<IteratorResult<T>> {
-      if (idx < state.items.length) {
-        return Promise.resolve({ value: state.items[idx++], done: false });
+      const arrayIdx = pos.idx - state.trimOffset;
+      if (arrayIdx >= 0 && arrayIdx < state.items.length) {
+        const value = state.items[arrayIdx];
+        pos.idx++;
+        maybeTrim(state);
+        return Promise.resolve({ value, done: false });
       }
       if (state.pumpDone) {
+        finish();
         if (state.pumpError) return Promise.reject(state.pumpError);
         return Promise.resolve({ value: undefined as unknown as T, done: true });
       }
       return new Promise<IteratorResult<T>>((resolve, reject) => {
         state.waiters.push({
           resolve: (result) => {
-            if (!result.done) idx = state.items.length;
+            if (!result.done) {
+              pos.idx = state.trimOffset + state.items.length;
+              maybeTrim(state);
+            } else {
+              finish();
+            }
             resolve(result);
           },
-          reject,
+          reject: (err) => {
+            finish();
+            reject(err);
+          },
         });
       });
+    },
+    return(): Promise<IteratorResult<T>> {
+      finish();
+      return Promise.resolve({ value: undefined as unknown as T, done: true });
     },
     [Symbol.asyncIterator]() { return iter; },
   };
@@ -174,6 +239,10 @@ function createDeltaIterator<T>(
       const result = await inner.next();
       if (result.done) return { value: undefined as unknown as string, done: true };
       return { value: extractDelta(result.value), done: false };
+    },
+    return(): Promise<IteratorResult<string>> {
+      inner.return?.();
+      return Promise.resolve({ value: undefined as unknown as string, done: true });
     },
     [Symbol.asyncIterator]() { return iter; },
   };

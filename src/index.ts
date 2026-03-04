@@ -90,15 +90,31 @@ export type {
   LifecycleHooks,
   Environment,
 } from './core/config';
-export { DEFAULT_RETRY, DEFAULT_BASE_URLS, resolveConfig } from './core/config';
+export { DEFAULT_RETRY, DEFAULT_BASE_URLS } from './core/config';
+/**
+ * @internal Resolve raw user config into a fully-populated ResolvedConfig.
+ * Prefer `createAIGatewayClient()` — this is exposed for advanced/custom
+ * client construction and may change between minor versions.
+ */
+export { resolveConfig } from './core/config';
 
 // API paths & versioning
 export type { ApiVersion, ApiPaths } from './core/paths';
-export { API_PATHS, DEFAULT_API_VERSION, buildApiPaths } from './core/paths';
+export { API_PATHS, DEFAULT_API_VERSION } from './core/paths';
+/**
+ * @internal Build API paths for a given version.
+ * Exposed for custom routing — may change between minor versions.
+ */
+export { buildApiPaths } from './core/paths';
 
 // Transport
 export { createFetchTransport } from './transport/fetch';
 export type { FetchTransportOptions } from './transport/fetch';
+/**
+ * @internal Override the default transport for ALL client instances globally.
+ * Prefer per-client `transport` option instead. These are primarily for testing
+ * and may change between minor versions.
+ */
 export { setDefaultTransport, resetDefaultTransport } from './core/request';
 
 // Abort / signals
