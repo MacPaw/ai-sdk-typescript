@@ -3,6 +3,7 @@
  */
 
 import type { RequestOptions } from './types';
+import type { ApiVersion, ApiPaths } from './paths';
 import { buildApiPaths } from './paths';
 
 export type Environment = 'production';
@@ -25,6 +26,13 @@ export const DEFAULT_RETRY: Required<RetryConfig> = {
   retryableStatuses: [429, 500, 502, 503, 504],
 };
 
+/**
+ * Optional logger for SDK diagnostics.
+ *
+ * **Security:** The SDK never passes the `Authorization` header value to
+ * the logger. If you implement a custom logger, do not log raw request
+ * headers — they may contain sensitive tokens in other contexts.
+ */
 export interface Logger {
   debug?(message: string, ...args: unknown[]): void;
   info?(message: string, ...args: unknown[]): void;
@@ -86,7 +94,7 @@ export interface AIGatewayClientConfig {
   /** Generate X-Request-ID header for each request. Default true. */
   generateRequestId?: boolean;
   /** API version prefix (e.g. `'v1'`, `'v2'`). Default: `'v1'`. */
-  apiVersion?: import('./paths').ApiVersion;
+  apiVersion?: ApiVersion;
 }
 
 export interface RequestConfig {
@@ -121,7 +129,7 @@ export interface ResolvedConfig {
   logger: Logger;
   hooks: LifecycleHooks;
   generateRequestId: boolean;
-  apiPaths: import('./paths').ApiPaths;
+  apiPaths: ApiPaths;
 }
 
 export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string }): ResolvedConfig {
