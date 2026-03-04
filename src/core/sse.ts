@@ -35,9 +35,12 @@ export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenera
           if (data === '[DONE]') return;
 
           if (currentEvent === 'error') {
+            // Reset before throwing so the event tag doesn't leak if
+            // this code is ever restructured to continue instead of throw.
             currentEvent = '';
             try {
               const errorPayload = JSON.parse(data);
+              // JSON parsed OK — throw a rich error with server-provided details.
               throw new AIGatewayError(
                 errorPayload.message ?? 'Stream error',
                 errorPayload.code ?? ErrorCode.InternalServerError,
@@ -45,6 +48,8 @@ export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenera
                 errorPayload.metadata ?? {},
               );
             } catch (err) {
+              // Re-throw AIGatewayError from above; wrap JSON parse failures
+              // in a generic error so the stream always surfaces something useful.
               if (err instanceof AIGatewayError) throw err;
               throw new AIGatewayError('Stream error', ErrorCode.InternalServerError, 500);
             }

@@ -79,47 +79,45 @@ async function executeRequest(
   }
 
   const timeoutMs = options?.timeout ?? config.timeout;
-
   const userSignal = options?.signal ?? init.signal;
-  const timeoutController = new AbortController();
-  const timeoutId = setTimeout(
-    () => timeoutController.abort(new Error(`Request timed out after ${timeoutMs}ms`)),
-    timeoutMs,
-  );
-
-  let signal: AbortSignal;
-  if (userSignal) {
-    // Combine user signal with timeout: abort if either fires
-    const combined = new AbortController();
-    const onAbort = (reason: unknown) => combined.abort(reason);
-    if (userSignal.aborted) {
-      combined.abort(userSignal.reason);
-    } else {
-      userSignal.addEventListener('abort', () => onAbort(userSignal.reason), { once: true });
-    }
-    if (timeoutController.signal.aborted) {
-      combined.abort(timeoutController.signal.reason);
-    } else {
-      timeoutController.signal.addEventListener('abort', () => onAbort(timeoutController.signal.reason), { once: true });
-    }
-    signal = combined.signal;
-  } else {
-    signal = timeoutController.signal;
-  }
-
-  const requestConfig: RequestConfig = {
-    url,
-    method: init.method,
-    headers,
-    body: init.body,
-    signal,
-  };
-
   const transport = config.transport ?? customDefaultTransport ?? builtinFetchTransport;
 
-  logger.debug?.('[ai-gateway-sdk] request', requestConfig.method, requestConfig.url);
+  logger.debug?.('[ai-gateway-sdk] request', init.method, url);
 
   async function doRequest(): Promise<Response> {
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(
+      () => timeoutController.abort(new Error(`Request timed out after ${timeoutMs}ms`)),
+      timeoutMs,
+    );
+
+    let signal: AbortSignal;
+    if (userSignal) {
+      const combined = new AbortController();
+      const onAbort = (reason: unknown) => combined.abort(reason);
+      if (userSignal.aborted) {
+        combined.abort(userSignal.reason);
+      } else {
+        userSignal.addEventListener('abort', () => onAbort(userSignal.reason), { once: true });
+      }
+      if (timeoutController.signal.aborted) {
+        combined.abort(timeoutController.signal.reason);
+      } else {
+        timeoutController.signal.addEventListener('abort', () => onAbort(timeoutController.signal.reason), { once: true });
+      }
+      signal = combined.signal;
+    } else {
+      signal = timeoutController.signal;
+    }
+
+    const requestConfig: RequestConfig = {
+      url,
+      method: init.method,
+      headers,
+      body: init.body,
+      signal,
+    };
+
     const { middleware } = config;
     let index = 0;
     const next = async (req: RequestConfig): Promise<Response> => {
@@ -132,58 +130,58 @@ async function executeRequest(
       return transport.request(req);
     };
 
-    let response: Response;
     try {
-      response = await next(requestConfig);
-    } catch (err) {
-      await hooks.onError?.(err, requestConfig);
-      throw err;
-    }
-
-    if (!response.ok) {
-      const contentType = response.headers.get('Content-Type') ?? '';
-      let body: unknown;
-      if (contentType.includes('application/json')) {
-        try {
-          body = await response.json();
-        } catch {
-          body = { message: response.statusText };
-        }
-      } else {
-        body = { message: await response.text().catch(() => response.statusText) };
-      }
-
-      logger.warn?.('[ai-gateway-sdk] error response', response.status, body);
-
+      let response: Response;
       try {
-        parseErrorResponse(response.status, body);
+        response = await next(requestConfig);
       } catch (err) {
         await hooks.onError?.(err, requestConfig);
         throw err;
       }
-    }
 
-    logger.debug?.('[ai-gateway-sdk] response', response.status, requestConfig.url);
-    await hooks.onResponse?.(requestConfig, response);
-    return response;
+      if (!response.ok) {
+        const contentType = response.headers.get('Content-Type') ?? '';
+        let body: unknown;
+        if (contentType.includes('application/json')) {
+          try {
+            body = await response.json();
+          } catch {
+            body = { message: response.statusText };
+          }
+        } else {
+          body = { message: await response.text().catch(() => response.statusText) };
+        }
+
+        logger.warn?.('[ai-gateway-sdk] error response', response.status, body);
+
+        try {
+          parseErrorResponse(response.status, body);
+        } catch (err) {
+          await hooks.onError?.(err, requestConfig);
+          throw err;
+        }
+      }
+
+      logger.debug?.('[ai-gateway-sdk] response', response.status, requestConfig.url);
+      await hooks.onResponse?.(requestConfig, response);
+      return response;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
-  try {
-    if (config.retry) {
-      return await withRetry(doRequest, {
-        retryConfig: config.retry,
-        isNetworkError: (err) =>
-          err instanceof TypeError && (err.message === 'Failed to fetch' || err.message.includes('fetch')),
-        onRetry: async (attempt, err) => {
-          logger.info?.('[ai-gateway-sdk] retrying', attempt, err);
-          await hooks.onRetry?.(attempt, err, requestConfig);
-        },
-      });
-    }
-    return await doRequest();
-  } finally {
-    clearTimeout(timeoutId);
+  if (config.retry) {
+    return withRetry(doRequest, {
+      retryConfig: config.retry,
+      isNetworkError: (err) =>
+        err instanceof TypeError && (err.message === 'Failed to fetch' || err.message.includes('fetch')),
+      onRetry: async (attempt, err) => {
+        logger.info?.('[ai-gateway-sdk] retrying', attempt, err);
+        await hooks.onRetry?.(attempt, err, { url, method: init.method, headers, body: init.body, signal: userSignal ?? new AbortController().signal });
+      },
+    });
   }
+  return doRequest();
 }
 
 const builtinFetchTransport: Transport = {
