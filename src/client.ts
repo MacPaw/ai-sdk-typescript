@@ -386,24 +386,31 @@ export function createAIGatewayClient(config: AIGatewayClientConfig): AIGatewayC
   }
   const resolved: ResolvedConfig = resolveConfig({ ...config, baseURL });
 
+  let _chat: { completions: ChatCompletionsAPI } | undefined;
+  let _responses: ResponsesAPI | undefined;
+  let _embeddings: EmbeddingsAPI | undefined;
+  let _models: ModelsAPI | undefined;
+  let _images: ImagesAPI | undefined;
+  let _audio: AudioAPI | undefined;
+
   const client: AIGatewayClient = {
     get chat() {
-      return { completions: buildChatCompletions(resolved) };
+      return (_chat ??= { completions: buildChatCompletions(resolved) });
     },
     get responses() {
-      return buildResponses(resolved);
+      return (_responses ??= buildResponses(resolved));
     },
     get embeddings() {
-      return buildEmbeddings(resolved);
+      return (_embeddings ??= buildEmbeddings(resolved));
     },
     get models() {
-      return buildModels(resolved);
+      return (_models ??= buildModels(resolved));
     },
     get images() {
-      return buildImages(resolved);
+      return (_images ??= buildImages(resolved));
     },
     get audio() {
-      return buildAudio(resolved);
+      return (_audio ??= buildAudio(resolved));
     },
     use(mw: Middleware) {
       resolved.middleware.push(mw);
