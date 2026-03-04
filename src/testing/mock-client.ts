@@ -1,4 +1,3 @@
-import type { AIGatewayClient } from '../client';
 import type { MockStreamTextResult, MockStreamResponseResult } from './mock-streams';
 import { createMockFn, type MockFn } from './mock-fn';
 

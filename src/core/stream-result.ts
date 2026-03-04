@@ -20,9 +20,15 @@ import { extractChatDelta, extractResponseDelta } from '../helpers';
 // consume from the same `items[]` array using their own `idx` cursor.
 //
 // When a consumer is ahead of the pump (all buffered items read), it parks
-// a `pendingResolve`/`pendingReject` pair. The pump fulfills it as soon as
-// the next chunk arrives — this avoids busy-waiting and keeps memory flat.
+// a waiter (resolve/reject pair) in the `waiters` queue. The pump wakes ALL
+// parked waiters as soon as the next chunk arrives, so parallel consumers
+// (e.g. `stream` and `textStream` consumed simultaneously) never deadlock.
 // ---------------------------------------------------------------------------
+
+interface Waiter<T> {
+  resolve: (value: IteratorResult<T>) => void;
+  reject: (reason: unknown) => void;
+}
 
 interface PumpState<T> {
   /** Append-only log of all chunks received from the generator. */
@@ -30,9 +36,8 @@ interface PumpState<T> {
   pumpStarted: boolean;
   pumpDone: boolean;
   pumpError: unknown;
-  /** Resolve/reject for a consumer waiting on the next chunk (at most one waiter at a time). */
-  pendingResolve: ((value: IteratorResult<T>) => void) | null;
-  pendingReject: ((reason: unknown) => void) | null;
+  /** Queue of consumers waiting for the next chunk (supports multiple parallel readers). */
+  waiters: Waiter<T>[];
   textResolve: (value: string) => void;
   textReject: (reason: unknown) => void;
 }
@@ -54,8 +59,7 @@ function createPump<T, U>(
     pumpStarted: false,
     pumpDone: false,
     pumpError: undefined,
-    pendingResolve: null,
-    pendingReject: null,
+    waiters: [],
     textResolve: undefined!,
     textReject: undefined!,
   };
@@ -86,33 +90,18 @@ function createPump<T, U>(
         fullText += extractDelta(item);
         const u = extractUsage(item);
         if (u) lastUsage = u;
-        if (state.pendingResolve) {
-          const resolve = state.pendingResolve;
-          state.pendingResolve = null;
-          state.pendingReject = null;
-          resolve({ value: item, done: false });
-        }
+        wakeWaiters(state, { value: item, done: false });
       }
       state.pumpDone = true;
       state.textResolve(fullText);
       usageResolve!(lastUsage);
-      if (state.pendingResolve) {
-        const resolve = state.pendingResolve;
-        state.pendingResolve = null;
-        state.pendingReject = null;
-        resolve({ value: undefined as unknown as T, done: true });
-      }
+      wakeWaiters(state, { value: undefined as unknown as T, done: true });
     } catch (err) {
       state.pumpDone = true;
       state.pumpError = err;
       state.textReject(err);
       usageReject!(err);
-      if (state.pendingReject) {
-        const reject = state.pendingReject;
-        state.pendingResolve = null;
-        state.pendingReject = null;
-        reject(err);
-      }
+      rejectWaiters(state, err);
     }
   }
 
@@ -122,6 +111,20 @@ function createPump<T, U>(
     usagePromise,
     ensureStarted: () => { startPump(); },
   };
+}
+
+/** Wake all parked waiters with the given result. */
+function wakeWaiters<T>(state: PumpState<T>, result: IteratorResult<T>): void {
+  if (state.waiters.length === 0) return;
+  const snapshot = state.waiters.splice(0);
+  for (const w of snapshot) w.resolve(result);
+}
+
+/** Reject all parked waiters with the given error. */
+function rejectWaiters<T>(state: PumpState<T>, error: unknown): void {
+  if (state.waiters.length === 0) return;
+  const snapshot = state.waiters.splice(0);
+  for (const w of snapshot) w.reject(error);
 }
 
 /**
@@ -145,11 +148,13 @@ function createChunkIterator<T>(
         return Promise.resolve({ value: undefined as unknown as T, done: true });
       }
       return new Promise<IteratorResult<T>>((resolve, reject) => {
-        state.pendingResolve = (result) => {
-          if (!result.done) idx = state.items.length;
-          resolve(result);
-        };
-        state.pendingReject = reject;
+        state.waiters.push({
+          resolve: (result) => {
+            if (!result.done) idx = state.items.length;
+            resolve(result);
+          },
+          reject,
+        });
       });
     },
     [Symbol.asyncIterator]() { return iter; },
