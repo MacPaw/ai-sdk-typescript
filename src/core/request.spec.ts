@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { runRequest } from './request';
 import type { ResolvedConfig, Middleware } from './config';
+import { API_PATHS } from './paths';
 
 function createMockConfig(overrides?: Partial<ResolvedConfig>): ResolvedConfig {
   return {
@@ -14,6 +15,7 @@ function createMockConfig(overrides?: Partial<ResolvedConfig>): ResolvedConfig {
     logger: {},
     hooks: {},
     generateRequestId: true,
+    apiPaths: API_PATHS,
     ...overrides,
   };
 }

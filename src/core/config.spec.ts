@@ -92,6 +92,18 @@ describe('resolveConfig', () => {
     expect(t1).toBe('token-1');
     expect(t2).toBe('token-2');
   });
+
+  it('defaults apiPaths to v1', () => {
+    const resolved = resolveConfig(baseConfig);
+    expect(resolved.apiPaths.ChatCompletions).toBe('/api/v1/chat/completions');
+  });
+
+  it('uses custom apiVersion', () => {
+    const resolved = resolveConfig({ ...baseConfig, apiVersion: 'v2' });
+    expect(resolved.apiPaths.ChatCompletions).toBe('/api/v2/chat/completions');
+    expect(resolved.apiPaths.Embeddings).toBe('/api/v2/embeddings');
+    expect(resolved.apiPaths.Responses).toBe('/api/v2/responses');
+  });
 });
 
 describe('DEFAULT_BASE_URLS', () => {
