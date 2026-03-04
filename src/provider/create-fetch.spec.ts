@@ -68,6 +68,18 @@ describe('createAIGatewayFetch', () => {
     expect(headers.has('Authorization')).toBe(false);
   });
 
+  it('does not prefix absolute URLs to a different host', async () => {
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'tok',
+    });
+
+    await customFetch('https://other.example.com/v1/models');
+
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(fetchCall[0]).toBe('https://other.example.com/v1/models');
+  });
+
   it('does not set Content-Type for FormData body', async () => {
     const customFetch = createAIGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',

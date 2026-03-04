@@ -836,7 +836,7 @@ client.chat.completions.create
 import { AuthError } from '@macpaw/ai';
 
 client.chat.completions.create.mockRejectedValue(
-  new AuthError('Token expired', 401, 'AUTH_REQUIRED'),
+  new AuthError('Token expired', 401),
 );
 
 await expect(service.complete(messages)).rejects.toThrow('Token expired');

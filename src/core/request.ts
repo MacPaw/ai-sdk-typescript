@@ -12,6 +12,23 @@ import { withRetry } from './retry';
 import { anySignal } from './abort';
 import { createFetchTransport } from '../transport/fetch';
 
+const NODE_NETWORK_CODES = new Set([
+  'ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND', 'EPIPE',
+  'ETIMEDOUT', 'ENETUNREACH', 'EAI_AGAIN', 'UND_ERR_CONNECT_TIMEOUT',
+]);
+
+/**
+ * Detect network errors across runtimes. Per the Fetch spec, a `TypeError`
+ * is thrown for network failures — message text varies by engine so we
+ * avoid matching on it. Also recognises Node.js system error codes.
+ */
+function isNetworkError(err: unknown): boolean {
+  if (err instanceof TypeError) return true;
+  const code = (err as { code?: string })?.code;
+  if (typeof code === 'string' && NODE_NETWORK_CODES.has(code)) return true;
+  return false;
+}
+
 let requestIdCounter = 0;
 
 function generateRequestId(): string {
@@ -162,8 +179,7 @@ async function executeRequest(
   if (config.retry) {
     return withRetry(doRequest, {
       retryConfig: config.retry,
-      isNetworkError: (err) =>
-        err instanceof TypeError && (err.message === 'Failed to fetch' || err.message.includes('fetch')),
+      isNetworkError: isNetworkError,
       onRetry: async (attempt, err) => {
         logger.info?.('[ai-gateway-sdk] retrying', attempt, err);
         await hooks.onRetry?.(attempt, err, { url, method: init.method, headers, body: init.body, signal: userSignal });

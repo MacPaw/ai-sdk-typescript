@@ -62,7 +62,8 @@ export function createAIGatewayFetch(options: CreateAIGatewayFetchOptions): (inp
       }
     }
 
-    const resolvedUrl = url.startsWith(base) ? url : `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+    const isAbsoluteUrl = url.startsWith('http://') || url.startsWith('https://');
+    const resolvedUrl = isAbsoluteUrl ? url : `${base}${url.startsWith('/') ? '' : '/'}${url}`;
     return fetch(resolvedUrl, { ...init, headers });
   };
 }

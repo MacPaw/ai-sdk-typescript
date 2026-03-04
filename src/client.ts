@@ -369,7 +369,7 @@ function buildAudio(config: ResolvedConfig): AudioAPI {
  * const client = createAIGatewayClient({
  *   env: 'production',
  *   getAuthToken: async () => (await getSession()).accessToken,
- *   retry: { maxRetries: 3 },
+ *   retry: { maxAttempts: 3 },
  * });
  * ```
  */

@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 22+ (see `.nvmrc`)
+- Node.js 22+ for development (see `.nvmrc`). The SDK itself supports Node >=18 at runtime.
 - pnpm (see `packageManager` in `package.json`)
 
 ## Setup
