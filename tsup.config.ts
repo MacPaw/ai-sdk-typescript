@@ -6,6 +6,7 @@ export default defineConfig({
     'core/index': 'src/core/index.ts',
     'provider/index': 'src/provider/index.ts',
     'nestjs/index': 'src/nestjs/index.ts',
+    'testing/index': 'src/testing/index.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,
