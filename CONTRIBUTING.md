@@ -8,8 +8,8 @@
 ## Setup
 
 ```bash
-git clone https://github.com/macpaw/ai-sdk.git
-cd ai-sdk
+git clone https://github.com/macpaw/ai-sdk-typescript.git
+cd ai-sdk-typescript
 pnpm install
 ```
 

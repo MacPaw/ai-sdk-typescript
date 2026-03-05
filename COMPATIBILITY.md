@@ -1,6 +1,6 @@
 # SDK ↔ AI Gateway BFF — Compatibility Check
 
-This document confirms that `@macpaw/ai` is aligned with the AI Gateway BFF (this repo).
+This document confirms that `@macpaw/ai-sdk` is aligned with the AI Gateway BFF (this repo).
 
 ## ✅ Paths
 

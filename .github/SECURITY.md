@@ -24,4 +24,4 @@ We will acknowledge receipt within **2 business days** and aim to provide a fix 
 
 ## Scope
 
-This policy covers the `@macpaw/ai` npm package and its published artifacts. Third-party dependencies are outside of scope but will be triaged if reported.
+This policy covers the `@macpaw/ai-sdk` npm package and its published artifacts. Third-party dependencies are outside of scope but will be triaged if reported.

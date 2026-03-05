@@ -7,7 +7,7 @@
  *
  * @example
  * ```ts
- * import { createAIGatewayProvider, generateText } from '@macpaw/ai/provider';
+ * import { createAIGatewayProvider, generateText } from '@macpaw/ai-sdk/provider';
  *
  * const gateway = createAIGatewayProvider({
  *   getAuthToken: async () => myToken,

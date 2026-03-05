@@ -26,7 +26,7 @@ export interface CreateAIGatewayFetchOptions {
  * Use with Vercel AI SDK:
  *
  * @example
- * import { createAIGatewayFetch } from '@macpaw/ai/provider';
+ * import { createAIGatewayFetch } from '@macpaw/ai-sdk/provider';
  * import { createOpenAI } from '@ai-sdk/openai';
  *
  * const fetch = createAIGatewayFetch({

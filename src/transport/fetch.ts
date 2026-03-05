@@ -17,7 +17,7 @@ export function createFetchTransport(options?: FetchTransportOptions): Transport
     async request(config: RequestConfig): Promise<Response> {
       if (typeof fetch === 'undefined') {
         throw new Error(
-          '@macpaw/ai requires a global `fetch` implementation. '
+          '@macpaw/ai-sdk requires a global `fetch` implementation. '
           + 'Use Node.js 18+ or install a polyfill like `undici`.',
         );
       }
