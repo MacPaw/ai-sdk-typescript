@@ -1,5 +1,5 @@
 {
-  "name": "@macpaw/ai",
+  "name": "@macpaw/ai-sdk",
   "version": "0.1.0",
   "description": "Commercial Web SDK for AI Gateway - universal TypeScript client for browser and Node.js",
   "type": "module",
@@ -58,10 +58,18 @@
       }
     }
   },
+  "bin": {
+    "macpaw-ai-setup": "./scripts/setup.mjs"
+  },
   "files": [
     "dist",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".cursor",
+    "scripts",
+    "templates"
   ],
   "sideEffects": false,
   "engines": {
@@ -83,6 +91,7 @@
   },
   "keywords": [
     "ai",
+    "ai-sdk-typescript",
     "ai-sdk",
     "gateway",
     "macpaw",
@@ -97,11 +106,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/macpaw/ai-sdk.git"
+    "url": "https://github.com/macpaw/ai-sdk-typescript.git"
   },
-  "homepage": "https://github.com/macpaw/ai-sdk#readme",
+  "homepage": "https://github.com/macpaw/ai-sdk-typescript#readme",
   "bugs": {
-    "url": "https://github.com/macpaw/ai-sdk/issues"
+    "url": "https://github.com/macpaw/ai-sdk-typescript/issues"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",

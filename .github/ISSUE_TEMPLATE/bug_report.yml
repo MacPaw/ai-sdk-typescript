@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a bug in @macpaw/ai
+description: Report a bug in @macpaw/ai-sdk
 labels: [bug]
 body:
   - type: textarea
@@ -39,8 +39,8 @@ body:
     id: version
     attributes:
       label: SDK version
-      description: "Output of: npm ls @macpaw/ai"
-      placeholder: "@macpaw/ai@0.1.0"
+      description: "Output of: npm ls @macpaw/ai-sdk"
+      placeholder: "@macpaw/ai-sdk@0.1.0"
     validations:
       required: true
 

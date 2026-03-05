@@ -1,11 +1,11 @@
 /**
- * @macpaw/ai
+ * @macpaw/ai-sdk
  *
  * Commercial Web SDK for AI Gateway. Universal TypeScript client for browser and Node.js.
  *
  * @example
  * ```ts
- * import { createAIGatewayClient, ErrorCode } from '@macpaw/ai';
+ * import { createAIGatewayClient, ErrorCode } from '@macpaw/ai-sdk';
  *
  * const client = createAIGatewayClient({
  *   env: 'production',
