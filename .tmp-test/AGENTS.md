@@ -15,7 +15,8 @@ TypeScript client for AI Gateway (Chat, Embeddings, Images, Audio, Responses).
 
 ## Common mistakes
 
-- Use `@macpaw/ai/provider` instead of direct `@ai-sdk/openai` or `ai` imports.
+- Use `@macpaw/ai/provider` instead of direct `@ai-sdk/openai` imports for provider setup and generation helpers.
+- Keep React hooks (`useChat`) from Vercel AI SDK React package (`@ai-sdk/react` or `ai/react`), not from `@macpaw/ai/provider`.
 - `env` only supports `'production'`. For staging use `baseURL`.
 - Retry config uses `maxAttempts`, not `maxRetries`.
 - Never hardcode tokens — use `getAuthToken`.

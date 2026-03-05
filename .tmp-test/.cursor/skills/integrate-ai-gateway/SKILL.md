@@ -75,7 +75,7 @@ export class ChatService {
 
   async complete(prompt: string): Promise<string> {
     const response = await this.ai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'openai/gpt-4o',
       messages: [{ role: 'user', content: prompt }],
     });
     return response.choices[0].message.content ?? '';
@@ -93,7 +93,8 @@ export class ChatController { /* ... */ }
 
 ### Vercel AI SDK / Next.js
 
-Use only `@macpaw/ai/provider` exports. Never import from `ai` or `@ai-sdk/openai` directly.
+Use `@macpaw/ai/provider` for model provider setup and server-side generation (`generateText`, `streamText`).
+Do not import providers from `@ai-sdk/openai` directly.
 
 ```ts
 // lib/ai.ts — shared provider instance
@@ -111,20 +112,23 @@ import { gateway } from '@/lib/ai';
 export async function POST(req: Request) {
   const { messages } = await req.json();
   const result = streamText({
-    model: gateway('gpt-4o'),
+    model: gateway('openai/gpt-4o'),
     messages,
   });
   return result.toDataStreamResponse();
 }
 
-// components/chat.tsx — useChat hook (re-exported from @macpaw/ai/provider)
-import { useChat } from '@macpaw/ai/provider';
+// components/chat.tsx — useChat with API route above
+'use client';
+import { useChat } from 'ai/react';
 
 export function Chat() {
   const { messages, input, handleInputChange, handleSubmit } = useChat();
-  // ...
+  // useChat calls /api/chat by default — which uses gateway via @macpaw/ai/provider
 }
 ```
+
+> Note: `useChat` is imported from `ai/react` (Vercel AI SDK React hooks), not from `@macpaw/ai/provider`. The provider handles server-side model + auth configuration.
 
 ### Node / Express / Browser
 
@@ -139,7 +143,7 @@ export const ai = createAIGatewayClient({
 
 // usage
 const response = await ai.chat.completions.create({
-  model: 'gpt-4o',
+  model: 'openai/gpt-4o',
   messages: [{ role: 'user', content: 'Hello' }],
 });
 ```
@@ -187,16 +191,22 @@ const result = await ai.audio.transcriptions.create({
 });
 ```
 
-### Responses (structured output)
+### Responses API
 
 ```ts
-import { zodResponseFormat } from '@macpaw/ai';
-
-const result = await ai.responses.parse({
-  model: 'gpt-4o',
-  input: 'Extract the name and age',
-  text: { format: zodResponseFormat(MySchema, 'my_schema') },
+const result = await ai.responses.create({
+  model: 'openai/gpt-4o',
+  input: 'Summarize the latest news',
 });
+
+// Streaming
+const stream = ai.responses.stream({
+  model: 'openai/gpt-4o',
+  input: 'Write a poem',
+});
+for await (const delta of stream.textStream) {
+  process.stdout.write(delta);
+}
 ```
 
 ## Step 3 — Add robust error handling
@@ -275,7 +285,7 @@ When the codebase already uses `openai`, `@ai-sdk/openai`, or imports from `ai`:
 | `import { openai } from '@ai-sdk/openai'` | `createAIGatewayProvider(...)` from `@macpaw/ai/provider` |
 | `import { generateText } from 'ai'` | `import { generateText } from '@macpaw/ai/provider'` |
 | `import { streamText } from 'ai'` | `import { streamText } from '@macpaw/ai/provider'` |
-| `import { useChat } from 'ai/react'` | `import { useChat } from '@macpaw/ai/provider'` |
+| `import { useChat } from 'ai/react'` | Keep React hooks from Vercel AI SDK React package (`ai/react` or `@ai-sdk/react`) |
 
 After migration, remove `openai`, `@ai-sdk/openai` from `package.json` unless they are used elsewhere.
 
@@ -286,12 +296,14 @@ After migration, remove `openai`, `@ai-sdk/openai` from `package.json` unless th
 - Do not hardcode secrets or tokens.
 - Prefer imports from `@macpaw/ai`, `@macpaw/ai/provider`, `@macpaw/ai/nestjs`, `@macpaw/ai/testing`.
 - For retries, use `maxAttempts` (not `maxRetries`).
-- Never import from `@ai-sdk/openai` or `ai` directly in app code.
+- Never import model providers from `@ai-sdk/openai` directly in app code; use `@macpaw/ai/provider` for provider setup and generation helpers.
+- Keep React hooks (`useChat`) from Vercel AI SDK React package (`ai/react` or `@ai-sdk/react`).
 
 ## Common mistakes to auto-fix
 
 - Replace direct OpenAI/Vercel provider usage with `createAIGatewayProvider`.
-- Replace `generateText` / `streamText` / `useChat` imports from `ai` or `ai/react` with `@macpaw/ai/provider`.
+- Replace `generateText` / `streamText` imports from `ai` with `@macpaw/ai/provider`.
+- Keep `useChat` imports from Vercel AI SDK React package (`ai/react` or `@ai-sdk/react`), not `@macpaw/ai/provider`.
 - Replace `env: 'staging'` with `baseURL`.
 - Replace token literals with `getAuthToken`.
 - Normalize retry option names to `maxAttempts`.
