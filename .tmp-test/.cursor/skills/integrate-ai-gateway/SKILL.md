@@ -75,7 +75,7 @@ export class ChatService {
 
   async complete(prompt: string): Promise<string> {
     const response = await this.ai.chat.completions.create({
-      model: 'openai/gpt-4o',
+      model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
     });
     return response.choices[0].message.content ?? '';
@@ -111,23 +111,20 @@ import { gateway } from '@/lib/ai';
 export async function POST(req: Request) {
   const { messages } = await req.json();
   const result = streamText({
-    model: gateway('openai/gpt-4o'),
+    model: gateway('gpt-4o'),
     messages,
   });
   return result.toDataStreamResponse();
 }
 
-// components/chat.tsx — useChat with API route above
-'use client';
-import { useChat } from 'ai/react';
+// components/chat.tsx — useChat hook (re-exported from @macpaw/ai/provider)
+import { useChat } from '@macpaw/ai/provider';
 
 export function Chat() {
   const { messages, input, handleInputChange, handleSubmit } = useChat();
-  // useChat calls /api/chat by default — which uses gateway via @macpaw/ai/provider
+  // ...
 }
 ```
-
-> Note: `useChat` is imported from `ai/react` (Vercel AI SDK React hooks), not from `@macpaw/ai/provider`. The provider only handles the server-side model + auth configuration.
 
 ### Node / Express / Browser
 
@@ -142,7 +139,7 @@ export const ai = createAIGatewayClient({
 
 // usage
 const response = await ai.chat.completions.create({
-  model: 'openai/gpt-4o',
+  model: 'gpt-4o',
   messages: [{ role: 'user', content: 'Hello' }],
 });
 ```
@@ -190,22 +187,16 @@ const result = await ai.audio.transcriptions.create({
 });
 ```
 
-### Responses API
+### Responses (structured output)
 
 ```ts
-const result = await ai.responses.create({
-  model: 'openai/gpt-4o',
-  input: 'Summarize the latest news',
-});
+import { zodResponseFormat } from '@macpaw/ai';
 
-// Streaming
-const stream = ai.responses.stream({
-  model: 'openai/gpt-4o',
-  input: 'Write a poem',
+const result = await ai.responses.parse({
+  model: 'gpt-4o',
+  input: 'Extract the name and age',
+  text: { format: zodResponseFormat(MySchema, 'my_schema') },
 });
-for await (const delta of stream.textStream) {
-  process.stdout.write(delta);
-}
 ```
 
 ## Step 3 — Add robust error handling

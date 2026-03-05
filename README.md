@@ -955,40 +955,34 @@ const result = await service.complete([{ role: 'user', content: 'Hi' }]);
 
 This SDK ships with instructions for **Cursor**, **Claude Code**, and **OpenAI Codex** so that AI assistants automatically follow the correct integration patterns when you ask them to "add AI Gateway" or "integrate chat with MacPaw AI".
 
-| Tool | File | How it works |
-|------|------|-------------|
+| Tool | What gets set up | How it works |
+|------|-----------------|-------------|
 | **Cursor** | `.cursor/skills/integrate-ai-gateway/SKILL.md` | Cursor Skill — auto-applied when you mention AI Gateway |
 | **Claude Code** | `CLAUDE.md` | Read automatically by Claude Code from repo root |
 | **OpenAI Codex** | `AGENTS.md` | Read automatically by Codex from repo root |
 
-### Use in your app repo
+### Quick setup (recommended)
 
-After `pnpm add @macpaw/ai` (or `npm install @macpaw/ai`):
-
-**Cursor** — one command to copy the skill:
+After `pnpm add @macpaw/ai` (or `npm install @macpaw/ai`), run one command to set up all three tools at once:
 
 ```bash
-pnpm exec macpaw-ai-setup-cursor
-# or: npx macpaw-ai-setup-cursor
+pnpm exec macpaw-ai-setup
+# or: npx macpaw-ai-setup
 ```
 
-**Manual copy** (if you prefer):
+This copies the Cursor skill, creates `CLAUDE.md` for Claude Code, and creates `AGENTS.md` for OpenAI Codex. If your project already has its own `CLAUDE.md` or `AGENTS.md`, the AI Gateway instructions are appended (not overwritten).
+
+To set up a specific tool only:
 
 ```bash
-# Cursor Skill
-mkdir -p .cursor/skills
-cp -r node_modules/@macpaw/ai/.cursor/skills/integrate-ai-gateway .cursor/skills/
-
-# Claude Code
-cp node_modules/@macpaw/ai/CLAUDE.md .
-
-# OpenAI Codex
-cp node_modules/@macpaw/ai/AGENTS.md .
+pnpm exec macpaw-ai-setup cursor   # Cursor skill only
+pnpm exec macpaw-ai-setup claude   # Claude Code only
+pnpm exec macpaw-ai-setup codex    # OpenAI Codex only
 ```
 
 Then ask in natural language: *"Add AI Gateway chat to this Next.js app"* or *"Integrate NestJS with AI Gateway using the official SDK."*
 
-For Cursor you can also copy the skill to `~/.cursor/skills/integrate-ai-gateway/` to make it available in every project.
+> **Tip:** Copy the Cursor skill to `~/.cursor/skills/integrate-ai-gateway/` to make it available in every project.
 
 ## Subpath exports
 
