@@ -963,7 +963,16 @@ This SDK ships with instructions for **Cursor**, **Claude Code**, and **OpenAI C
 
 ### Use in your app repo
 
-After `pnpm add @macpaw/ai`, copy the relevant files from the installed package:
+After `pnpm add @macpaw/ai` (or `npm install @macpaw/ai`):
+
+**Cursor** — one command to copy the skill:
+
+```bash
+pnpm exec macpaw-ai-setup-cursor
+# or: npx macpaw-ai-setup-cursor
+```
+
+**Manual copy** (if you prefer):
 
 ```bash
 # Cursor Skill

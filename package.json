@@ -58,13 +58,17 @@
       }
     }
   },
+  "bin": {
+    "macpaw-ai-setup-cursor": "./scripts/setup-cursor.mjs"
+  },
   "files": [
     "dist",
     "README.md",
     "CHANGELOG.md",
     "AGENTS.md",
     "CLAUDE.md",
-    ".cursor"
+    ".cursor",
+    "scripts"
   ],
   "sideEffects": false,
   "engines": {
