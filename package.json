@@ -1,5 +1,5 @@
 {
-  "name": "@macpaw/ai",
+  "name": "@macpaw/ai-sdk",
   "version": "0.1.0",
   "description": "Commercial Web SDK for AI Gateway - universal TypeScript client for browser and Node.js",
   "type": "module",

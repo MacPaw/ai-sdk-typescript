@@ -5,7 +5,7 @@
  * High-level: createAIGatewayProvider (full Vercel AI SDK provider)
  *
  * Also re-exports commonly used Vercel AI SDK functions so consumers
- * only need `@macpaw/ai` — no extra installs required.
+ * only need `@macpaw/ai-sdk` — no extra installs required.
  */
 
 export { createAIGatewayFetch } from './create-fetch';

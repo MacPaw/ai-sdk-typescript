@@ -1,6 +1,6 @@
 # ai-sdk-typescript
 Official TypeScript SDK for AI Gateway - universal client for browser and Node.js (Chat, Embeddings, Images, Audio, NestJS module)
-# @macpaw/ai
+# @macpaw/ai-sdk
 
 Commercial Web SDK for the AI Gateway. Universal TypeScript client for browser and Node.js with streaming, retry, middleware, observability hooks, and normalized errors.
 
@@ -24,15 +24,15 @@ Commercial Web SDK for the AI Gateway. Universal TypeScript client for browser a
 ## Install
 
 ```bash
-pnpm add @macpaw/ai
+pnpm add @macpaw/ai-sdk
 # or
-npm install @macpaw/ai
+npm install @macpaw/ai-sdk
 ```
 
 ## Quick start
 
 ```ts
-import { createAIGatewayClient, ErrorCode } from '@macpaw/ai';
+import { createAIGatewayClient, ErrorCode } from '@macpaw/ai-sdk';
 
 const client = createAIGatewayClient({
   env: 'production',
@@ -188,7 +188,7 @@ console.log(result.data[0].embedding);
 ### Images
 
 ```ts
-import { ImageSize } from '@macpaw/ai';
+import { ImageSize } from '@macpaw/ai-sdk';
 
 // Generate
 const image = await client.images.generate({
@@ -209,7 +209,7 @@ const edited = await client.images.edit({
 ### Audio
 
 ```ts
-import { AudioFormat } from '@macpaw/ai';
+import { AudioFormat } from '@macpaw/ai-sdk';
 
 // Transcription
 const transcription = await client.audio.transcriptions.create({
@@ -264,7 +264,7 @@ const completion = await client.chat.completions.create(
   },
 );
 
-// Combine multiple abort signals (e.g. user cancel + timeout) — use anySignal from @macpaw/ai
+// Combine multiple abort signals (e.g. user cancel + timeout) — use anySignal from @macpaw/ai-sdk
 const completion2 = await client.chat.completions.create(
   { model: 'openai/gpt-4.1-nano', messages: [] },
   { signal: anySignal([controller.signal, AbortSignal.timeout(30_000)]) },
@@ -328,7 +328,7 @@ The SDK normalizes errors from both BFF and OpenAI proxy formats into `AIGateway
 | `ErrorCode.InternalServerError` | 500 | Server error |
 
 ```ts
-import { AIGatewayError, ErrorCode } from '@macpaw/ai';
+import { AIGatewayError, ErrorCode } from '@macpaw/ai-sdk';
 
 try {
   await client.chat.completions.create({ model: '...', messages: [...] });
@@ -361,7 +361,7 @@ try {
 All code and status types use the const-object pattern for optimal DX — autocomplete, `switch` exhaustiveness, and runtime access:
 
 ```ts
-import { ErrorCode, MessageRole, ImageSize, AudioFormat } from '@macpaw/ai';
+import { ErrorCode, MessageRole, ImageSize, AudioFormat } from '@macpaw/ai-sdk';
 
 // Use as values
 ErrorCode.AuthRequired     // 'AUTH_REQUIRED'
@@ -383,7 +383,7 @@ function handleError(code: ErrorCode) {
 Replace the default fetch-based transport:
 
 ```ts
-import { createAIGatewayClient } from '@macpaw/ai';
+import { createAIGatewayClient } from '@macpaw/ai-sdk';
 
 const client = createAIGatewayClient({
   env: 'production',
@@ -421,7 +421,7 @@ Everything is included — no extra packages needed.
 ### Option A: High-level provider (recommended)
 
 ```ts
-import { createAIGatewayProvider, generateText, streamText } from '@macpaw/ai/provider';
+import { createAIGatewayProvider, generateText, streamText } from '@macpaw/ai-sdk/provider';
 
 const gateway = createAIGatewayProvider({
   getAuthToken: async () => (await getSetappSession()).accessToken,
@@ -449,7 +449,7 @@ for await (const chunk of result.textStream) {
 
 ```ts
 import { createOpenAI } from '@ai-sdk/openai';
-import { createAIGatewayFetch } from '@macpaw/ai/provider';
+import { createAIGatewayFetch } from '@macpaw/ai-sdk/provider';
 
 const customFetch = createAIGatewayFetch({
   baseURL: 'https://api.macpaw.com/ai',
@@ -463,7 +463,7 @@ const openai = createOpenAI({
 });
 ```
 
-> **Note:** `@ai-sdk/openai` and `ai` are bundled as dependencies of `@macpaw/ai`.
+> **Note:** `@ai-sdk/openai` and `ai` are bundled as dependencies of `@macpaw/ai-sdk`.
 > You can still import them directly if needed (e.g. `import { createOpenAI } from '@ai-sdk/openai'`).
 
 ### React hooks
@@ -497,7 +497,7 @@ function Chat() {
 ### Browser (vanilla)
 
 ```ts
-import { createAIGatewayClient, AIGatewayError, ErrorCode } from '@macpaw/ai';
+import { createAIGatewayClient, AIGatewayError, ErrorCode } from '@macpaw/ai-sdk';
 
 const client = createAIGatewayClient({
   env: 'production',
@@ -528,7 +528,7 @@ document.querySelector('#ask-btn')!.addEventListener('click', async () => {
 
 ```ts
 import express from 'express';
-import { createAIGatewayClient, AIGatewayError } from '@macpaw/ai';
+import { createAIGatewayClient, AIGatewayError } from '@macpaw/ai-sdk';
 
 const client = createAIGatewayClient({
   env: 'production',
@@ -562,7 +562,7 @@ app.listen(3000);
 The SDK provides a first-class NestJS integration with `DynamicModule`, injectable client, custom decorator, and exception filter.
 
 ```bash
-pnpm add @macpaw/ai @nestjs/common rxjs
+pnpm add @macpaw/ai-sdk @nestjs/common rxjs
 ```
 
 #### 1. Register the module
@@ -571,7 +571,7 @@ pnpm add @macpaw/ai @nestjs/common rxjs
 
 ```ts
 import { Module } from '@nestjs/common';
-import { AIGatewayModule } from '@macpaw/ai/nestjs';
+import { AIGatewayModule } from '@macpaw/ai-sdk/nestjs';
 
 @Module({
   imports: [
@@ -589,7 +589,7 @@ export class AppModule {}
 ```ts
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AIGatewayModule } from '@macpaw/ai/nestjs';
+import { AIGatewayModule } from '@macpaw/ai-sdk/nestjs';
 
 @Module({
   imports: [
@@ -618,8 +618,8 @@ Use the `@InjectAIGateway()` decorator to inject the configured `AIGatewayClient
 
 ```ts
 import { Injectable } from '@nestjs/common';
-import { InjectAIGateway } from '@macpaw/ai/nestjs';
-import type { AIGatewayClient } from '@macpaw/ai';
+import { InjectAIGateway } from '@macpaw/ai-sdk/nestjs';
+import type { AIGatewayClient } from '@macpaw/ai-sdk';
 
 @Injectable()
 export class ChatService {
@@ -647,7 +647,7 @@ The `AIGatewayExceptionFilter` automatically maps `AIGatewayError` to structured
 
 ```ts
 import { Controller, Post, Body, UseFilters } from '@nestjs/common';
-import { AIGatewayExceptionFilter } from '@macpaw/ai/nestjs';
+import { AIGatewayExceptionFilter } from '@macpaw/ai-sdk/nestjs';
 import { ChatService } from './chat.service';
 
 @Controller('chat')
@@ -666,7 +666,7 @@ Or apply it globally:
 
 ```ts
 import { NestFactory } from '@nestjs/core';
-import { AIGatewayExceptionFilter } from '@macpaw/ai/nestjs';
+import { AIGatewayExceptionFilter } from '@macpaw/ai-sdk/nestjs';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -698,7 +698,7 @@ For complex configuration scenarios, implement `AIGatewayOptionsFactory`:
 
 ```ts
 import { Injectable } from '@nestjs/common';
-import { AIGatewayOptionsFactory, AIGatewayModuleOptions } from '@macpaw/ai/nestjs';
+import { AIGatewayOptionsFactory, AIGatewayModuleOptions } from '@macpaw/ai-sdk/nestjs';
 
 @Injectable()
 export class AIGatewayConfigService implements AIGatewayOptionsFactory {
@@ -726,7 +726,7 @@ AIGatewayModule.forRootAsync({
 
 ## Testing
 
-The SDK ships a dedicated `@macpaw/ai/testing` entry point with a fully-mocked client, framework-agnostic mock functions, and streaming helpers.
+The SDK ships a dedicated `@macpaw/ai-sdk/testing` entry point with a fully-mocked client, framework-agnostic mock functions, and streaming helpers.
 
 ```ts
 import {
@@ -734,7 +734,7 @@ import {
   createMockChatCompletion,
   createMockStreamTextResult,
   createMockStreamResponseResult,
-} from '@macpaw/ai/testing';
+} from '@macpaw/ai-sdk/testing';
 ```
 
 ### Mock client
@@ -784,7 +784,7 @@ import {
   createMockTranscriptionResponse,
   createMockTranslationResponse,
   createMockModelInfoResponse,
-} from '@macpaw/ai/testing';
+} from '@macpaw/ai-sdk/testing';
 
 client.chat.completions.create.mockResolvedValue(createMockChatCompletion({ content: 'Hello' }));
 client.responses.create.mockResolvedValue(createMockResponseObject({ content: 'World' }));
@@ -833,7 +833,7 @@ client.chat.completions.create
 #### Error testing
 
 ```ts
-import { AuthError } from '@macpaw/ai';
+import { AuthError } from '@macpaw/ai-sdk';
 
 client.chat.completions.create.mockRejectedValue(
   new AuthError('Token expired', 401),
@@ -889,8 +889,8 @@ client.chat.completions.create.mockReset();  // clears calls + resets implementa
 For integration tests where you want the **real client pipeline** (auth, middleware, retry) but **no network**, use `createMockTransport()`:
 
 ```ts
-import { createAIGatewayClient } from '@macpaw/ai';
-import { createMockTransport } from '@macpaw/ai/testing';
+import { createAIGatewayClient } from '@macpaw/ai-sdk';
+import { createMockTransport } from '@macpaw/ai-sdk/testing';
 
 const transport = createMockTransport();
 const client = createAIGatewayClient({
@@ -934,8 +934,8 @@ For NestJS integration tests, use the mock client with the injection token:
 
 ```ts
 import { Test } from '@nestjs/testing';
-import { AI_GATEWAY_CLIENT } from '@macpaw/ai/nestjs';
-import { createMockAIGatewayClient } from '@macpaw/ai/testing';
+import { AI_GATEWAY_CLIENT } from '@macpaw/ai-sdk/nestjs';
+import { createMockAIGatewayClient } from '@macpaw/ai-sdk/testing';
 
 const mockClient = createMockAIGatewayClient();
 
@@ -963,7 +963,7 @@ This SDK ships with instructions for **Cursor**, **Claude Code**, and **OpenAI C
 
 ### Quick setup (recommended)
 
-After `pnpm add @macpaw/ai` (or `npm install @macpaw/ai`), run one command to set up all three tools at once:
+After `pnpm add @macpaw/ai-sdk` (or `npm install @macpaw/ai-sdk`), run one command to set up all three tools at once:
 
 ```bash
 pnpm exec macpaw-ai-setup
@@ -986,15 +986,15 @@ Then ask in natural language: *"Add AI Gateway chat to this Next.js app"* or *"I
 
 ## Subpath exports
 
-> **Note:** `@macpaw/ai/core` exposes internal APIs (config, retry, SSE parser, etc.). Prefer the main `@macpaw/ai` entry point unless you need low-level control. Core APIs may change between minor versions.
+> **Note:** `@macpaw/ai-sdk/core` exposes internal APIs (config, retry, SSE parser, etc.). Prefer the main `@macpaw/ai-sdk` entry point unless you need low-level control. Core APIs may change between minor versions.
 
 | Import path | Content |
 |---|---|
-| `@macpaw/ai` | Main client, types, errors, `ErrorCode` enum, `anySignal` |
-| `@macpaw/ai/core` | Core types, errors, config, retry, SSE parser (**advanced** — internal APIs) |
-| `@macpaw/ai/provider` | Vercel AI SDK provider + re-exports (`generateText`, `streamText`, …) |
-| `@macpaw/ai/nestjs` | NestJS module, decorator, exception filter |
-| `@macpaw/ai/testing` | Mock client, `MockFn`, fixtures, stream helpers, mock transport |
+| `@macpaw/ai-sdk` | Main client, types, errors, `ErrorCode` enum, `anySignal` |
+| `@macpaw/ai-sdk/core` | Core types, errors, config, retry, SSE parser (**advanced** — internal APIs) |
+| `@macpaw/ai-sdk/provider` | Vercel AI SDK provider + re-exports (`generateText`, `streamText`, …) |
+| `@macpaw/ai-sdk/nestjs` | NestJS module, decorator, exception filter |
+| `@macpaw/ai-sdk/testing` | Mock client, `MockFn`, fixtures, stream helpers, mock transport |
 
 ## Versioning policy
 

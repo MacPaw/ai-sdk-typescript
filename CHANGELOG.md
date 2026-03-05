@@ -1,4 +1,4 @@
-# @macpaw/ai
+# @macpaw/ai-sdk
 
 > Changelog is maintained by [semantic-release](https://github.com/semantic-release/semantic-release). Versions and entries are added automatically on release; do not edit version headings manually.
 

@@ -112,8 +112,8 @@ function parseBody(config: RequestConfig): unknown {
  *
  * @example
  * ```ts
- * import { createAIGatewayClient } from '@macpaw/ai';
- * import { createMockTransport } from '@macpaw/ai/testing';
+ * import { createAIGatewayClient } from '@macpaw/ai-sdk';
+ * import { createMockTransport } from '@macpaw/ai-sdk/testing';
  *
  * const transport = createMockTransport();
  * const client = createAIGatewayClient({

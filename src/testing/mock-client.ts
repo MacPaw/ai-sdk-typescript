@@ -70,7 +70,7 @@ export interface MockAIGatewayClient {
  *
  * @example
  * ```ts
- * import { createMockAIGatewayClient, createMockStreamTextResult } from '@macpaw/ai/testing';
+ * import { createMockAIGatewayClient, createMockStreamTextResult } from '@macpaw/ai-sdk/testing';
  *
  * const client = createMockAIGatewayClient();
  *
