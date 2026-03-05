@@ -15,9 +15,11 @@ This is the `@macpaw/ai` SDK — a TypeScript client for AI Gateway (Chat, Embed
 
 ## Common mistakes
 
-- Use `@macpaw/ai/provider` instead of direct `@ai-sdk/openai` or `ai` imports.
+- Use `@macpaw/ai/provider` instead of direct `@ai-sdk/openai` or `ai` imports for provider/generation functions.
+- React hooks (`useChat`, `useCompletion`) stay as `ai/react` — they are NOT re-exported by `@macpaw/ai/provider`.
 - `env` only supports `'production'`. For staging use `baseURL`.
 - Retry config uses `maxAttempts`, not `maxRetries`.
+- Never hardcode tokens — use `getAuthToken`.
 
 ## When developing the SDK itself
 

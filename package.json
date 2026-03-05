@@ -59,8 +59,7 @@
     }
   },
   "bin": {
-    "macpaw-ai-setup": "./scripts/setup.mjs",
-    "macpaw-ai-setup-cursor": "./scripts/setup.mjs"
+    "macpaw-ai-setup": "./scripts/setup.mjs"
   },
   "files": [
     "dist",

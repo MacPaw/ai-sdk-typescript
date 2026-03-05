@@ -16,7 +16,7 @@ Install `@macpaw/ai`. No other AI packages required.
 
 Auth: `getAuthToken: async () => string | null`. Use `env: 'production'` for production base URL, `baseURL: 'https://...'` for staging/custom.
 
-Do NOT import from `@ai-sdk/openai` or `ai` directly — the provider re-exports everything needed.
+Do NOT import from `@ai-sdk/openai` or `ai` directly for provider/generation functions — use `@macpaw/ai/provider`. Exception: React hooks (`useChat`, `useCompletion`) stay as `ai/react`.
 
 ## Developing the SDK
 

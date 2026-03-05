@@ -93,7 +93,7 @@ export class ChatController { /* ... */ }
 
 ### Vercel AI SDK / Next.js
 
-Use only `@macpaw/ai/provider` exports. Never import from `ai` or `@ai-sdk/openai` directly.
+Use `@macpaw/ai/provider` for provider + generation functions. Never import from `@ai-sdk/openai` directly. React hooks (`useChat`, `useCompletion`) stay as `ai/react`.
 
 ```ts
 // lib/ai.ts — shared provider instance
@@ -284,7 +284,7 @@ When the codebase already uses `openai`, `@ai-sdk/openai`, or imports from `ai`:
 | `import { openai } from '@ai-sdk/openai'` | `createAIGatewayProvider(...)` from `@macpaw/ai/provider` |
 | `import { generateText } from 'ai'` | `import { generateText } from '@macpaw/ai/provider'` |
 | `import { streamText } from 'ai'` | `import { streamText } from '@macpaw/ai/provider'` |
-| `import { useChat } from 'ai/react'` | `import { useChat } from '@macpaw/ai/provider'` |
+| `import { useChat } from 'ai/react'` | Keep as-is — `useChat` is a React hook, not re-exported by provider |
 
 After migration, remove `openai`, `@ai-sdk/openai` from `package.json` unless they are used elsewhere.
 
@@ -295,12 +295,12 @@ After migration, remove `openai`, `@ai-sdk/openai` from `package.json` unless th
 - Do not hardcode secrets or tokens.
 - Prefer imports from `@macpaw/ai`, `@macpaw/ai/provider`, `@macpaw/ai/nestjs`, `@macpaw/ai/testing`.
 - For retries, use `maxAttempts` (not `maxRetries`).
-- Never import from `@ai-sdk/openai` or `ai` directly in app code.
+- Never import from `@ai-sdk/openai` or `ai` directly — except `useChat`/`useCompletion` React hooks which stay as `ai/react` (or `@ai-sdk/react`).
 
 ## Common mistakes to auto-fix
 
 - Replace direct OpenAI/Vercel provider usage with `createAIGatewayProvider`.
-- Replace `generateText` / `streamText` / `useChat` imports from `ai` or `ai/react` with `@macpaw/ai/provider`.
+- Replace `generateText` / `streamText` imports from `ai` with `@macpaw/ai/provider`. Keep `useChat`/`useCompletion` from `ai/react`.
 - Replace `env: 'staging'` with `baseURL`.
 - Replace token literals with `getAuthToken`.
 - Normalize retry option names to `maxAttempts`.
