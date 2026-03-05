@@ -951,6 +951,36 @@ mockClient.chat.completions.create.mockResolvedValue({ /* ... */ });
 const result = await service.complete([{ role: 'user', content: 'Hi' }]);
 ```
 
+## AI coding assistant integration
+
+This SDK ships with instructions for **Cursor**, **Claude Code**, and **OpenAI Codex** so that AI assistants automatically follow the correct integration patterns when you ask them to "add AI Gateway" or "integrate chat with MacPaw AI".
+
+| Tool | File | How it works |
+|------|------|-------------|
+| **Cursor** | `.cursor/skills/integrate-ai-gateway/SKILL.md` | Cursor Skill — auto-applied when you mention AI Gateway |
+| **Claude Code** | `CLAUDE.md` | Read automatically by Claude Code from repo root |
+| **OpenAI Codex** | `AGENTS.md` | Read automatically by Codex from repo root |
+
+### Use in your app repo
+
+After `pnpm add @macpaw/ai`, copy the relevant files from the installed package:
+
+```bash
+# Cursor Skill
+mkdir -p .cursor/skills
+cp -r node_modules/@macpaw/ai/.cursor/skills/integrate-ai-gateway .cursor/skills/
+
+# Claude Code
+cp node_modules/@macpaw/ai/CLAUDE.md .
+
+# OpenAI Codex
+cp node_modules/@macpaw/ai/AGENTS.md .
+```
+
+Then ask in natural language: *"Add AI Gateway chat to this Next.js app"* or *"Integrate NestJS with AI Gateway using the official SDK."*
+
+For Cursor you can also copy the skill to `~/.cursor/skills/integrate-ai-gateway/` to make it available in every project.
+
 ## Subpath exports
 
 > **Note:** `@macpaw/ai/core` exposes internal APIs (config, retry, SSE parser, etc.). Prefer the main `@macpaw/ai` entry point unless you need low-level control. Core APIs may change between minor versions.

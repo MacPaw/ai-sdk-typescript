@@ -61,7 +61,10 @@
   "files": [
     "dist",
     "README.md",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".cursor"
   ],
   "sideEffects": false,
   "engines": {
