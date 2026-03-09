@@ -113,7 +113,7 @@
     "url": "https://github.com/macpaw/ai-sdk-typescript/issues"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.0",
+    "@ai-sdk/openai": "^3.0.41",
     "ai": "^6.0.0"
   },
   "devDependencies": {
