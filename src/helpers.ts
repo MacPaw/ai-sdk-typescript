@@ -2,7 +2,7 @@
  * Convenience helpers for common SDK usage patterns.
  */
 
-import type { ChatCompletionChunk, ResponseStreamEvent, TranscriptionStreamEvent } from './core/types';
+import type { ChatCompletionChunk, ResponseStreamEvent, TranscriptionStreamEvent } from './types';
 
 /**
  * Extract text content from a streaming chat completion chunk.
@@ -20,9 +20,7 @@ export function extractChatDelta(chunk: ChatCompletionChunk): string {
  *   client.chat.completions.create({ model: 'm', messages, stream: true })
  * );
  */
-export async function collectChatStream(
-  stream: AsyncIterable<ChatCompletionChunk>
-): Promise<string> {
+export async function collectChatStream(stream: AsyncIterable<ChatCompletionChunk>): Promise<string> {
   let text = '';
   for await (const chunk of stream) {
     text += extractChatDelta(chunk);
@@ -44,9 +42,7 @@ export function extractResponseDelta(event: ResponseStreamEvent): string {
 /**
  * Collect full text from a Responses API stream.
  */
-export async function collectResponseStream(
-  stream: AsyncIterable<ResponseStreamEvent>
-): Promise<string> {
+export async function collectResponseStream(stream: AsyncIterable<ResponseStreamEvent>): Promise<string> {
   let text = '';
   for await (const event of stream) {
     text += extractResponseDelta(event);
@@ -67,9 +63,7 @@ export function extractTranscriptionDelta(event: TranscriptionStreamEvent): stri
 /**
  * Collect full text from a transcription stream.
  */
-export async function collectTranscriptionStream(
-  stream: AsyncIterable<TranscriptionStreamEvent>
-): Promise<string> {
+export async function collectTranscriptionStream(stream: AsyncIterable<TranscriptionStreamEvent>): Promise<string> {
   let text = '';
   for await (const event of stream) {
     text += extractTranscriptionDelta(event);

@@ -2,16 +2,16 @@
  * Responses API facade (OpenAI Create Response format).
  */
 
-import type { ResolvedConfig } from '../core/config';
-import { runRequest } from '../core/request';
-import { assertSSEResponse, parseSSEAsJSON } from '../core/sse';
-import { validateResponseRequest } from '../core/validation';
-import type { CreateResponseRequest, ResponseObject, ResponseStreamEvent, RequestOptions } from '../core/types';
+import type { ResolvedConfig } from '../../runtime/config';
+import { runRequest } from '../../runtime/request';
+import { assertSSEResponse, parseSSEAsJSON } from '../../runtime/sse';
+import { validateResponseRequest } from '../../runtime/validation';
+import type { CreateResponseRequest, ResponseObject, ResponseStreamEvent, RequestOptions } from '../../types';
 
 export async function createResponse(
   config: ResolvedConfig,
   request: CreateResponseRequest,
-  options?: RequestOptions
+  options?: RequestOptions,
 ): Promise<ResponseObject | { data: ResponseObject; response: Response }> {
   validateResponseRequest(request);
   const body = JSON.stringify(request);
@@ -24,7 +24,7 @@ export async function createResponse(
 export async function* createResponseStream(
   config: ResolvedConfig,
   request: CreateResponseRequest,
-  options?: RequestOptions
+  options?: RequestOptions,
 ): AsyncGenerator<ResponseStreamEvent, void, undefined> {
   validateResponseRequest(request);
   const streamRequest = { ...request, stream: true };

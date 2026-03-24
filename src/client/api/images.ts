@@ -2,20 +2,15 @@
  * Images API facade (generation and editing).
  */
 
-import type { ResolvedConfig } from '../core/config';
-import { runRequest } from '../core/request';
-import { validateImageGenerationRequest, validateImageEditRequest } from '../core/validation';
-import type {
-  CreateImageRequest,
-  CreateImageResponse,
-  CreateImageEditRequest,
-  RequestOptions,
-} from '../core/types';
+import type { ResolvedConfig } from '../../runtime/config';
+import { runRequest } from '../../runtime/request';
+import { validateImageGenerationRequest, validateImageEditRequest } from '../../runtime/validation';
+import type { CreateImageRequest, CreateImageResponse, CreateImageEditRequest, RequestOptions } from '../../types';
 
 export async function createImage(
   config: ResolvedConfig,
   request: CreateImageRequest,
-  options?: RequestOptions
+  options?: RequestOptions,
 ): Promise<CreateImageResponse | { data: CreateImageResponse; response: Response }> {
   validateImageGenerationRequest(request);
   const body = JSON.stringify(request);
@@ -28,7 +23,7 @@ export async function createImage(
 export async function createImageEdit(
   config: ResolvedConfig,
   request: CreateImageEditRequest,
-  options?: RequestOptions
+  options?: RequestOptions,
 ): Promise<CreateImageResponse | { data: CreateImageResponse; response: Response }> {
   validateImageEditRequest(request);
   const formData = new FormData();

@@ -2,21 +2,16 @@
  * Chat Completions API facade.
  */
 
-import type { ResolvedConfig } from '../core/config';
-import { runRequest } from '../core/request';
-import { assertSSEResponse, parseSSEAsJSON } from '../core/sse';
-import { validateChatCompletionRequest } from '../core/validation';
-import type {
-  CreateChatCompletionRequest,
-  ChatCompletion,
-  ChatCompletionChunk,
-  RequestOptions,
-} from '../core/types';
+import type { ResolvedConfig } from '../../runtime/config';
+import { runRequest } from '../../runtime/request';
+import { assertSSEResponse, parseSSEAsJSON } from '../../runtime/sse';
+import { validateChatCompletionRequest } from '../../runtime/validation';
+import type { CreateChatCompletionRequest, ChatCompletion, ChatCompletionChunk, RequestOptions } from '../../types';
 
 export async function createChatCompletion(
   config: ResolvedConfig,
   request: CreateChatCompletionRequest,
-  options?: RequestOptions
+  options?: RequestOptions,
 ): Promise<ChatCompletion | { data: ChatCompletion; response: Response }> {
   validateChatCompletionRequest(request);
   const body = JSON.stringify(request);
@@ -29,7 +24,7 @@ export async function createChatCompletion(
 export async function* createChatCompletionStream(
   config: ResolvedConfig,
   request: CreateChatCompletionRequest,
-  options?: RequestOptions
+  options?: RequestOptions,
 ): AsyncGenerator<ChatCompletionChunk, void, undefined> {
   validateChatCompletionRequest(request);
   const streamRequest = { ...request, stream: true };

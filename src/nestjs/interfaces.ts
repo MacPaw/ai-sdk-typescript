@@ -1,5 +1,5 @@
 import type { InjectionToken, ModuleMetadata, OptionalFactoryDependency, Type } from '@nestjs/common';
-import type { AIGatewayClientConfig } from '../core/config';
+import type { AIGatewayClientConfig } from '../runtime/config';
 
 /**
  * Synchronous module configuration.
@@ -28,7 +28,7 @@ export interface AIGatewayModuleAsyncOptions extends Pick<ModuleMetadata, 'impor
   /** Class to instantiate as the options factory. */
   useClass?: Type<AIGatewayOptionsFactory>;
   /** Factory function that returns the module options. */
-  useFactory?: (...args: any[]) => Promise<AIGatewayModuleOptions> | AIGatewayModuleOptions;
+  useFactory?: (...args: unknown[]) => Promise<AIGatewayModuleOptions> | AIGatewayModuleOptions;
   /** Dependencies to inject into useFactory. */
   inject?: (InjectionToken | OptionalFactoryDependency)[];
   /** Whether the module is global (available without importing in every module). Default: true. */

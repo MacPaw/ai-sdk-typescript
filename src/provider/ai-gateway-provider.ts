@@ -1,92 +1,84 @@
 /**
  * Vercel AI SDK-compatible provider for AI Gateway.
  *
- * Creates a provider that wraps @ai-sdk/openai with AI Gateway auth
- * and error handling baked in. Works with generateText, streamText,
- * useChat, and all Vercel AI SDK hooks.
- *
- * @example
- * ```ts
- * import { createAIGatewayProvider, generateText } from '@macpaw/ai-sdk/provider';
- *
- * const gateway = createAIGatewayProvider({
- *   getAuthToken: async () => myToken,
- *   env: 'production',
- * });
- *
- * const { text } = await generateText({
- *   model: gateway('openai/gpt-4.1-nano'),
- *   prompt: 'Hello!',
- * });
- * ```
+ * Creates a strongly typed OpenAI-compatible provider backed by the gateway,
+ * making it easy to switch existing `ai` apps between direct OpenAI and
+ * gateway traffic without rewriting the rest of the app.
  */
 
 import { createOpenAI as builtinCreateOpenAI } from '@ai-sdk/openai';
+import type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
 import { createAIGatewayFetch } from './create-fetch';
-import type { Environment } from '../core/config';
-import { DEFAULT_BASE_URLS } from '../core/config';
-import type { ApiVersion } from '../core/paths';
-import { DEFAULT_API_VERSION } from '../core/paths';
+import type { Environment } from '../runtime/config';
+import { DEFAULT_BASE_URLS } from '../runtime/config';
+import type { ApiVersion } from '../runtime/paths';
+import { DEFAULT_API_VERSION } from '../runtime/paths';
 
-type CreateOpenAIFn = (config: {
-  baseURL: string;
-  fetch: typeof globalThis.fetch;
-  apiKey: string;
-}) => CreateOpenAIReturn;
-
-type CreateOpenAIReturn = ((modelId: string, settings?: Record<string, unknown>) => unknown) & {
-  chat: (modelId: string, settings?: Record<string, unknown>) => unknown;
-  completion: (modelId: string, settings?: Record<string, unknown>) => unknown;
-  embedding: (modelId: string, settings?: Record<string, unknown>) => unknown;
-  [key: string]: unknown;
-};
-
-export interface AIGatewayProviderOptions {
+export interface AIGatewayProviderOptions extends Omit<OpenAIProviderSettings, 'apiKey' | 'baseURL' | 'fetch'> {
   /**
    * Optional override for the OpenAI provider factory.
    * Uses `createOpenAI` from `@ai-sdk/openai` by default.
    */
-  createOpenAI?: CreateOpenAIFn;
-  /** Base URL of the AI Gateway BFF. Required if env is not set. */
+  createOpenAI?: typeof builtinCreateOpenAI;
+  /** Base URL of the AI Gateway (HTTP API root). Required if env is not set. */
   baseURL?: string;
   /** Environment: 'production' selects the default base URL. For non-production, use baseURL instead. */
   env?: Environment;
-  /** Async function that returns the Bearer token. */
-  getAuthToken: () => Promise<string | null>;
+  /** Async function that returns the Bearer token. Supports refresh-aware providers. */
+  getAuthToken: (forceRefresh?: boolean) => Promise<string | null>;
   /** Extra headers for every request. */
   headers?: Record<string, string>;
   /** API version prefix (e.g. `'v1'`, `'v2'`). Default: `'v1'`. */
   apiVersion?: ApiVersion;
+  /** Automatically retry once on 401 after forcing token refresh. Default: true. */
+  autoRefreshToken?: boolean;
+  /** Cache the auth token for this many milliseconds. Default: 0. */
+  tokenCacheTTL?: number;
+  /** Generate `X-Request-ID` for provider fetch calls. Default: true. */
+  generateRequestId?: boolean;
+  /** Normalize gateway error responses into `AIGatewayError`. Default: true. */
+  normalizeErrors?: boolean;
+}
+
+function resolveGatewayBaseURL(baseURL?: string, env?: Environment): string {
+  const resolved = baseURL ?? (env ? DEFAULT_BASE_URLS[env] : undefined);
+  if (!resolved) {
+    throw new Error(
+      'AIGatewayProvider requires baseURL or env (production). For non-production environments, pass baseURL directly.',
+    );
+  }
+  return resolved;
 }
 
 /**
  * Creates a Vercel AI SDK-compatible provider backed by AI Gateway.
  *
- * The returned object works as both a function and has `.chat`, `.completion`,
- * `.embedding` methods matching the @ai-sdk/openai provider interface.
- *
- * Handles:
- * - Auth token injection via custom fetch
- * - URL routing to AI Gateway BFF
- * - All model types supported by @ai-sdk/openai
+ * The returned value is a fully typed `OpenAIProvider`, so existing apps can
+ * keep using their `ai-sdk` helpers and model-selection patterns.
  */
-export function createAIGatewayProvider(options: AIGatewayProviderOptions): CreateOpenAIReturn {
-  const baseURL = options.baseURL ?? (options.env ? DEFAULT_BASE_URLS[options.env] : undefined);
-  if (!baseURL) {
-    throw new Error('AIGatewayProvider requires baseURL or env (production). For non-production environments, pass baseURL directly.');
-  }
-
+export function createAIGatewayProvider(options: AIGatewayProviderOptions): OpenAIProvider {
+  const baseURL = resolveGatewayBaseURL(options.baseURL, options.env);
   const customFetch = createAIGatewayFetch({
     baseURL,
     getAuthToken: options.getAuthToken,
     headers: options.headers,
+    autoRefreshToken: options.autoRefreshToken,
+    tokenCacheTTL: options.tokenCacheTTL,
+    generateRequestId: options.generateRequestId,
+    normalizeErrors: options.normalizeErrors,
   });
 
-  const factory = options.createOpenAI ?? (builtinCreateOpenAI as unknown as CreateOpenAIFn);
+  const createOpenAI = options.createOpenAI ?? builtinCreateOpenAI;
 
-  return factory({
+  return createOpenAI({
+    name: options.name,
+    organization: options.organization,
+    project: options.project,
+    headers: options.headers,
     baseURL: `${baseURL.replace(/\/$/, '')}/api/${options.apiVersion ?? DEFAULT_API_VERSION}`,
-    fetch: customFetch as unknown as typeof globalThis.fetch,
+    fetch: customFetch,
     apiKey: 'unused',
   });
 }
+
+export { resolveGatewayBaseURL };

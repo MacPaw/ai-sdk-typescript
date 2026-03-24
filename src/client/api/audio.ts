@@ -3,10 +3,10 @@
  * Uses multipart/form-data for file uploads.
  */
 
-import type { ResolvedConfig } from '../core/config';
-import { runRequest } from '../core/request';
-import { assertSSEResponse, parseSSEAsJSON } from '../core/sse';
-import { validateTranscriptionRequest, validateTranslationRequest } from '../core/validation';
+import type { ResolvedConfig } from '../../runtime/config';
+import { runRequest } from '../../runtime/request';
+import { assertSSEResponse, parseSSEAsJSON } from '../../runtime/sse';
+import { validateTranscriptionRequest, validateTranslationRequest } from '../../runtime/validation';
 import type {
   CreateTranscriptionRequest,
   TranscriptionResponse,
@@ -14,7 +14,7 @@ import type {
   CreateTranslationRequest,
   TranslationResponse,
   RequestOptions,
-} from '../core/types';
+} from '../../types';
 
 function buildTranscriptionFormData(request: CreateTranscriptionRequest): FormData {
   const formData = new FormData();
@@ -36,11 +36,16 @@ function buildTranscriptionFormData(request: CreateTranscriptionRequest): FormDa
 export async function createTranscription(
   config: ResolvedConfig,
   request: CreateTranscriptionRequest,
-  options?: RequestOptions
+  options?: RequestOptions,
 ): Promise<TranscriptionResponse | { data: TranscriptionResponse; response: Response }> {
   validateTranscriptionRequest(request);
   const formData = buildTranscriptionFormData(request);
-  const response = await runRequest(config, config.apiPaths.AudioTranscriptions, { method: 'POST', body: formData }, options);
+  const response = await runRequest(
+    config,
+    config.apiPaths.AudioTranscriptions,
+    { method: 'POST', body: formData },
+    options,
+  );
   const data = (await response.json()) as TranscriptionResponse;
   if (options?.withResponse) return { data, response };
   return data;
@@ -49,12 +54,17 @@ export async function createTranscription(
 export async function* createTranscriptionStream(
   config: ResolvedConfig,
   request: CreateTranscriptionRequest,
-  options?: RequestOptions
+  options?: RequestOptions,
 ): AsyncGenerator<TranscriptionStreamEvent, void, undefined> {
   validateTranscriptionRequest(request);
   const streamRequest = { ...request, stream: true as const };
   const formData = buildTranscriptionFormData(streamRequest);
-  const response = await runRequest(config, config.apiPaths.AudioTranscriptions, { method: 'POST', body: formData }, options);
+  const response = await runRequest(
+    config,
+    config.apiPaths.AudioTranscriptions,
+    { method: 'POST', body: formData },
+    options,
+  );
   const stream = await assertSSEResponse(response);
   yield* parseSSEAsJSON<TranscriptionStreamEvent>(stream, config.logger);
 }
@@ -62,7 +72,7 @@ export async function* createTranscriptionStream(
 export async function createTranslation(
   config: ResolvedConfig,
   request: CreateTranslationRequest,
-  options?: RequestOptions
+  options?: RequestOptions,
 ): Promise<TranslationResponse | { data: TranslationResponse; response: Response }> {
   validateTranslationRequest(request);
   const formData = new FormData();
@@ -72,7 +82,12 @@ export async function createTranslation(
   if (request.response_format) formData.append('response_format', request.response_format);
   if (request.temperature != null) formData.append('temperature', String(request.temperature));
 
-  const response = await runRequest(config, config.apiPaths.AudioTranslations, { method: 'POST', body: formData }, options);
+  const response = await runRequest(
+    config,
+    config.apiPaths.AudioTranslations,
+    { method: 'POST', body: formData },
+    options,
+  );
   const data = (await response.json()) as TranslationResponse;
   if (options?.withResponse) return { data, response };
   return data;

@@ -3,11 +3,7 @@ import { Module } from '@nestjs/common';
 import { createAIGatewayClient } from '../client';
 import type { AIGatewayClient } from '../client';
 import { AI_GATEWAY_CLIENT, AI_GATEWAY_OPTIONS } from './constants';
-import type {
-  AIGatewayModuleOptions,
-  AIGatewayModuleAsyncOptions,
-  AIGatewayOptionsFactory,
-} from './interfaces';
+import type { AIGatewayModuleOptions, AIGatewayModuleAsyncOptions, AIGatewayOptionsFactory } from './interfaces';
 
 @Module({})
 export class AIGatewayModule {

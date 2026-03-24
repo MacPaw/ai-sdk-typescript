@@ -2,87 +2,174 @@
  * Custom fetch factory for use with Vercel AI SDK and other OpenAI-compatible clients.
  * Use this with createOpenAI({ baseURL, fetch: createAIGatewayFetch(...) }) or similar.
  *
- * AI Gateway BFF paths are under /api/v1 (e.g. /api/v1/chat/completions).
- * So baseURL should be the BFF root, e.g. https://api.macpaw.com/ai
+ * AI Gateway HTTP paths are under /api/v1 (e.g. /api/v1/chat/completions).
+ * So baseURL should be the gateway root, e.g. https://api.macpaw.com/ai
  */
+
+import { parseErrorResponseFromResponse } from '../runtime/errors';
 
 export interface CreateAIGatewayFetchOptions {
   baseURL: string;
-  /**
-   * Returns the Bearer token for each request.
-   *
-   * **Note:** Unlike the main `createAIGatewayClient`, this fetch wrapper does
-   * **not** support automatic 401 retry with `forceRefresh`. If the token expires
-   * mid-session, the consumer (e.g. Vercel AI SDK) will receive a 401 error.
-   * Handle token refresh in your `getAuthToken` implementation or use the main
-   * client with `autoRefreshToken: true` for full retry support.
-   */
-  getAuthToken: () => Promise<string | null>;
+  /** Returns the Bearer token for each request. */
+  getAuthToken: (forceRefresh?: boolean) => Promise<string | null>;
   headers?: Record<string, string>;
+  /** Automatically retry once on 401 after forcing token refresh. Default: true. */
+  autoRefreshToken?: boolean;
+  /** Cache the auth token for this many milliseconds. Default: 0. */
+  tokenCacheTTL?: number;
+  /** Generate `X-Request-ID` for requests that do not already have one. Default: true. */
+  generateRequestId?: boolean;
+  /** Normalize gateway error responses into `AIGatewayError`. Default: true. */
+  normalizeErrors?: boolean;
 }
 
-/**
- * Returns a fetch-like function that adds Bearer auth and fixes URL to the AI Gateway BFF.
- * Use with Vercel AI SDK:
- *
- * @example
- * import { createAIGatewayFetch } from '@macpaw/ai-sdk/provider';
- * import { createOpenAI } from '@ai-sdk/openai';
- *
- * const fetch = createAIGatewayFetch({
- *   baseURL: 'https://api.macpaw.com/ai',
- *   getAuthToken: async () => (await getSetappSession()).accessToken,
- * });
- *
- * const openai = createOpenAI({
- *   baseURL: 'https://api.macpaw.com/ai/api/v1',
- *   fetch,
- *   apiKey: 'unused',
- * });
- */
-export function createAIGatewayFetch(options: CreateAIGatewayFetchOptions): (input: string | URL | Request | { url: string }, init?: RequestInit) => Promise<Response> {
-  const { baseURL, getAuthToken, headers: extraHeaders = {} } = options;
+type FetchInput = string | URL | Request | { url: string };
+
+let providerRequestIdCounter = 0;
+
+function generateRequestId(): string {
+  const timestamp = Date.now().toString(36);
+  const counter = (providerRequestIdCounter++).toString(36);
+  const random = Math.random().toString(36).slice(2, 8);
+  return `provider-${timestamp}-${counter}-${random}`;
+}
+
+function resolveRequestUrl(input: FetchInput): string {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.href;
+  return input.url;
+}
+
+function cloneHeaders(headers?: RequestInit['headers']): Headers {
+  return new Headers(headers);
+}
+
+export function createAIGatewayFetch(
+  options: CreateAIGatewayFetchOptions,
+): (input: FetchInput, init?: RequestInit) => Promise<Response> {
+  const {
+    baseURL,
+    getAuthToken,
+    headers: extraHeaders = {},
+    autoRefreshToken = true,
+    tokenCacheTTL = 0,
+    generateRequestId: shouldGenerateRequestId = true,
+    normalizeErrors = true,
+  } = options;
+
   const base = baseURL.replace(/\/$/, '');
+  let cachedToken: string | null = null;
+  let cacheExpiresAt = 0;
+  let pendingRefresh: Promise<string | null> | null = null;
+  let pendingIsForced = false;
 
-  return async function aiGatewayFetch(
-    input: string | URL | Request | { url: string },
-    init?: RequestInit
-  ): Promise<Response> {
-    // Derive defaults from Request objects so method/headers/body aren't silently dropped.
-    if (typeof Request !== 'undefined' && input instanceof Request) {
-      init = {
-        method: input.method,
-        headers: input.headers,
-        body: input.body,
-        signal: input.signal,
-        ...init,
-      };
+  async function loadToken(forceRefresh = false): Promise<string | null> {
+    if (tokenCacheTTL <= 0) {
+      return getAuthToken(forceRefresh);
     }
 
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as { url: string }).url;
-    const isAbsoluteExternal = (url.startsWith('http://') || url.startsWith('https://')) && !url.startsWith(base);
-    const resolvedUrl = (url.startsWith('http://') || url.startsWith('https://'))
-      ? url
-      : `${base}${url.startsWith('/') ? '' : '/'}${url}`;
-
-    const headers = new Headers(init?.headers);
-
-    // Only inject auth + extra headers for requests targeting the configured base.
-    if (!isAbsoluteExternal) {
-      const token = await getAuthToken();
-      if (token) headers.set('Authorization', `Bearer ${token}`);
-      Object.entries(extraHeaders).forEach(([k, v]) => headers.set(k, v));
+    if (!forceRefresh && Date.now() < cacheExpiresAt) {
+      return cachedToken;
     }
 
-    const body = init?.body;
-    if (body != null && !headers.has('Content-Type')) {
-      const isFormDataLike = typeof FormData !== 'undefined' && body instanceof FormData;
-      const isBlobLike = typeof Blob !== 'undefined' && body instanceof Blob;
-      if (!isFormDataLike && !isBlobLike) {
-        headers.set('Content-Type', 'application/json');
+    if (forceRefresh && pendingRefresh && !pendingIsForced) {
+      pendingRefresh = null;
+    }
+
+    if (!pendingRefresh) {
+      pendingIsForced = forceRefresh;
+      pendingRefresh = getAuthToken(forceRefresh).then(
+        (token) => {
+          cachedToken = token;
+          cacheExpiresAt = Date.now() + tokenCacheTTL;
+          pendingRefresh = null;
+          return token;
+        },
+        (error) => {
+          pendingRefresh = null;
+          throw error;
+        },
+      );
+    }
+
+    return pendingRefresh;
+  }
+
+  function resetCachedToken(): void {
+    cachedToken = null;
+    cacheExpiresAt = 0;
+    pendingRefresh = null;
+    pendingIsForced = false;
+  }
+
+  return async function aiGatewayFetch(input: FetchInput, init?: RequestInit): Promise<Response> {
+    const rawUrl = resolveRequestUrl(input);
+    const isAbsolute = rawUrl.startsWith('http://') || rawUrl.startsWith('https://');
+    const isAbsoluteExternal = isAbsolute && !rawUrl.startsWith(base);
+    const isGatewayRequest = !isAbsoluteExternal;
+    const resolvedUrl = isAbsolute ? rawUrl : `${base}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+
+    const request = typeof Request !== 'undefined' && input instanceof Request ? input : undefined;
+
+    async function execute(forceRefresh = false): Promise<Response> {
+      const requestClone = request?.clone();
+      const headers = cloneHeaders(requestClone?.headers);
+
+      if (init?.headers) {
+        for (const [key, value] of new Headers(init.headers).entries()) {
+          headers.set(key, value);
+        }
       }
+
+      if (isGatewayRequest) {
+        const token = await loadToken(forceRefresh);
+        if (token) {
+          headers.set('Authorization', `Bearer ${token}`);
+        } else {
+          headers.delete('Authorization');
+        }
+
+        for (const [key, value] of Object.entries(extraHeaders)) {
+          headers.set(key, value);
+        }
+
+        if (
+          shouldGenerateRequestId &&
+          !Array.from(headers.keys()).some((key) => key.toLowerCase() === 'x-request-id')
+        ) {
+          headers.set('X-Request-ID', generateRequestId());
+        }
+      }
+
+      const body = init?.body ?? requestClone?.body;
+      if (body != null && !headers.has('Content-Type')) {
+        const isFormDataLike = typeof FormData !== 'undefined' && body instanceof FormData;
+        const isBlobLike = typeof Blob !== 'undefined' && body instanceof Blob;
+        if (!isFormDataLike && !isBlobLike) {
+          headers.set('Content-Type', 'application/json');
+        }
+      }
+
+      const response = await fetch(resolvedUrl, {
+        ...init,
+        method: init?.method ?? requestClone?.method,
+        headers,
+        body,
+        signal: init?.signal ?? requestClone?.signal,
+      });
+
+      if (isGatewayRequest && response.status === 401 && autoRefreshToken && !forceRefresh) {
+        resetCachedToken();
+        return execute(true);
+      }
+
+      if (isGatewayRequest && normalizeErrors && !response.ok) {
+        await parseErrorResponseFromResponse(response.clone());
+      }
+
+      return response;
     }
 
-    return fetch(resolvedUrl, { ...init, headers });
+    return execute(false);
   };
 }

@@ -1,6 +1,6 @@
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import { Catch, HttpException, HttpStatus } from '@nestjs/common';
-import { AIGatewayError } from '../core/errors';
+import { AIGatewayError } from '../runtime/errors';
 
 /**
  * NestJS exception filter that catches `AIGatewayError` and returns a structured HTTP response.
