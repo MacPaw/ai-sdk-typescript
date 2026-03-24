@@ -45,7 +45,7 @@ describe('createAIGatewayProvider', () => {
     expect(mockCreateOpenAI).toHaveBeenCalledTimes(1);
     const config = mockCreateOpenAI.mock.calls[0][0];
     expect(config.baseURL).toBe('https://api.macpaw.com/ai/api/v1');
-    expect(config.apiKey).toBe('unused');
+    expect(config.apiKey).toBe('ai-gateway-auth-via-fetch');
     expect(typeof config.fetch).toBe('function');
   });
 

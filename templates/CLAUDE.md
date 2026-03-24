@@ -1,11 +1,11 @@
 # AI Gateway (@macpaw/ai-sdk)
 
-Vercel AI SDK extension layer for AI Gateway. Install `@macpaw/ai-sdk` — no other AI packages are required unless your app uses React hooks from `@ai-sdk/react`.
+Vercel AI SDK extension layer for AI Gateway. Install `@macpaw/ai-sdk`; add `react` + `@ai-sdk/react` for hooks (or use `@macpaw/ai-sdk/react`). Add the matching `@ai-sdk/*` peer for each `@macpaw/ai-sdk/<provider>` subpath you use.
 
 | Stack                     | Import from               | Key export                                                                                                                              |
 | ------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | NestJS / Node.js (NestJS) | `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule.forRootAsync()`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`                                                      |
-| Next.js / Vercel AI SDK   | `@macpaw/ai-sdk/provider` | `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createOpenAI`, `generateText`, `streamText` |
+| Next.js / Vercel AI SDK   | `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` (same) | `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createOpenAI`, `generateText`, `streamText`; `@macpaw/ai-sdk/ai/internal`, `@macpaw/ai-sdk/ai/test` match `ai/internal`, `ai/test`; optional `@macpaw/ai-sdk/react` and `@macpaw/ai-sdk/<provider>` mirrors (anthropic, google, xai, groq, mistral, amazon-bedrock, azure, cohere, perplexity, deepseek, togetherai, openai-compatible) |
 | Node / Express / Browser  | `@macpaw/ai-sdk/client`   | `createAIGatewayClient`                                                                                                                 |
 | Tests                     | `@macpaw/ai-sdk/testing`  | `createMockOpenAIProvider`, `createMockAIGatewayClient`, `createMockChatCompletion`                                                     |
 | Errors                    | `@macpaw/ai-sdk`          | `AIGatewayError`, `ErrorCode`                                                                                                           |
@@ -13,8 +13,8 @@ Vercel AI SDK extension layer for AI Gateway. Install `@macpaw/ai-sdk` — no ot
 
 Auth: `getAuthToken: async () => string | null`. Use `env: 'production'` for production base URL, `baseURL: 'https://...'` for staging/custom.
 
-Prefer `@macpaw/ai-sdk/provider` for AI SDK integration. It exposes the curated AI SDK surface plus `createOpenAI` for dual-backend flows; it is not a full mirror of every `ai` export.
-React hooks such as `useChat` come from the Vercel AI SDK React package (`@ai-sdk/react`), not from `@macpaw/ai-sdk/provider`.
+Prefer `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` for AI SDK integration (identical). The entry re-exports the full `ai` package and adds `createOpenAI` plus AI Gateway helpers, including subpaths for `ai/internal` and `ai/test`.
+React hooks such as `useChat` come from `@macpaw/ai-sdk/react` or `@ai-sdk/react`, not from the provider entry.
 If the app imports `ai` or `@ai-sdk/openai` directly for non-gateway helpers, keep those package versions aligned with `@macpaw/ai-sdk`.
 
 Common mistakes: `env` only supports `'production'` (use `baseURL` for staging). Retry uses `maxAttempts`, not `maxRetries`. Never hardcode tokens — use `getAuthToken`.

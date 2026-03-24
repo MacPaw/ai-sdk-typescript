@@ -17,4 +17,13 @@ export default tseslint.config(
       'vitest.config.ts',
     ],
   },
+  {
+    files: ['examples/**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+      },
+    },
+  },
 );

@@ -72,6 +72,8 @@ function buildChatCompletions(config: ResolvedConfig): ChatCompletionsAPI {
     return createStreamTextResult(generator, ac);
   }
 
+  // `as` cast required: TS cannot unify a union return type with overloaded signatures.
+  // Safety is ensured by the explicit ChatCompletionsAPI return type on buildChatCompletions.
   return { create, stream } as ChatCompletionsAPI;
 }
 

@@ -33,5 +33,9 @@ export function anySignal(signals: AbortSignal[]): AbortSignal {
     handlers.push([signal, handler]);
     signal.addEventListener('abort', handler, { once: true });
   }
-  return controller.signal;
+
+  const result = controller.signal;
+  result.addEventListener('abort', cleanup, { once: true });
+
+  return result;
 }

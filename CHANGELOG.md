@@ -6,6 +6,10 @@
 
 ### Added
 
+- `@macpaw/ai-sdk/react` subpath re-exports `@ai-sdk/react` so apps can import hooks from the MacPaw package scope alongside `@macpaw/ai-sdk/ai` / `provider`.
+- `@macpaw/ai-sdk/anthropic` and `@macpaw/ai-sdk/google` subpaths re-export `@ai-sdk/anthropic` and `@ai-sdk/google` for the same scoped-import ergonomics.
+- `@macpaw/ai-sdk/provider` now re-exports the entire `ai` package (`export * from 'ai'`) for drop-in migration; AI Gateway symbols remain additive.
+- ESLint: `examples/**/*.{js,mjs,cjs}` use Node globals so `pnpm lint` passes on demo scripts.
 - Runnable examples for mock transport, direct client, Vercel-style provider flow, and a copy-ready NestJS skeleton.
 - README badges and release signals documentation; local `pnpm size:pack` script for publish-size inspection.
 - README and COMPATIBILITY: when to use `@macpaw/ai-sdk/provider` vs `createAIGatewayClient`, optional dual-backend (env flag) example, and auth placement notes.
@@ -21,7 +25,7 @@
 - HTTP facades moved from `src/api/` to `src/client/api/` (internal structure only; public imports unchanged).
 - Tests live under colocated `src/**/__tests__/` directories.
 - Client entry moved to `src/client/index.ts`; `@macpaw/ai-sdk/core` no longer re-exports domain types (use the main entry or `@macpaw/ai-sdk/types`).
-- README and AI-assistant templates now describe `@macpaw/ai-sdk/provider` as a curated Vercel AI SDK surface, not a full mirror of every `ai` export.
+- README and AI-assistant templates describe `@macpaw/ai-sdk/provider` as a full re-export of `ai` plus AI Gateway helpers.
 - `macpaw-ai-setup` now reads the Cursor skill from published templates, so the npm package no longer needs to ship repository-only `.cursor` assets.
 - Vitest now fails when no tests are discovered, tightening release-time verification.
 

@@ -77,11 +77,17 @@ export function createAIGatewayProvider(options: AIGatewayProviderOptions): Open
     name: options.name,
     organization: options.organization,
     project: options.project,
-    headers: options.headers,
     baseURL: `${baseURL.replace(/\/$/, '')}/api/${options.apiVersion ?? DEFAULT_API_VERSION}`,
     fetch: customFetch,
-    apiKey: 'unused',
+    apiKey: GATEWAY_PLACEHOLDER_API_KEY,
   });
 }
+
+/**
+ * Placeholder passed to `createOpenAI` since gateway auth is handled by the custom fetch.
+ * `@ai-sdk/openai` requires a non-empty `apiKey`; this value is never sent over the wire
+ * because `createAIGatewayFetch` replaces the Authorization header for gateway URLs.
+ */
+const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
 
 export { resolveGatewayBaseURL };

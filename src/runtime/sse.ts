@@ -25,24 +25,38 @@ function throwStreamError(data: string): never {
 
 /**
  * Validate that a streaming response has the expected SSE content type.
- * Throws a descriptive error if the server returned JSON or an unexpected type.
+ * Throws `AIGatewayError` if the server returned JSON or an unexpected type,
+ * so consumers can catch it consistently via `isAIGatewayError`.
  */
 export async function assertSSEResponse(response: Response): Promise<ReadableStream<Uint8Array>> {
   const contentType = response.headers.get('Content-Type') ?? '';
   if (contentType.includes('application/json')) {
-    const body = await response.json();
-    throw new Error(
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      body = undefined;
+    }
+    throw new AIGatewayError(
       `Expected SSE stream but received JSON response. ` +
         `This usually means the server rejected the streaming request. ` +
         `Body: ${JSON.stringify(body).slice(0, 300)}`,
+      ErrorCode.BadRequest,
+      response.status || 400,
     );
   }
   if (!contentType.includes('text/event-stream')) {
-    const text = await response.text();
-    throw new Error(`Unexpected content type: ${contentType}. Body: ${text.slice(0, 200)}`);
+    const text = await response.text().catch(() => '');
+    throw new AIGatewayError(
+      `Unexpected content type: ${contentType}. Body: ${text.slice(0, 200)}`,
+      ErrorCode.BadRequest,
+      response.status || 400,
+    );
   }
   const stream = response.body;
-  if (!stream) throw new Error('No response body');
+  if (!stream) {
+    throw new AIGatewayError('No response body for SSE stream', ErrorCode.InternalServerError, 500);
+  }
   return stream;
 }
 

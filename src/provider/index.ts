@@ -1,9 +1,12 @@
 /**
- * Provider utilities for Vercel AI SDK integration.
+ * Vercel AI SDK-compatible entry: re-exports the full `ai` package and adds MacPaw AI Gateway.
  *
- * This is the primary entry point for applications already built on Vercel AI SDK.
- * It provides the AI Gateway provider layer plus a curated set of AI SDK helpers.
+ * Migration: replace `from 'ai'` with `from '@macpaw/ai-sdk/ai'` or `from '@macpaw/ai-sdk/provider'`
+ * (same module). Subpaths: `ai/internal` → `@macpaw/ai-sdk/ai/internal`, `ai/test` → `@macpaw/ai-sdk/ai/test`.
+ * Wire `createAIGatewayProvider` (or dual/custom registry); use gateway errors from this package where needed.
  */
+
+export * from 'ai';
 
 export { createAIGatewayFetch } from './create-fetch';
 export type { CreateAIGatewayFetchOptions } from './create-fetch';
@@ -19,23 +22,6 @@ export type { AIGatewayProviderSource, OpenAIProviderSource, Resolvable } from '
 
 export { createOpenAI } from '@ai-sdk/openai';
 export type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
-
-export {
-  customProvider,
-  embed,
-  embedMany,
-  generateObject,
-  generateText,
-  streamObject,
-  streamText,
-  wrapLanguageModel,
-  createIdGenerator,
-  dynamicTool,
-  generateId,
-  jsonSchema,
-  tool,
-  zodSchema,
-} from 'ai';
 
 export {
   AIGatewayError,

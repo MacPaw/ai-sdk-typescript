@@ -11,6 +11,7 @@ import { AuthError, parseErrorResponseFromResponse } from './errors';
 import { withRetry } from './retry';
 import { anySignal } from './abort';
 import { createFetchTransport } from './transport/fetch';
+import { generateRequestId, hasHeaderCaseInsensitive } from './request-id';
 
 const NODE_NETWORK_CODES = new Set([
   'ECONNREFUSED',
@@ -28,15 +29,6 @@ function isNetworkError(err: unknown): boolean {
   const code = (err as { code?: string })?.code;
   if (typeof code === 'string' && NODE_NETWORK_CODES.has(code)) return true;
   return false;
-}
-
-let requestIdCounter = 0;
-
-function generateRequestId(): string {
-  const timestamp = Date.now().toString(36);
-  const counter = (requestIdCounter++).toString(36);
-  const random = Math.random().toString(36).slice(2, 8);
-  return `sdk-${timestamp}-${counter}-${random}`;
 }
 
 function redactSensitiveHeaders(headers: Record<string, string>): Record<string, string> {
@@ -97,8 +89,8 @@ async function executeRequest(
 
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  if (config.generateRequestId && !Object.keys(headers).some((key) => key.toLowerCase() === 'x-request-id')) {
-    headers['X-Request-ID'] = generateRequestId();
+  if (config.generateRequestId && !hasHeaderCaseInsensitive(headers, 'x-request-id')) {
+    headers['X-Request-ID'] = generateRequestId('sdk');
   }
 
   const timeoutMs = options?.timeout ?? config.timeout;
@@ -192,13 +184,20 @@ let customDefaultTransport: Transport | undefined;
 
 /**
  * Override the default transport for all clients that don't specify their own.
- * Prefer passing `transport` in the client config for per-client control.
+ *
+ * @deprecated Mutates module-level state affecting all clients in the process.
+ * In serverless/edge environments this can cause cross-request interference.
+ * Pass `transport` in the per-client config instead.
  */
 export function setDefaultTransport(transport: Transport): void {
   customDefaultTransport = transport;
 }
 
-/** Remove the custom default transport, reverting to the built-in fetch transport. */
+/**
+ * Remove the custom default transport, reverting to the built-in fetch transport.
+ *
+ * @deprecated See {@link setDefaultTransport} deprecation notice.
+ */
 export function resetDefaultTransport(): void {
   customDefaultTransport = undefined;
 }

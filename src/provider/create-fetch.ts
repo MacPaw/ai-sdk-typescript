@@ -8,6 +8,7 @@
 
 import { parseErrorResponseFromResponse } from '../runtime/errors';
 import { createAuthTokenCache } from '../runtime/auth-token-cache';
+import { generateRequestId } from '../runtime/request-id';
 
 export interface CreateAIGatewayFetchOptions {
   baseURL: string;
@@ -28,15 +29,6 @@ export interface CreateAIGatewayFetchOptions {
 }
 
 type FetchInput = string | URL | Request | { url: string };
-
-let providerRequestIdCounter = 0;
-
-function generateRequestId(): string {
-  const timestamp = Date.now().toString(36);
-  const counter = (providerRequestIdCounter++).toString(36);
-  const random = Math.random().toString(36).slice(2, 8);
-  return `provider-${timestamp}-${counter}-${random}`;
-}
 
 function resolveRequestUrl(input: FetchInput): string {
   if (typeof input === 'string') return input;
@@ -112,11 +104,8 @@ export function createAIGatewayFetch(
           headers.set(key, value);
         }
 
-        if (
-          shouldGenerateRequestId &&
-          !Array.from(headers.keys()).some((key) => key.toLowerCase() === 'x-request-id')
-        ) {
-          headers.set('X-Request-ID', generateRequestId());
+        if (shouldGenerateRequestId && !headers.has('x-request-id')) {
+          headers.set('X-Request-ID', generateRequestId('provider'));
         }
       }
 

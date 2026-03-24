@@ -16,11 +16,31 @@ import { customProvider } from 'ai';
 import { resolveAIGatewayProvider } from './provider-source';
 import type { AIGatewayProviderSource } from './provider-source';
 
-function requireRerankingModel(provider: ProviderV3): NonNullable<ProviderV3['rerankingModel']> {
-  if (typeof provider.rerankingModel !== 'function') {
-    throw new Error('AI Gateway fallback provider does not implement rerankingModel()');
+/**
+ * Maps ProviderV3 method names to OpenAIProvider method names where they differ.
+ * Updated when `@ai-sdk/openai` renames methods relative to the generic ProviderV3 interface.
+ */
+const OPENAI_METHOD_MAP: Record<string, string> = {
+  transcriptionModel: 'transcription',
+  speechModel: 'speech',
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function delegateToProvider(provider: ProviderV3, method: string, modelId: string): any {
+  const mapped = OPENAI_METHOD_MAP[method] ?? method;
+  const target = provider as unknown as Record<string, unknown>;
+
+  const fn = target[mapped];
+  if (typeof fn === 'function') {
+    return fn.call(provider, modelId);
   }
-  return provider.rerankingModel.bind(provider);
+
+  const directFn = target[method];
+  if (typeof directFn === 'function') {
+    return directFn.call(provider, modelId);
+  }
+
+  throw new Error(`AI Gateway fallback provider does not implement ${method}() or ${mapped}()`);
 }
 
 export interface AIGatewayCustomProviderRegistry<
@@ -109,13 +129,13 @@ export function createAIGatewayCustomProvider<
       return resolveFallbackProvider().imageModel(modelId);
     },
     transcriptionModel(modelId) {
-      return resolveFallbackProvider().transcription(modelId);
+      return delegateToProvider(resolveFallbackProvider() as ProviderV3, 'transcriptionModel', modelId) as TranscriptionModelV3;
     },
     speechModel(modelId) {
-      return resolveFallbackProvider().speech(modelId);
+      return delegateToProvider(resolveFallbackProvider() as ProviderV3, 'speechModel', modelId) as SpeechModelV3;
     },
     rerankingModel(modelId) {
-      return requireRerankingModel(resolveFallbackProvider() as ProviderV3)(modelId);
+      return delegateToProvider(resolveFallbackProvider() as ProviderV3, 'rerankingModel', modelId) as RerankingModelV3;
     },
   };
 

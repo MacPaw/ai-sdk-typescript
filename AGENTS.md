@@ -4,10 +4,10 @@ This is the `@macpaw/ai-sdk` SDK — a Vercel AI SDK extension layer for AI Gate
 
 ## When integrating an app with AI Gateway
 
-1. **Install:** `pnpm add @macpaw/ai-sdk` — no other AI packages needed unless you use React hooks from `@ai-sdk/react`.
+1. **Install:** `pnpm add @macpaw/ai-sdk` — add `react` + `@ai-sdk/react` only for UI hooks; add the matching `@ai-sdk/*` peer only for provider subpaths you import (e.g. `@ai-sdk/xai` for `@macpaw/ai-sdk/xai`).
 2. **Detect stack and choose path:**
    - **NestJS** (or **Node.js (NestJS)**) → `AIGatewayModule` from `@macpaw/ai-sdk/nestjs`, inject with `@InjectAIGateway()`, use `AIGatewayExceptionFilter`.
-   - **Next.js / Vercel AI SDK** → `@macpaw/ai-sdk/provider` as the primary path: `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createOpenAI`, `generateText`, `streamText`.
+   - **Next.js / Vercel AI SDK** → `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` (same module): `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createOpenAI`, `generateText`, `streamText`. Use `@macpaw/ai-sdk/ai/internal` and `@macpaw/ai-sdk/ai/test` where the app used `ai/internal` and `ai/test`. Optional mirrors: `@macpaw/ai-sdk/react`, `@macpaw/ai-sdk/anthropic`, `@macpaw/ai-sdk/google`, `@macpaw/ai-sdk/xai`, `@macpaw/ai-sdk/groq`, `@macpaw/ai-sdk/mistral`, `@macpaw/ai-sdk/amazon-bedrock`, `@macpaw/ai-sdk/azure`, `@macpaw/ai-sdk/cohere`, `@macpaw/ai-sdk/perplexity`, `@macpaw/ai-sdk/deepseek`, `@macpaw/ai-sdk/togetherai`, `@macpaw/ai-sdk/openai-compatible` — each re-exports the same API as `@ai-sdk/<name>`; install the peer you use.
    - **Node / Express / Browser with direct Gateway HTTP usage** → `createAIGatewayClient` from `@macpaw/ai-sdk/client`.
    - **Advanced transport / request-pipeline primitives** → `@macpaw/ai-sdk/runtime` (`API_PATHS`, `createFetchTransport`, `SDKValidationError`, retry/SSE helpers).
 3. **Auth:** always `getAuthToken: async () => token` (Bearer). Use `env: 'production'` for prod URL, `baseURL` for staging.
@@ -17,9 +17,9 @@ This is the `@macpaw/ai-sdk` SDK — a Vercel AI SDK extension layer for AI Gate
 
 ## Common mistakes
 
-- Use `@macpaw/ai-sdk/provider` instead of mixing direct `ai` / `@ai-sdk/openai` imports across the app. The provider entry exposes the curated AI SDK surface we support semver-wise, plus `createOpenAI` for dual-backend flows.
+- Use `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` instead of mixing direct `ai` / `@ai-sdk/openai` imports across the app. The entry re-exports the full `ai` package (Vercel AI SDK core) semver-aligned via peers, plus `createOpenAI` and AI Gateway helpers.
 - `createAIGatewayDualProvider()` and `createAIGatewayCustomProvider()` accept eager providers or lazy factories, which is useful for env-specific builds.
-- React hooks (`useChat`, `useCompletion`) still come from the Vercel AI SDK React package such as `@ai-sdk/react`.
+- React hooks (`useChat`, `useCompletion`) from `@macpaw/ai-sdk/react` (re-exports `@ai-sdk/react`) or directly from `@ai-sdk/react`.
 - `env` only supports `'production'`. For staging use `baseURL`.
 - Retry config uses `maxAttempts`, not `maxRetries`.
 - Never hardcode tokens — use `getAuthToken`.
@@ -30,5 +30,5 @@ This is the `@macpaw/ai-sdk` SDK — a Vercel AI SDK extension layer for AI Gate
 
 - `pnpm install && pnpm typecheck && pnpm lint && pnpm test` to verify changes.
 - Conventional Commits: `feat:`, `fix:`, `perf:`, `docs:`, `test:`.
-- Entry points: `src/index.ts`, `src/client-entry.ts`, `src/client/index.ts`, `src/runtime/index.ts`, `src/types/index.ts`, `src/core/index.ts`, `src/provider/index.ts`, `src/nestjs/index.ts`, `src/testing/index.ts`, `src/client/api/*`.
+- Entry points: `src/index.ts`, `src/client-entry.ts`, `src/client/index.ts`, `src/runtime/index.ts`, `src/types/index.ts`, `src/core/index.ts`, `src/provider/index.ts`, `src/react/index.ts`, `src/anthropic/index.ts`, `src/google/index.ts`, `src/xai/index.ts`, `src/groq/index.ts`, `src/mistral/index.ts`, `src/amazon-bedrock/index.ts`, `src/azure/index.ts`, `src/cohere/index.ts`, `src/perplexity/index.ts`, `src/deepseek/index.ts`, `src/togetherai/index.ts`, `src/openai-compatible/index.ts`, `src/nestjs/index.ts`, `src/testing/index.ts`, `src/client/api/*`.
 - Co-located tests: `src/**/__tests__/**/*.spec.ts` only.

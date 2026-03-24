@@ -1,25 +1,13 @@
 /**
- * Shared surface for AI Gateway integrations.
+ * Root package entry.
  *
- * Use `@macpaw/ai-sdk/provider` for Vercel AI SDK applications.
- * Use `@macpaw/ai-sdk/client` for the advanced low-level Gateway HTTP client.
+ * Re-exports the Vercel-compatible provider surface for easier migrations from `ai`,
+ * while keeping advanced Gateway HTTP/client and runtime internals on explicit subpaths.
  */
 
-export {
-  AIGatewayErrorCodes,
-  AIGatewayError,
-  AuthError,
-  CreditsError,
-  RateLimitError,
-  ModelNotAllowedError,
-  ValidationError,
-  isAIGatewayError,
-  parseErrorResponse,
-} from './runtime/errors';
-export type { NormalizedErrorMetadata } from './runtime/errors';
+export * from './provider';
 
 export {
-  ErrorCode,
   GatewayApiCode,
   MessageRole,
   FinishReason,

@@ -209,17 +209,23 @@ export async function parseErrorResponseFromResponse(response: Response): Promis
     body = { message: await response.text().catch(() => response.statusText) };
   }
 
+  const retryAfterHeader = response.headers.get('Retry-After');
+  let headerRetryAfter: number | undefined;
+  if (retryAfterHeader) {
+    headerRetryAfter = parseRetryAfterHeader(retryAfterHeader);
+  }
+
   try {
     parseErrorResponse(response.status, body);
   } catch (error) {
-    if (error instanceof AIGatewayError && error.retryAfter == null) {
-      const retryAfter = response.headers.get('Retry-After');
-      if (retryAfter) {
-        const seconds = parseRetryAfterHeader(retryAfter);
-        if (seconds != null) {
-          error.metadata.retryAfter = seconds;
-        }
-      }
+    if (error instanceof AIGatewayError && error.retryAfter == null && headerRetryAfter != null) {
+      throw createTypedError(
+        error.message,
+        error.code,
+        error.statusCode,
+        { ...error.metadata, retryAfter: headerRetryAfter },
+        error.cause != null ? { cause: error.cause } : undefined,
+      );
     }
     throw error;
   }
