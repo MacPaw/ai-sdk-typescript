@@ -120,7 +120,7 @@
     "@nestjs/common": "^11.1.14",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.5.0",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.0.2",
     "typescript-eslint": "^8.56.1",
