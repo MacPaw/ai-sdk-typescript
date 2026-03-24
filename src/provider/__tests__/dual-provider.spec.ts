@@ -19,6 +19,8 @@ function createMockProvider(label: string): OpenAIProvider {
     transcription: vi.fn().mockReturnValue(`${label}-transcription`),
     speech: vi.fn().mockReturnValue(`${label}-speech`),
     tools: { label },
+    providerLabel: `${label}-provider`,
+    experimentalHelper: vi.fn().mockReturnValue(`${label}-experimental`),
   }) as unknown as OpenAIProvider;
 }
 
@@ -89,5 +91,34 @@ describe('createAIGatewayDualProvider', () => {
 
     expect(provider.chat('openai/gpt-4.1-nano')).toBe('direct-chat');
     expect(directFactory).toHaveBeenCalledTimes(1);
+  });
+
+  it('forwards provider properties without a manual allowlist', () => {
+    const gateway = createMockProvider('gateway') as OpenAIProvider & {
+      providerLabel: string;
+      experimentalHelper: () => string;
+    };
+    const direct = createMockProvider('direct') as OpenAIProvider & {
+      providerLabel: string;
+      experimentalHelper: () => string;
+    };
+    let useGateway = false;
+
+    const provider = createAIGatewayDualProvider({
+      useGateway: () => useGateway,
+      gateway,
+      direct,
+    }) as OpenAIProvider & {
+      providerLabel: string;
+      experimentalHelper: () => string;
+    };
+
+    expect(provider.providerLabel).toBe('direct-provider');
+    expect(provider.experimentalHelper()).toBe('direct-experimental');
+
+    useGateway = true;
+
+    expect(provider.providerLabel).toBe('gateway-provider');
+    expect(provider.experimentalHelper()).toBe('gateway-experimental');
   });
 });

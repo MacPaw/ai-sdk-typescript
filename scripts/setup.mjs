@@ -37,7 +37,9 @@ const results = [];
 
 // --- Cursor Skill ---
 if (all || tool === 'cursor') {
-  const src = path.join(pkgRoot, '.cursor', 'skills', 'integrate-ai-gateway');
+  const packagedCursorSkill = path.join(pkgRoot, 'templates', 'cursor', 'skills', 'integrate-ai-gateway');
+  const repoCursorSkill = path.join(pkgRoot, '.cursor', 'skills', 'integrate-ai-gateway');
+  const src = fs.existsSync(packagedCursorSkill) ? packagedCursorSkill : repoCursorSkill;
   const destDir = path.join(projectRoot, '.cursor', 'skills');
   const dest = path.join(destDir, 'integrate-ai-gateway');
 

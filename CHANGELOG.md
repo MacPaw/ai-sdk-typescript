@@ -18,6 +18,9 @@
 - HTTP facades moved from `src/api/` to `src/client/api/` (internal structure only; public imports unchanged).
 - Tests live under colocated `src/**/__tests__/` directories.
 - Client entry moved to `src/client/index.ts`; `@macpaw/ai-sdk/core` no longer re-exports domain types (use the main entry or `@macpaw/ai-sdk/types`).
+- README and AI-assistant templates now describe `@macpaw/ai-sdk/provider` as a curated Vercel AI SDK surface, not a full mirror of every `ai` export.
+- `macpaw-ai-setup` now reads the Cursor skill from published templates, so the npm package no longer needs to ship repository-only `.cursor` assets.
+- Vitest now fails when no tests are discovered, tightening release-time verification.
 
 ### Deprecated
 

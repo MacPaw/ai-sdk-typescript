@@ -73,6 +73,45 @@ describe('createMockTransport', () => {
       expect(data.text).toBe('Mock transcription');
     });
 
+    it('returns SSE for streaming chat requests by default', async () => {
+      const response = await transport.request(
+        makeConfig(API_PATHS.ChatCompletions, { model: 'gpt-4.1-nano', messages: [], stream: true }),
+      );
+
+      expect(response.headers.get('content-type')).toContain('text/event-stream');
+      const text = await response.text();
+      expect(text).toContain('"chat.completion.chunk"');
+      expect(text).toContain('[DONE]');
+    });
+
+    it('returns SSE for streaming responses requests by default', async () => {
+      const response = await transport.request(makeConfig(API_PATHS.Responses, { model: 'gpt-4.1-nano', input: 'Hi', stream: true }));
+
+      expect(response.headers.get('content-type')).toContain('text/event-stream');
+      const text = await response.text();
+      expect(text).toContain('"response.output_text.delta"');
+      expect(text).toContain('[DONE]');
+    });
+
+    it('returns SSE for streaming transcription requests by default', async () => {
+      const form = new FormData();
+      form.append('file', new Blob(['audio']), 'audio.mp3');
+      form.append('model', 'whisper-1');
+      form.append('stream', 'true');
+
+      const response = await transport.request({
+        url: `https://api.example.com${API_PATHS.AudioTranscriptions}`,
+        method: 'POST',
+        headers: {},
+        body: form,
+      });
+
+      expect(response.headers.get('content-type')).toContain('text/event-stream');
+      const text = await response.text();
+      expect(text).toContain('"transcript.text.delta"');
+      expect(text).toContain('[DONE]');
+    });
+
     it('returns mock translation for /audio/translations', async () => {
       const response = await transport.request(makeConfig(API_PATHS.AudioTranslations));
       const data = await json(response);
@@ -218,6 +257,28 @@ describe('createMockTransport', () => {
       };
       await transport.request(config);
       expect(transport.requests[0].body).toBe('raw-text-body');
+    });
+
+    it('summarizes multipart FormData bodies and preserves the raw body', async () => {
+      const form = new FormData();
+      form.append('file', new Blob(['audio data'], { type: 'audio/mp3' }), 'audio.mp3');
+      form.append('model', 'whisper-1');
+      form.append('timestamp_granularities[]', 'word');
+      form.append('timestamp_granularities[]', 'segment');
+
+      await transport.request({
+        url: `https://api.example.com${API_PATHS.AudioTranscriptions}`,
+        method: 'POST',
+        headers: {},
+        body: form,
+      });
+
+      expect(transport.requests[0].body).toEqual({
+        file: { kind: 'blob', name: 'audio.mp3', type: 'audio/mp3', size: 10 },
+        model: 'whisper-1',
+        'timestamp_granularities[]': ['word', 'segment'],
+      });
+      expect(transport.requests[0].rawBody).toBe(form);
     });
   });
 });

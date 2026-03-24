@@ -25,6 +25,7 @@ export type MockRouteHandler = (config: RequestConfig, body: unknown) => Respons
 export interface MockTransportRequest {
   config: RequestConfig;
   body: unknown;
+  rawBody: RequestConfig['body'];
   matchedRoute: string | undefined;
   timestamp: number;
 }
@@ -53,13 +54,63 @@ function jsonResponse(data: unknown, status = 200): Response {
   });
 }
 
+function sseResponse(events: unknown[]): Response {
+  const payload =
+    [...events.map((event) => `data: ${JSON.stringify(event)}`), 'data: [DONE]'].join('\n\n') + '\n\n';
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encoder.encode(payload));
+      controller.close();
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: { 'content-type': 'text/event-stream' },
+  });
+}
+
+function wantsStream(body: unknown): boolean {
+  return (body as Record<string, unknown> | undefined)?.stream === true || (body as Record<string, unknown> | undefined)?.stream === 'true';
+}
+
 function defaultHandler(path: string, body: unknown): Response {
   const model = (body as Record<string, unknown>)?.model as string | undefined;
 
   if (path.endsWith(API_PATHS.ChatCompletions)) {
+    if (wantsStream(body)) {
+      return sseResponse([
+        {
+          id: 'chatcmpl-mock-0',
+          object: 'chat.completion.chunk',
+          created: Math.floor(Date.now() / 1000),
+          model: model ?? 'mock-model',
+          choices: [{ index: 0, delta: { role: 'assistant' }, finish_reason: null }],
+          usage: null,
+        },
+        {
+          id: 'chatcmpl-mock-1',
+          object: 'chat.completion.chunk',
+          created: Math.floor(Date.now() / 1000),
+          model: model ?? 'mock-model',
+          choices: [{ index: 0, delta: { content: 'Mock response' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 5, completion_tokens: 2, total_tokens: 7 },
+        },
+      ]);
+    }
     return jsonResponse(createMockChatCompletion({ model }));
   }
   if (path.endsWith(API_PATHS.Responses)) {
+    if (wantsStream(body)) {
+      return sseResponse([
+        { type: 'response.output_text.delta', delta: 'Mock response' },
+        {
+          type: 'response.completed',
+          response: createMockResponseObject({ model, content: 'Mock response' }),
+        },
+      ]);
+    }
     return jsonResponse(createMockResponseObject({ model }));
   }
   if (path.endsWith(API_PATHS.Embeddings)) {
@@ -72,6 +123,13 @@ function defaultHandler(path: string, body: unknown): Response {
     return jsonResponse(createMockImageResponse());
   }
   if (path.endsWith(API_PATHS.AudioTranscriptions)) {
+    if (wantsStream(body)) {
+      return sseResponse([
+        { type: 'transcript.text.delta', delta: 'Mock ' },
+        { type: 'transcript.text.delta', delta: 'transcription' },
+        { type: 'transcript.text.done', text: 'Mock transcription' },
+      ]);
+    }
     return jsonResponse(createMockTranscriptionResponse());
   }
   if (path.endsWith(API_PATHS.AudioTranslations)) {
@@ -88,13 +146,45 @@ function defaultHandler(path: string, body: unknown): Response {
 // Parse body from RequestConfig
 // ---------------------------------------------------------------------------
 
-function parseBody(config: RequestConfig): unknown {
-  if (!config.body || typeof config.body !== 'string') return undefined;
-  try {
-    return JSON.parse(config.body);
-  } catch {
-    return config.body;
+function summarizeFormDataValue(value: string | Blob): unknown {
+  if (typeof value === 'string') return value;
+
+  const fileLike = value as Blob & { name?: string };
+  return {
+    kind: 'blob',
+    name: fileLike.name,
+    type: value.type,
+    size: value.size,
+  };
+}
+
+function appendFormField(target: Record<string, unknown>, key: string, value: unknown): void {
+  if (!(key in target)) {
+    target[key] = value;
+    return;
   }
+
+  const existing = target[key];
+  target[key] = Array.isArray(existing) ? [...existing, value] : [existing, value];
+}
+
+async function parseBody(config: RequestConfig): Promise<unknown> {
+  if (!config.body) return undefined;
+  if (typeof config.body === 'string') {
+    try {
+      return JSON.parse(config.body);
+    } catch {
+      return config.body;
+    }
+  }
+  if (typeof FormData !== 'undefined' && config.body instanceof FormData) {
+    const fields: Record<string, unknown> = {};
+    for (const [key, value] of config.body.entries()) {
+      appendFormField(fields, key, summarizeFormDataValue(value));
+    }
+    return fields;
+  }
+  return config.body;
 }
 
 // ---------------------------------------------------------------------------
@@ -128,6 +218,7 @@ function parseBody(config: RequestConfig): unknown {
  * // Inspect captured requests
  * console.log(transport.requestCount);         // 1
  * console.log(transport.requests[0].body);      // { model: '...', messages: [...] }
+ * // Multipart bodies are summarized into plain objects; the original body is on rawBody.
  *
  * // Custom handler for a specific route
  * transport.onRoute('/chat/completions', (_config, body) => {
@@ -156,12 +247,13 @@ export function createMockTransport(): MockTransport {
     },
 
     async request(config: RequestConfig): Promise<Response> {
-      const body = parseBody(config);
+      const body = await parseBody(config);
       const match = findRoute(config.url);
 
       requests.push({
         config,
         body,
+        rawBody: config.body,
         matchedRoute: match?.[0],
         timestamp: Date.now(),
       });

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createAIGatewayClient } from '../client';
 import type { Middleware, RequestConfig } from '../runtime/config';
+import { createMockTransport } from '../testing/mock-transport';
 
 describe('createAIGatewayClient', () => {
   it('throws if neither baseURL nor env is provided', () => {
@@ -65,5 +66,50 @@ describe('createAIGatewayClient', () => {
     expect(typeof client.images.edit).toBe('function');
     expect(typeof client.audio.transcriptions.create).toBe('function');
     expect(typeof client.audio.translations.create).toBe('function');
+  });
+
+  it('chat.completions.stream uses the client pipeline and injects stream usage options', async () => {
+    const transport = createMockTransport();
+    const client = createAIGatewayClient({
+      baseURL: 'https://api.example.com/ai',
+      getAuthToken: async () => 'token',
+      transport,
+    });
+
+    const result = client.chat.completions.stream({
+      model: 'openai/gpt-4.1-nano',
+      messages: [{ role: 'user', content: 'Hi' }],
+    });
+
+    await expect(result.text).resolves.toBe('Mock response');
+    expect(transport.requestCount).toBe(1);
+    expect(transport.requests[0].body).toEqual({
+      model: 'openai/gpt-4.1-nano',
+      messages: [{ role: 'user', content: 'Hi' }],
+      stream: true,
+      stream_options: { include_usage: true },
+    });
+  });
+
+  it('responses.stream uses default SSE transport fixtures', async () => {
+    const transport = createMockTransport();
+    const client = createAIGatewayClient({
+      baseURL: 'https://api.example.com/ai',
+      getAuthToken: async () => 'token',
+      transport,
+    });
+
+    const result = client.responses.stream({
+      model: 'openai/gpt-4.1-nano',
+      input: 'Hi',
+    });
+
+    await expect(result.text).resolves.toBe('Mock response');
+    expect(transport.requestCount).toBe(1);
+    expect(transport.requests[0].body).toEqual({
+      model: 'openai/gpt-4.1-nano',
+      input: 'Hi',
+      stream: true,
+    });
   });
 });

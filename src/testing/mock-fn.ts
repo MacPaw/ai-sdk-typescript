@@ -3,6 +3,42 @@
  * Works without vitest/jest — users get call tracking and return value control out of the box.
  */
 
+import { isDeepStrictEqual } from 'node:util';
+
+function isBinaryLike(value: unknown): value is Blob | File {
+  if (typeof Blob !== 'undefined' && value instanceof Blob) return true;
+  if (typeof File !== 'undefined' && value instanceof File) return true;
+  return false;
+}
+
+function areEqual(left: unknown, right: unknown): boolean {
+  if (Object.is(left, right)) return true;
+  if (isBinaryLike(left) || isBinaryLike(right)) return false;
+
+  if (Array.isArray(left) && Array.isArray(right)) {
+    return left.length === right.length && left.every((item, index) => areEqual(item, right[index]));
+  }
+
+  if (
+    left != null &&
+    right != null &&
+    typeof left === 'object' &&
+    typeof right === 'object' &&
+    Object.getPrototypeOf(left) === Object.prototype &&
+    Object.getPrototypeOf(right) === Object.prototype
+  ) {
+    const leftEntries = Object.entries(left as Record<string, unknown>);
+    const rightEntries = Object.entries(right as Record<string, unknown>);
+
+    return (
+      leftEntries.length === rightEntries.length &&
+      leftEntries.every(([key, value]) => key in (right as Record<string, unknown>) && areEqual(value, (right as Record<string, unknown>)[key]))
+    );
+  }
+
+  return isDeepStrictEqual(left, right);
+}
+
 export interface MockFn<TReturn = unknown> {
   (...args: unknown[]): TReturn;
   /** All recorded calls (each entry is the arguments array). */
@@ -34,7 +70,7 @@ export interface MockFn<TReturn = unknown> {
   mockClear(): MockFn<TReturn>;
   /** Clear call history *and* reset implementation to default. */
   mockReset(): MockFn<TReturn>;
-  /** Check if any call was made with the given arguments (deep equality via JSON). */
+  /** Check if any call was made with the given arguments (deep structural equality). */
   wasCalledWith(...args: unknown[]): boolean;
 }
 
@@ -109,8 +145,7 @@ export function createMockFn<TReturn = unknown>(defaultReturn?: TReturn): MockFn
   };
 
   fn.wasCalledWith = (...args: unknown[]) => {
-    const target = JSON.stringify(args);
-    return calls.some((c) => JSON.stringify(c) === target);
+    return calls.some((c) => areEqual(c, args));
   };
 
   if (defaultReturn !== undefined) {

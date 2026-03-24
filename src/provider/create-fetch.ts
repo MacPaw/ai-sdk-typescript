@@ -19,7 +19,10 @@ export interface CreateAIGatewayFetchOptions {
   tokenCacheTTL?: number;
   /** Generate `X-Request-ID` for requests that do not already have one. Default: true. */
   generateRequestId?: boolean;
-  /** Normalize gateway error responses into `AIGatewayError`. Default: true. */
+  /**
+   * Normalize gateway error responses into `AIGatewayError`. Default: true.
+   * When enabled, non-OK gateway responses throw instead of returning a failed `Response`.
+   */
   normalizeErrors?: boolean;
 }
 

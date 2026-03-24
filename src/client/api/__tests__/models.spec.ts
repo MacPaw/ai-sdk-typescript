@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { getModelInfo } from '../models';
 import type { ResolvedConfig } from '../../../core/config';
 import { API_PATHS } from '../../../core/paths';
+import { SDKValidationError } from '../../../runtime/validation';
 
 function createMockConfig(response: Response): ResolvedConfig {
   return {
@@ -65,5 +66,15 @@ describe('getModelInfo', () => {
     const transport = config.transport!;
     const req = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(req.url).toContain('litellm_model_id=openai%2Fgpt-4.1-nano');
+  });
+
+  it('validates litellm_model_id when provided', async () => {
+    const response = new Response(JSON.stringify({ data: [] }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const config = createMockConfig(response);
+
+    await expect(getModelInfo(config, { litellm_model_id: '   ' })).rejects.toBeInstanceOf(SDKValidationError);
   });
 });

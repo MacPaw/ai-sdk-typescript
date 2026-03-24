@@ -192,6 +192,30 @@ describe('createAIGatewayFetch', () => {
     );
   });
 
+  it('returns the raw non-OK Response when normalizeErrors is false', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+      new Response(JSON.stringify({ statusCode: 429, message: 'Slow down', code: 'RATE_LIMITED' }), {
+        status: 429,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'token',
+      autoRefreshToken: false,
+      normalizeErrors: false,
+    });
+
+    const response = await customFetch('https://api.macpaw.com/ai/api/v1/chat/completions');
+    expect(response.status).toBe(429);
+    await expect(response.json()).resolves.toEqual({
+      statusCode: 429,
+      message: 'Slow down',
+      code: 'RATE_LIMITED',
+    });
+  });
+
   it('does not cache null tokens for the full TTL', async () => {
     const getAuthToken = vi.fn<() => Promise<string | null>>().mockResolvedValueOnce(null).mockResolvedValueOnce('fresh-token');
     const customFetch = createAIGatewayFetch({

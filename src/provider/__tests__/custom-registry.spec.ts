@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import type { ProviderV3 } from '@ai-sdk/provider';
 import type { OpenAIProvider } from '@ai-sdk/openai';
 import { createAIGatewayCustomProvider } from '../custom-registry';
 
@@ -40,9 +41,12 @@ describe('createAIGatewayCustomProvider', () => {
       },
     );
 
-    expect(mockCreateOpenAI).toHaveBeenCalledTimes(1);
+    expect(mockCreateOpenAI).not.toHaveBeenCalled();
     expect(typeof registry.languageModel).toBe('function');
     expect(registry.languageModel('fast')).toBe(mockReturn);
+    expect(mockCreateOpenAI).not.toHaveBeenCalled();
+    expect((registry as ProviderV3).languageModel('openai/gpt-4.1-nano')).toStrictEqual({ spec: 'lm' });
+    expect(mockCreateOpenAI).toHaveBeenCalledTimes(1);
   });
 
   it('reuses a prebuilt gateway provider without rebuilding it', () => {
@@ -57,7 +61,7 @@ describe('createAIGatewayCustomProvider', () => {
     expect(registry.languageModel('fast')).toBe(gateway);
   });
 
-  it('supports lazy gateway provider factories', () => {
+  it('resolves lazy gateway provider factories only on fallback access', () => {
     const gateway = createMockProvider();
     const gatewayFactory = vi.fn().mockReturnValue(gateway);
 
@@ -67,7 +71,13 @@ describe('createAIGatewayCustomProvider', () => {
       },
     });
 
-    expect(gatewayFactory).toHaveBeenCalledTimes(1);
+    expect(gatewayFactory).not.toHaveBeenCalled();
     expect(registry.languageModel('fast')).toBe(gateway);
+    expect(gatewayFactory).not.toHaveBeenCalled();
+
+    expect((registry as ProviderV3).languageModel('openai/gpt-4.1-nano')).toStrictEqual(
+      gateway.languageModel('openai/gpt-4.1-nano'),
+    );
+    expect(gatewayFactory).toHaveBeenCalledTimes(1);
   });
 });

@@ -50,6 +50,15 @@ describe('createMockFn', () => {
       fn('a', 1);
       expect(fn.wasCalledWith('c', 3)).toBe(false);
     });
+
+    it('compares Blob arguments without JSON serialization tricks', () => {
+      const fn = createMockFn();
+      const blob = new Blob(['hello'], { type: 'text/plain' });
+      fn(blob);
+
+      expect(fn.wasCalledWith(blob)).toBe(true);
+      expect(fn.wasCalledWith(new Blob(['hello'], { type: 'text/plain' }))).toBe(false);
+    });
   });
 
   describe('mockReturnValue', () => {

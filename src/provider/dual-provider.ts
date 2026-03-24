@@ -17,6 +17,9 @@ export interface AIGatewayDualProviderOptions {
 /**
  * Create a provider that switches between AI Gateway and a direct OpenAI-compatible
  * backend without changing the surrounding `ai-sdk` integration code.
+ *
+ * A Proxy keeps the wrapper aligned with future `OpenAIProvider` additions instead
+ * of manually forwarding a fixed method list that can drift from upstream.
  */
 export function createAIGatewayDualProvider(options: AIGatewayDualProviderOptions): OpenAIProvider {
   let cachedGatewayProvider: OpenAIProvider | undefined;
@@ -32,26 +35,33 @@ export function createAIGatewayDualProvider(options: AIGatewayDualProviderOption
 
   const provider = ((modelId: Parameters<OpenAIProvider>[0]) => pickProvider()(modelId)) as OpenAIProvider;
 
-  provider.languageModel = (modelId) => pickProvider().languageModel(modelId);
-  provider.chat = (modelId) => pickProvider().chat(modelId);
-  provider.responses = (modelId) => pickProvider().responses(modelId);
-  provider.completion = (modelId) => pickProvider().completion(modelId);
-  provider.embedding = (modelId) => pickProvider().embedding(modelId);
-  provider.embeddingModel = (modelId) => pickProvider().embeddingModel(modelId);
-  provider.textEmbedding = (modelId) => pickProvider().textEmbedding(modelId);
-  provider.textEmbeddingModel = (modelId) => pickProvider().textEmbeddingModel(modelId);
-  provider.image = (modelId) => pickProvider().image(modelId);
-  provider.imageModel = (modelId) => pickProvider().imageModel(modelId);
-  provider.transcription = (modelId) => pickProvider().transcription(modelId);
-  provider.speech = (modelId) => pickProvider().speech(modelId);
-
-  Object.defineProperty(provider, 'tools', {
-    enumerable: true,
-    configurable: false,
-    get() {
-      return pickProvider().tools;
+  return new Proxy(provider, {
+    apply(_target, _thisArg, args: Parameters<OpenAIProvider>) {
+      return pickProvider()(...args);
+    },
+    get(_target, prop) {
+      const selectedProvider = pickProvider();
+      const value = Reflect.get(selectedProvider, prop, selectedProvider);
+      return typeof value === 'function' ? value.bind(selectedProvider) : value;
+    },
+    has(_target, prop) {
+      return prop in pickProvider();
+    },
+    set(_target, prop, value) {
+      Reflect.set(pickProvider() as object, prop, value);
+      return true;
+    },
+    defineProperty(_target, prop, descriptor) {
+      return Reflect.defineProperty(pickProvider() as object, prop, descriptor);
+    },
+    deleteProperty(_target, prop) {
+      return Reflect.deleteProperty(pickProvider() as object, prop);
+    },
+    ownKeys() {
+      return Reflect.ownKeys(pickProvider());
+    },
+    getOwnPropertyDescriptor(_target, prop) {
+      return Object.getOwnPropertyDescriptor(pickProvider(), prop);
     },
   });
-
-  return provider;
 }

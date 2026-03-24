@@ -76,3 +76,8 @@ export function validateTranslationRequest(request: { file?: unknown; model?: un
   requireBlob(request.file, 'file');
   requireString(request.model, 'model');
 }
+
+export function validateModelInfoParams(params?: { litellm_model_id?: unknown }): void {
+  if (params?.litellm_model_id == null) return;
+  requireString(params.litellm_model_id, 'litellm_model_id');
+}

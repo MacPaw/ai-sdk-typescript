@@ -55,6 +55,9 @@ function resolveGatewayBaseURL(baseURL?: string, env?: Environment): string {
  *
  * The returned value is a fully typed `OpenAIProvider`, so existing apps can
  * keep using their `ai-sdk` helpers and model-selection patterns.
+ *
+ * For a `customProvider` with gateway fallback and model aliases, use `createAIGatewayCustomProvider`.
+ * To toggle gateway vs direct OpenAI from a build/env flag (e.g. marketplace build), use `createAIGatewayDualProvider`.
  */
 export function createAIGatewayProvider(options: AIGatewayProviderOptions): OpenAIProvider {
   const baseURL = resolveGatewayBaseURL(options.baseURL, options.env);

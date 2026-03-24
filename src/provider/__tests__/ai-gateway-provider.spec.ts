@@ -75,6 +75,21 @@ describe('createAIGatewayProvider', () => {
     expect(config.baseURL).toBe('https://custom.gateway.com/ai/api/v1');
   });
 
+  it('honors apiVersion when provided', () => {
+    const mockReturn = createMockProvider();
+    const mockCreateOpenAI = vi.fn().mockReturnValue(mockReturn);
+
+    createAIGatewayProvider({
+      createOpenAI: mockCreateOpenAI as never,
+      baseURL: 'https://custom.gateway.com/ai',
+      apiVersion: 'v2',
+      getAuthToken: async () => 'token',
+    });
+
+    const config = mockCreateOpenAI.mock.calls[0][0];
+    expect(config.baseURL).toBe('https://custom.gateway.com/ai/api/v2');
+  });
+
   it('returns the result of createOpenAI', () => {
     const mockReturn = createMockProvider();
     const mockCreateOpenAI = vi.fn().mockReturnValue(mockReturn);

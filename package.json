@@ -96,9 +96,6 @@
     "README.md",
     "MIGRATION.md",
     "CHANGELOG.md",
-    "AGENTS.md",
-    "CLAUDE.md",
-    ".cursor",
     "scripts",
     "templates"
   ],
@@ -168,10 +165,22 @@
     "vitest": "^4.0.18"
   },
   "peerDependencies": {
+    "ai": "^6.0.0",
+    "@ai-sdk/openai": "^3.0.0",
+    "@ai-sdk/provider": "^3.0.0",
     "@nestjs/common": ">=10.0.0",
     "rxjs": ">=7.0.0"
   },
   "peerDependenciesMeta": {
+    "ai": {
+      "optional": true
+    },
+    "@ai-sdk/openai": {
+      "optional": true
+    },
+    "@ai-sdk/provider": {
+      "optional": true
+    },
     "@nestjs/common": {
       "optional": true
     },

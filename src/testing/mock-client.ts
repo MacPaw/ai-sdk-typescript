@@ -44,7 +44,8 @@ export interface MockAudioAPI {
 
 /**
  * A fully-mocked AI Gateway client where every API method is a `MockFn`.
- * Assignable to `AIGatewayClient` for DI / parameter usage.
+ * It mirrors the real namespace layout for unit tests while keeping the mock API
+ * simple and framework-agnostic.
  */
 export interface MockAIGatewayClient {
   readonly chat: { completions: MockChatCompletionsAPI };

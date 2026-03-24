@@ -8,14 +8,6 @@
  */
 
 export { createAIGatewayClient } from './client';
-export type {
-  AIGatewayClient,
-  ChatCompletionsAPI,
-  ResponsesAPI,
-  EmbeddingsAPI,
-  ModelsAPI,
-  ImagesAPI,
-  AudioAPI,
-} from './client';
-
-export type { AIGatewayClientConfig } from './runtime/config';
+export type * from './client/contracts';
+export type { AIGatewayClientConfig, Middleware, RequestConfig } from './runtime/config';
+export type { StreamTextResult, StreamResponseResult } from './runtime/stream-result';

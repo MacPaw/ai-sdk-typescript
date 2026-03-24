@@ -38,7 +38,8 @@ export interface AIGatewayCustomProviderRegistry<
  * Builds a {@link customProvider} whose `fallbackProvider` is an AI Gateway OpenAI-compatible
  * provider from {@link resolveAIGatewayProvider}. Use `languageModels`, `embeddingModels`, etc.
  * to register aliases or restrict models; unknown IDs resolve through the gateway fallback.
- * The gateway source can be passed eagerly or lazily.
+ * The gateway source can be passed eagerly or lazily and is resolved only when the
+ * fallback branch is first used.
  *
  * @example
  * ```ts
@@ -86,10 +87,37 @@ export function createAIGatewayCustomProvider<
   rerankingModel(modelId: Extract<keyof RERANKING_MODELS, string>): RerankingModelV3;
   videoModel(modelId: Extract<keyof VIDEO_MODELS, string>): Experimental_VideoModelV3;
 } {
-  const fallbackProvider = resolveAIGatewayProvider(gateway);
+  let fallbackProvider: ReturnType<typeof resolveAIGatewayProvider> | undefined;
+  const resolveFallbackProvider = () => (fallbackProvider ??= resolveAIGatewayProvider(gateway));
+
+  const lazyFallbackProvider: ProviderV3 = {
+    specificationVersion: 'v3',
+    languageModel(modelId) {
+      return resolveFallbackProvider().languageModel(modelId);
+    },
+    embeddingModel(modelId) {
+      return resolveFallbackProvider().embeddingModel(modelId);
+    },
+    imageModel(modelId) {
+      return resolveFallbackProvider().imageModel(modelId);
+    },
+    transcriptionModel(modelId) {
+      return resolveFallbackProvider().transcription(modelId);
+    },
+    speechModel(modelId) {
+      return resolveFallbackProvider().speech(modelId);
+    },
+    rerankingModel(modelId) {
+      const provider = resolveFallbackProvider() as ProviderV3;
+      if (typeof provider.rerankingModel !== 'function') {
+        throw new Error('AI Gateway fallback provider does not implement rerankingModel()');
+      }
+      return provider.rerankingModel(modelId);
+    },
+  };
 
   return customProvider({
     ...registry,
-    fallbackProvider,
+    fallbackProvider: lazyFallbackProvider,
   });
 }

@@ -17,5 +17,6 @@ describe('provider entry', () => {
 
   it('does not expose the low-level Gateway client', () => {
     expect('createAIGatewayClient' in provider).toBe(false);
+    expect('openai' in provider).toBe(false);
   });
 });

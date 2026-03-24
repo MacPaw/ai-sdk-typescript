@@ -13,7 +13,8 @@ Vercel AI SDK extension layer for AI Gateway. Install `@macpaw/ai-sdk` — no ot
 
 Auth: `getAuthToken: async () => string | null`. Use `env: 'production'` for production base URL, `baseURL: 'https://...'` for staging/custom.
 
-Prefer `@macpaw/ai-sdk/provider` for AI SDK integration. It already exposes the curated AI SDK surface plus `createOpenAI` for dual-backend flows.
+Prefer `@macpaw/ai-sdk/provider` for AI SDK integration. It exposes the curated AI SDK surface plus `createOpenAI` for dual-backend flows; it is not a full mirror of every `ai` export.
 React hooks such as `useChat` come from the Vercel AI SDK React package (`@ai-sdk/react`), not from `@macpaw/ai-sdk/provider`.
+If the app imports `ai` or `@ai-sdk/openai` directly for non-gateway helpers, keep those package versions aligned with `@macpaw/ai-sdk`.
 
 Common mistakes: `env` only supports `'production'` (use `baseURL` for staging). Retry uses `maxAttempts`, not `maxRetries`. Never hardcode tokens — use `getAuthToken`.
