@@ -19,10 +19,7 @@ const providerMirrorSubpaths = [
 ] as const;
 
 const providerMirrorAliases = Object.fromEntries(
-  providerMirrorSubpaths.map((sub) => [
-    `@macpaw/ai-sdk/${sub}`,
-    resolve(__dirname, `./src/${sub}/index.ts`),
-  ]),
+  providerMirrorSubpaths.map((sub) => [`@macpaw/ai-sdk/${sub}`, resolve(__dirname, `./src/${sub}/index.ts`)]),
 );
 
 export default defineConfig({

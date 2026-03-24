@@ -30,20 +30,11 @@
   "excludeProtected": true,
   "excludeInternal": true,
   "excludeExternals": true,
-  "externalPattern": [
-    "node_modules/**"
-  ],
+  "externalPattern": ["node_modules/**"],
   "includeVersion": true,
   "categorizeByGroup": true,
   "sort": ["source-order"],
-  "kindSortOrder": [
-    "Function",
-    "Class",
-    "Interface",
-    "TypeAlias",
-    "Variable",
-    "Enum"
-  ],
+  "kindSortOrder": ["Function", "Class", "Interface", "TypeAlias", "Variable", "Enum"],
   "navigationLinks": {
     "GitHub": "https://github.com/macpaw/ai-sdk-typescript",
     "npm": "https://www.npmjs.com/package/@macpaw/ai-sdk"

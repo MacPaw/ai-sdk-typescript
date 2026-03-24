@@ -7,9 +7,7 @@ type PackageExports = Record<
   string | { import?: { types?: string; default?: string }; require?: { types?: string; default?: string } }
 >;
 
-const packageJson = JSON.parse(
-  readFileSync(fileURLToPath(new URL('../../package.json', import.meta.url)), 'utf8'),
-) as {
+const packageJson = JSON.parse(readFileSync(fileURLToPath(new URL('../../package.json', import.meta.url)), 'utf8')) as {
   exports: PackageExports;
   files: string[];
 };
@@ -35,7 +33,16 @@ function sourceFileExists(relativePath: string): boolean {
 
 describe('package exports', () => {
   it('keeps the release-critical entrypoints in the export map', () => {
-    for (const subpath of ['.', './ai', './ai/internal', './ai/test', './client', './runtime', './testing', './react']) {
+    for (const subpath of [
+      '.',
+      './ai',
+      './ai/internal',
+      './ai/test',
+      './client',
+      './runtime',
+      './testing',
+      './react',
+    ]) {
       expect(packageJson.exports[subpath]).toBeDefined();
     }
   });

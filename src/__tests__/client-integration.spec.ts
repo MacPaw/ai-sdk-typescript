@@ -106,7 +106,9 @@ describe('AIGatewayClient integration with mock transport', () => {
         object: 'chat.completion',
         created: 1,
         model: 'openai/gpt-4.1-nano',
-        choices: [{ index: 0, message: { role: 'assistant', content: 'Recovered after retry' }, finish_reason: 'stop' }],
+        choices: [
+          { index: 0, message: { role: 'assistant', content: 'Recovered after retry' }, finish_reason: 'stop' },
+        ],
       });
     });
 

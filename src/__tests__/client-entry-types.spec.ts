@@ -12,8 +12,10 @@ import type { ModelInfoResponse, WithResponseResult } from '../types';
 
 type Assert<T extends true> = T;
 type IsEqual<A, B> =
-  (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2)
-    ? ((<T>() => T extends B ? 1 : 2) extends (<T>() => T extends A ? 1 : 2) ? true : false)
+  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2
+    ? (<T>() => T extends B ? 1 : 2) extends <T>() => T extends A ? 1 : 2
+      ? true
+      : false
     : false;
 
 const assertType = <T extends true>(value: T): T => value;

@@ -10,9 +10,7 @@ type MockProvider = OpenAIProvider &
     rerankingModel?: ReturnType<typeof vi.fn>;
   };
 
-function createMockProvider(options?: {
-  rerankingModel?: boolean;
-}): MockProvider {
+function createMockProvider(options?: { rerankingModel?: boolean }): MockProvider {
   const provider = Object.assign(vi.fn().mockReturnValue({ spec: 'lm' }), {
     languageModel: vi.fn().mockReturnValue({ spec: 'lm' }),
     chat: vi.fn(),

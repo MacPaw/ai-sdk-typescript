@@ -55,8 +55,7 @@ function jsonResponse(data: unknown, status = 200): Response {
 }
 
 function sseResponse(events: unknown[]): Response {
-  const payload =
-    [...events.map((event) => `data: ${JSON.stringify(event)}`), 'data: [DONE]'].join('\n\n') + '\n\n';
+  const payload = [...events.map((event) => `data: ${JSON.stringify(event)}`), 'data: [DONE]'].join('\n\n') + '\n\n';
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -72,7 +71,10 @@ function sseResponse(events: unknown[]): Response {
 }
 
 function wantsStream(body: unknown): boolean {
-  return (body as Record<string, unknown> | undefined)?.stream === true || (body as Record<string, unknown> | undefined)?.stream === 'true';
+  return (
+    (body as Record<string, unknown> | undefined)?.stream === true ||
+    (body as Record<string, unknown> | undefined)?.stream === 'true'
+  );
 }
 
 function defaultHandler(path: string, body: unknown): Response {

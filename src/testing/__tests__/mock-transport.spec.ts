@@ -85,7 +85,9 @@ describe('createMockTransport', () => {
     });
 
     it('returns SSE for streaming responses requests by default', async () => {
-      const response = await transport.request(makeConfig(API_PATHS.Responses, { model: 'gpt-4.1-nano', input: 'Hi', stream: true }));
+      const response = await transport.request(
+        makeConfig(API_PATHS.Responses, { model: 'gpt-4.1-nano', input: 'Hi', stream: true }),
+      );
 
       expect(response.headers.get('content-type')).toContain('text/event-stream');
       const text = await response.text();

@@ -19,9 +19,9 @@ describe('withRetry', () => {
   it('normalizes invalid maxAttempts and retries up to default attempts', async () => {
     const err = Object.assign(new Error('rate limit'), { statusCode: 429 });
     const fn = vi.fn().mockRejectedValue(err);
-    await expect(
-      withRetry(fn, { retryConfig: { maxAttempts: 0, initialDelayMs: 1, maxDelayMs: 1 } }),
-    ).rejects.toBe(err);
+    await expect(withRetry(fn, { retryConfig: { maxAttempts: 0, initialDelayMs: 1, maxDelayMs: 1 } })).rejects.toBe(
+      err,
+    );
     expect(fn).toHaveBeenCalledTimes(3);
   });
 

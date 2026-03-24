@@ -32,7 +32,10 @@ function areEqual(left: unknown, right: unknown): boolean {
 
     return (
       leftEntries.length === rightEntries.length &&
-      leftEntries.every(([key, value]) => key in (right as Record<string, unknown>) && areEqual(value, (right as Record<string, unknown>)[key]))
+      leftEntries.every(
+        ([key, value]) =>
+          key in (right as Record<string, unknown>) && areEqual(value, (right as Record<string, unknown>)[key]),
+      )
     );
   }
 

@@ -123,7 +123,11 @@ export function createAIGatewayCustomProvider<
       return resolveFallbackProvider().imageModel(modelId);
     },
     transcriptionModel(modelId) {
-      return delegateToProvider(resolveFallbackProvider() as ProviderV3, 'transcriptionModel', modelId) as TranscriptionModelV3;
+      return delegateToProvider(
+        resolveFallbackProvider() as ProviderV3,
+        'transcriptionModel',
+        modelId,
+      ) as TranscriptionModelV3;
     },
     speechModel(modelId) {
       return delegateToProvider(resolveFallbackProvider() as ProviderV3, 'speechModel', modelId) as SpeechModelV3;

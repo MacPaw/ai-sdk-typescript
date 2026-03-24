@@ -49,8 +49,7 @@ function isGatewayUrl(url: URL, gatewayBaseUrl: URL): boolean {
   const requestPath = url.pathname.replace(/\/$/, '');
 
   return (
-    url.origin === gatewayBaseUrl.origin &&
-    (requestPath === gatewayPath || requestPath.startsWith(`${gatewayPath}/`))
+    url.origin === gatewayBaseUrl.origin && (requestPath === gatewayPath || requestPath.startsWith(`${gatewayPath}/`))
   );
 }
 

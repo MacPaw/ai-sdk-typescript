@@ -298,15 +298,15 @@ Then report:
 
 When the codebase already uses `openai`, `@ai-sdk/openai`, or imports from `ai`:
 
-| Before                                    | After                                                               |
-| ----------------------------------------- | ------------------------------------------------------------------- |
-| `import OpenAI from 'openai'`             | `import { createAIGatewayClient } from '@macpaw/ai-sdk/client'`     |
-| `new OpenAI({ apiKey })`                  | `createAIGatewayClient({ env: 'production', getAuthToken })`        |
-| `import { openai } from '@ai-sdk/openai'` | `createAIGatewayProvider(...)` from `@macpaw/ai-sdk/provider`       |
-| `import { generateText } from 'ai'`       | `import { generateText } from '@macpaw/ai-sdk/ai'` (or `…/provider`) |
-| `import { streamText } from 'ai'`         | `import { streamText } from '@macpaw/ai-sdk/ai'` (or `…/provider`)   |
+| Before                                    | After                                                                 |
+| ----------------------------------------- | --------------------------------------------------------------------- |
+| `import OpenAI from 'openai'`             | `import { createAIGatewayClient } from '@macpaw/ai-sdk/client'`       |
+| `new OpenAI({ apiKey })`                  | `createAIGatewayClient({ env: 'production', getAuthToken })`          |
+| `import { openai } from '@ai-sdk/openai'` | `createAIGatewayProvider(...)` from `@macpaw/ai-sdk/provider`         |
+| `import { generateText } from 'ai'`       | `import { generateText } from '@macpaw/ai-sdk/ai'` (or `…/provider`)  |
+| `import { streamText } from 'ai'`         | `import { streamText } from '@macpaw/ai-sdk/ai'` (or `…/provider`)    |
 | `from 'ai/internal'` / `from 'ai/test'`   | `from '@macpaw/ai-sdk/ai/internal'` / `from '@macpaw/ai-sdk/ai/test'` |
-| `import { useChat } from 'ai/react'`      | Keep as-is — `useChat` is a React hook, not re-exported by provider |
+| `import { useChat } from 'ai/react'`      | Keep as-is — `useChat` is a React hook, not re-exported by provider   |
 
 After migration, remove `openai`, `@ai-sdk/openai` from `package.json` unless they are used elsewhere.
 

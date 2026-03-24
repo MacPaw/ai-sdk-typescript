@@ -143,10 +143,7 @@ export interface ResolvedConfig {
 }
 
 export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string }): ResolvedConfig {
-  const retry =
-    config.retry === false
-      ? false
-      : normalizeRetryConfig({ ...DEFAULT_RETRY, ...config.retry });
+  const retry = config.retry === false ? false : normalizeRetryConfig({ ...DEFAULT_RETRY, ...config.retry });
   const logger = config.logger ?? NOOP_LOGGER;
   const hooks = config.hooks ?? {};
   const middleware = [...(config.middleware ?? [])];

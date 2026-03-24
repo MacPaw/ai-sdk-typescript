@@ -26,9 +26,7 @@ const tool = process.argv[2]?.toLowerCase();
 const validTools = ['cursor', 'claude', 'codex'];
 
 if (tool && !validTools.includes(tool)) {
-  console.error(
-    `Unknown tool "${tool}". Valid options: ${validTools.join(', ')} (or omit to set up all).`,
-  );
+  console.error(`Unknown tool "${tool}". Valid options: ${validTools.join(', ')} (or omit to set up all).`);
   process.exit(1);
 }
 

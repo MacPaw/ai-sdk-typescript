@@ -217,7 +217,10 @@ describe('createAIGatewayFetch', () => {
   });
 
   it('does not cache null tokens for the full TTL', async () => {
-    const getAuthToken = vi.fn<() => Promise<string | null>>().mockResolvedValueOnce(null).mockResolvedValueOnce('fresh-token');
+    const getAuthToken = vi
+      .fn<() => Promise<string | null>>()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce('fresh-token');
     const customFetch = createAIGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken,

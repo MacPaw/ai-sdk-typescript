@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { OpenAIProvider } from '@ai-sdk/openai';
-import { isOpenAIProvider, resolveAIGatewayProvider, resolveOpenAIProvider, resolveProviderSource } from '../provider-source';
+import {
+  isOpenAIProvider,
+  resolveAIGatewayProvider,
+  resolveOpenAIProvider,
+  resolveProviderSource,
+} from '../provider-source';
 
 function createMockProvider(): OpenAIProvider {
   const callable = vi.fn().mockReturnValue({ spec: 'lm' });
