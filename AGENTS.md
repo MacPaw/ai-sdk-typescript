@@ -9,6 +9,7 @@ This is the `@macpaw/ai-sdk` SDK — a Vercel AI SDK extension layer for AI Gate
    - **NestJS** (or **Node.js (NestJS)**) → `AIGatewayModule` from `@macpaw/ai-sdk/nestjs`, inject with `@InjectAIGateway()`, use `AIGatewayExceptionFilter`.
    - **Next.js / Vercel AI SDK** → `@macpaw/ai-sdk/provider` as the primary path: `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createOpenAI`, `generateText`, `streamText`.
    - **Node / Express / Browser with direct Gateway HTTP usage** → `createAIGatewayClient` from `@macpaw/ai-sdk/client`.
+   - **Advanced transport / request-pipeline primitives** → `@macpaw/ai-sdk/runtime` (`API_PATHS`, `createFetchTransport`, `SDKValidationError`, retry/SSE helpers).
 3. **Auth:** always `getAuthToken: async () => token` (Bearer). Use `env: 'production'` for prod URL, `baseURL` for staging.
 4. **Errors:** catch `AIGatewayError` from `@macpaw/ai-sdk`. Key fields: `code` (ErrorCode enum), `paymentUrl`, `retryAfter`, `requestId`.
 5. **Testing:** use `createMockOpenAIProvider` for provider-first apps, and `createMockAIGatewayClient` when you intentionally test the low-level client path.
@@ -22,10 +23,11 @@ This is the `@macpaw/ai-sdk` SDK — a Vercel AI SDK extension layer for AI Gate
 - Retry config uses `maxAttempts`, not `maxRetries`.
 - Never hardcode tokens — use `getAuthToken`.
 - Import `createAIGatewayClient` from `@macpaw/ai-sdk/client`, not the root package.
+- Import transport/config/validation internals from `@macpaw/ai-sdk/runtime`, not `@macpaw/ai-sdk/client`.
 
 ## When developing the SDK itself
 
 - `pnpm install && pnpm typecheck && pnpm lint && pnpm test` to verify changes.
 - Conventional Commits: `feat:`, `fix:`, `perf:`, `docs:`, `test:`.
-- Entry points: `src/index.ts`, `src/client-entry.ts`, `src/client/index.ts`, `src/client/api/*`, `src/runtime/index.ts`, `src/types/index.ts`, `src/core/index.ts`, `src/provider/index.ts`, `src/nestjs/index.ts`, `src/testing/index.ts`.
+- Entry points: `src/index.ts`, `src/client-entry.ts`, `src/client/index.ts`, `src/runtime/index.ts`, `src/types/index.ts`, `src/core/index.ts`, `src/provider/index.ts`, `src/nestjs/index.ts`, `src/testing/index.ts`, `src/client/api/*`.
 - Co-located tests: `src/**/__tests__/**/*.spec.ts` only.
