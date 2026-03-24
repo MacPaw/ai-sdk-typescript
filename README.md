@@ -300,7 +300,9 @@ const completion = await client.chat.completions.create(
   },
 );
 
-// Combine multiple abort signals (e.g. user cancel + timeout) — use anySignal from @macpaw/ai-sdk
+import { anySignal } from '@macpaw/ai-sdk/runtime';
+
+// Combine multiple abort signals (e.g. user cancel + timeout)
 const completion2 = await client.chat.completions.create(
   { model: 'openai/gpt-4.1-nano', messages: [] },
   { signal: anySignal([controller.signal, AbortSignal.timeout(30_000)]) },
