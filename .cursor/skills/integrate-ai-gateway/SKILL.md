@@ -8,6 +8,7 @@ description: Integrate applications with AI Gateway using the @macpaw/ai-sdk SDK
 ## Goal
 
 Implement AI Gateway integration in "auto mode":
+
 1. Detect stack.
 2. Make the minimal correct code changes.
 3. Add safe error handling.
@@ -27,12 +28,12 @@ If the codebase uses `openai`, `@ai-sdk/openai`, or `@anthropic-ai/sdk` directly
 
 Scan `package.json` and source files, then choose exactly one primary path:
 
-| Marker | Primary integration path |
-|--------|---------------------------|
-| `@nestjs/common` deps, `*.module.ts`, decorators | **NestJS** with `@macpaw/ai-sdk/nestjs` |
-| `next`, `@ai-sdk/*`, `ai` patterns | **Vercel AI SDK / Next.js** with `@macpaw/ai-sdk/provider` |
-| `express`, `fastify`, `hono`, server scripts | **Node server** with `@macpaw/ai-sdk` |
-| Vite/Webpack SPA with no backend | **Browser client** with `@macpaw/ai-sdk` |
+| Marker                                           | Primary integration path                                   |
+| ------------------------------------------------ | ---------------------------------------------------------- |
+| `@nestjs/common` deps, `*.module.ts`, decorators | **NestJS** (Node.js + Nest) with `@macpaw/ai-sdk/nestjs`   |
+| `next`, `@ai-sdk/*`, `ai` patterns               | **Vercel AI SDK / Next.js** with `@macpaw/ai-sdk/provider` |
+| `express`, `fastify`, `hono`, server scripts     | **Node server** with `@macpaw/ai-sdk/client`               |
+| Vite/Webpack SPA with no backend                 | **Browser client** with `@macpaw/ai-sdk/client`            |
 
 If two paths are equally plausible, ask one concise clarification question and continue.
 
@@ -43,6 +44,7 @@ Always install `@macpaw/ai-sdk` via the project's package manager. No additional
 ### NestJS
 
 Use:
+
 - `AIGatewayModule.forRootAsync(...)` in `AppModule` imports
 - `@InjectAIGateway()` in services
 - `AIGatewayExceptionFilter` for controllers/routes
@@ -67,7 +69,7 @@ export class AppModule {}
 // chat.service.ts — full usage example
 import { Injectable } from '@nestjs/common';
 import { InjectAIGateway } from '@macpaw/ai-sdk/nestjs';
-import type { AIGatewayClient } from '@macpaw/ai-sdk';
+import type { AIGatewayClient } from '@macpaw/ai-sdk/client';
 
 @Injectable()
 export class ChatService {
@@ -88,7 +90,9 @@ import { AIGatewayExceptionFilter } from '@macpaw/ai-sdk/nestjs';
 
 @Controller('chat')
 @UseFilters(AIGatewayExceptionFilter)
-export class ChatController { /* ... */ }
+export class ChatController {
+  /* ... */
+}
 ```
 
 ### Vercel AI SDK / Next.js
@@ -118,7 +122,7 @@ export async function POST(req: Request) {
 }
 
 // components/chat.tsx — useChat with API route above
-'use client';
+('use client');
 import { useChat } from 'ai/react';
 
 export function Chat() {
@@ -129,11 +133,28 @@ export function Chat() {
 
 > Note: `useChat` is imported from `ai/react` (Vercel AI SDK React hooks), not from `@macpaw/ai-sdk/provider`. The provider only handles the server-side model + auth configuration.
 
+**Dual backend (gateway vs direct OpenAI)** — keep `generateText` / `streamText` unchanged; pick the model factory from config (env flag, build flavor, etc.):
+
+```ts
+import { createOpenAI } from '@ai-sdk/openai';
+import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
+
+const useGateway = process.env.MY_APP_USE_AI_GATEWAY === '1';
+const gateway = createAIGatewayProvider({ env: 'production', getAuthToken: async () => sessionToken });
+const direct = createOpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+
+export function languageModel(id: string) {
+  return useGateway ? gateway(id) : direct(id);
+}
+```
+
+Use `createAIGatewayClient` from `@macpaw/ai-sdk/client` for multipart-heavy APIs (image edits, audio) when the provider path is not enough. Prefer domain types from `@macpaw/ai-sdk/types`.
+
 ### Node / Express / Browser
 
 ```ts
 // lib/ai.ts — shared singleton
-import { createAIGatewayClient } from '@macpaw/ai-sdk';
+import { createAIGatewayClient } from '@macpaw/ai-sdk/client';
 
 export const ai = createAIGatewayClient({
   env: 'production',
@@ -227,7 +248,7 @@ try {
         // wait error.retryAfter seconds
         break;
       default:
-        // log error.requestId for support
+      // log error.requestId for support
     }
   }
   throw error;
@@ -255,19 +276,19 @@ If not, add a minimal smoke example in the nearest existing examples/scripts are
 import { createMockAIGatewayClient, createMockChatCompletion } from '@macpaw/ai-sdk/testing';
 
 const mock = createMockAIGatewayClient();
-mock.chat.completions.create.mockResolvedValue(
-  createMockChatCompletion({ content: 'Mock response' }),
-);
+mock.chat.completions.create.mockResolvedValue(createMockChatCompletion({ content: 'Mock response' }));
 ```
 
 ## Step 6 — Verify and report
 
 After edits, run the project's available verification commands (prefer this order):
+
 1. Typecheck
 2. Lint
 3. Tests (targeted first, full suite if reasonable)
 
 Then report:
+
 - Files changed
 - Why each change was needed
 - Verification status
@@ -277,14 +298,14 @@ Then report:
 
 When the codebase already uses `openai`, `@ai-sdk/openai`, or imports from `ai`:
 
-| Before | After |
-|--------|-------|
-| `import OpenAI from 'openai'` | `import { createAIGatewayClient } from '@macpaw/ai-sdk'` |
-| `new OpenAI({ apiKey })` | `createAIGatewayClient({ env: 'production', getAuthToken })` |
-| `import { openai } from '@ai-sdk/openai'` | `createAIGatewayProvider(...)` from `@macpaw/ai-sdk/provider` |
-| `import { generateText } from 'ai'` | `import { generateText } from '@macpaw/ai-sdk/provider'` |
-| `import { streamText } from 'ai'` | `import { streamText } from '@macpaw/ai-sdk/provider'` |
-| `import { useChat } from 'ai/react'` | Keep as-is — `useChat` is a React hook, not re-exported by provider |
+| Before                                    | After                                                               |
+| ----------------------------------------- | ------------------------------------------------------------------- |
+| `import OpenAI from 'openai'`             | `import { createAIGatewayClient } from '@macpaw/ai-sdk/client'`     |
+| `new OpenAI({ apiKey })`                  | `createAIGatewayClient({ env: 'production', getAuthToken })`        |
+| `import { openai } from '@ai-sdk/openai'` | `createAIGatewayProvider(...)` from `@macpaw/ai-sdk/provider`       |
+| `import { generateText } from 'ai'`       | `import { generateText } from '@macpaw/ai-sdk/provider'`            |
+| `import { streamText } from 'ai'`         | `import { streamText } from '@macpaw/ai-sdk/provider'`              |
+| `import { useChat } from 'ai/react'`      | Keep as-is — `useChat` is a React hook, not re-exported by provider |
 
 After migration, remove `openai`, `@ai-sdk/openai` from `package.json` unless they are used elsewhere.
 
@@ -293,13 +314,13 @@ After migration, remove `openai`, `@ai-sdk/openai` from `package.json` unless th
 - Use `getAuthToken: async () => tokenOrNull` for auth.
 - `env` supports only `'production'`; use `baseURL` for staging/custom hosts.
 - Do not hardcode secrets or tokens.
-- Prefer imports from `@macpaw/ai-sdk`, `@macpaw/ai-sdk/provider`, `@macpaw/ai-sdk/nestjs`, `@macpaw/ai-sdk/testing`.
+- Prefer imports from `@macpaw/ai-sdk`, `@macpaw/ai-sdk/client`, `@macpaw/ai-sdk/provider`, `@macpaw/ai-sdk/nestjs`, `@macpaw/ai-sdk/testing`.
 - For retries, use `maxAttempts` (not `maxRetries`).
-- Never import from `@ai-sdk/openai` or `ai` directly — except `useChat`/`useCompletion` React hooks which stay as `ai/react` (or `@ai-sdk/react`).
+- Never import generation helpers from `ai` directly — use `@macpaw/ai-sdk/provider`. Exception: `useChat` / `useCompletion` stay as `ai/react` (or `@ai-sdk/react`). For a dual-backend toggle, `createOpenAI` from `@ai-sdk/openai` is allowed only for the non-gateway branch next to `createAIGatewayProvider`.
 
 ## Common mistakes to auto-fix
 
-- Replace direct OpenAI/Vercel provider usage with `createAIGatewayProvider`.
+- Replace direct gateway-bound OpenAI usage with `createAIGatewayProvider` (keep `createOpenAI` only when intentionally supporting a non-gateway branch).
 - Replace `generateText` / `streamText` imports from `ai` with `@macpaw/ai-sdk/provider`. Keep `useChat`/`useCompletion` from `ai/react`.
 - Replace `env: 'staging'` with `baseURL`.
 - Replace token literals with `getAuthToken`.
