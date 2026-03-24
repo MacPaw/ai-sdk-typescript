@@ -4,7 +4,7 @@ Vercel AI SDK extension layer for AI Gateway with MacPaw and Setapp auth flows, 
 
 # @macpaw/ai-sdk
 
-`@macpaw/ai-sdk/provider` is the primary product surface for app developers already using Vercel AI SDK. `@macpaw/ai-sdk/client` is the explicit advanced path for multipart APIs, middleware-heavy HTTP flows, and direct Gateway control.
+`@macpaw/ai-sdk/provider` is the primary product surface for app developers already using Vercel AI SDK. `@macpaw/ai-sdk/client` is the focused advanced path for multipart APIs and direct Gateway control. `@macpaw/ai-sdk/runtime` exposes advanced transport, validation, and request-pipeline primitives when you intentionally need the internals.
 
 ## Features
 
@@ -22,6 +22,7 @@ Vercel AI SDK extension layer for AI Gateway with MacPaw and Setapp auth flows, 
 - **Typed** — Full TypeScript types, const-object enums for all codes/roles
 - **Tree-shakeable** — ESM + CJS with minimal runtime dependencies
 - **Advanced client path** — Explicit `@macpaw/ai-sdk/client` for multipart and low-level Gateway usage
+- **Explicit runtime layer** — `@macpaw/ai-sdk/runtime` for advanced transport/config/request primitives without overloading the client entry
 
 ## Install
 
@@ -137,6 +138,8 @@ const client = createAIGatewayClient({
   // apiVersion: 'v2',
 });
 ```
+
+If you need lower-level request-pipeline primitives such as `API_PATHS`, `createFetchTransport`, or `SDKValidationError`, import them from `@macpaw/ai-sdk/runtime` instead of the client entry.
 
 ## API Reference
 
@@ -541,19 +544,16 @@ const gateway = createAIGatewayProvider({
   env: 'production',
 });
 
-const registry = createAIGatewayCustomProvider(
-  { getAuthToken: async () => myToken, env: 'production' },
-  {
-    languageModels: {
-      fast: gateway('openai/gpt-4.1-nano'),
-    },
+const registry = createAIGatewayCustomProvider(gateway, {
+  languageModels: {
+    fast: gateway('openai/gpt-4.1-nano'),
   },
-);
+});
 
 await generateText({ model: registry.languageModel('fast'), prompt: 'Hi' });
 ```
 
-For full control, import `customProvider` from `@macpaw/ai-sdk/provider` and pass `fallbackProvider: createAIGatewayProvider({ ... })`.
+You can pass either a prebuilt gateway provider or gateway options. For full control, import `customProvider` from `@macpaw/ai-sdk/provider` and pass `fallbackProvider: createAIGatewayProvider({ ... })`.
 
 ### Option B: Low-level custom fetch
 
@@ -1091,13 +1091,14 @@ Then ask in natural language: _"Add AI Gateway chat to this Next.js app"_ or _"I
 
 ## Subpath exports
 
-> **Note:** `@macpaw/ai-sdk/provider` is the recommended app-developer entry point. `@macpaw/ai-sdk/client` is the advanced low-level path. `@macpaw/ai-sdk/core` remains an internal/compat surface and may change more aggressively.
+> **Note:** `@macpaw/ai-sdk/provider` is the recommended app-developer entry point. `@macpaw/ai-sdk/client` is the focused low-level client path. `@macpaw/ai-sdk/runtime` is the explicit advanced runtime surface. `@macpaw/ai-sdk/core` remains a compatibility facade and may change more aggressively.
 
 | Import path               | Content                                                                                            |
 | ------------------------- | -------------------------------------------------------------------------------------------------- |
 | `@macpaw/ai-sdk`          | Shared errors, `ErrorCode`, enums, and stream helper utilities                                     |
-| `@macpaw/ai-sdk/client`   | Advanced low-level Gateway HTTP client, middleware hooks, multipart APIs, transport/config exports |
+| `@macpaw/ai-sdk/client`   | Advanced low-level Gateway HTTP client for direct API usage and multipart flows                    |
 | `@macpaw/ai-sdk/types`    | Domain TypeScript types (OpenAI-compatible request/response shapes)                                |
+| `@macpaw/ai-sdk/runtime`  | Advanced runtime primitives: transport, config, validation, request execution, SSE, retry         |
 | `@macpaw/ai-sdk/core`     | Runtime compatibility facade (**advanced/internal**; no domain type barrel)                        |
 | `@macpaw/ai-sdk/provider` | Curated Vercel AI SDK surface plus AI Gateway provider/fetch/dual-provider helpers                 |
 | `@macpaw/ai-sdk/nestjs`   | NestJS module, decorator, exception filter                                                         |
