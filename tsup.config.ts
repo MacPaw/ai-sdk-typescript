@@ -5,6 +5,7 @@ export default defineConfig({
     index: 'src/index.ts',
     'client/index': 'src/client-entry.ts',
     'core/index': 'src/core/index.ts',
+    'runtime/index': 'src/runtime/index.ts',
     'types/index': 'src/types/index.ts',
     'provider/index': 'src/provider/index.ts',
     'nestjs/index': 'src/nestjs/index.ts',

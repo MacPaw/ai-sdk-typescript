@@ -37,6 +37,16 @@
         "default": "./dist/core/index.cjs"
       }
     },
+    "./runtime": {
+      "import": {
+        "types": "./dist/runtime/index.d.ts",
+        "default": "./dist/runtime/index.js"
+      },
+      "require": {
+        "types": "./dist/runtime/index.d.cts",
+        "default": "./dist/runtime/index.cjs"
+      }
+    },
     "./types": {
       "import": {
         "types": "./dist/types/index.d.ts",

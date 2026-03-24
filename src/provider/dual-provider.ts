@@ -1,6 +1,6 @@
 import type { OpenAIProvider } from '@ai-sdk/openai';
-import { createAIGatewayProvider } from './ai-gateway-provider';
-import type { AIGatewayProviderOptions } from './ai-gateway-provider';
+import type { AIGatewayProviderSource } from './provider-source';
+import { resolveAIGatewayProvider } from './provider-source';
 
 export interface AIGatewayDualProviderOptions {
   /**
@@ -9,13 +9,9 @@ export interface AIGatewayDualProviderOptions {
    */
   useGateway: boolean | (() => boolean);
   /** AI Gateway provider options or a prebuilt gateway provider instance. */
-  gateway: AIGatewayProviderOptions | OpenAIProvider;
+  gateway: AIGatewayProviderSource;
   /** Direct OpenAI-compatible provider used when `useGateway` is false. */
   direct: OpenAIProvider;
-}
-
-function isOpenAIProvider(value: AIGatewayProviderOptions | OpenAIProvider): value is OpenAIProvider {
-  return typeof value === 'function' && typeof value.languageModel === 'function';
 }
 
 /**
@@ -23,9 +19,7 @@ function isOpenAIProvider(value: AIGatewayProviderOptions | OpenAIProvider): val
  * backend without changing the surrounding `ai-sdk` integration code.
  */
 export function createAIGatewayDualProvider(options: AIGatewayDualProviderOptions): OpenAIProvider {
-  const gatewayProvider = isOpenAIProvider(options.gateway)
-    ? options.gateway
-    : createAIGatewayProvider(options.gateway);
+  const gatewayProvider = resolveAIGatewayProvider(options.gateway);
 
   const pickProvider = (): OpenAIProvider =>
     (typeof options.useGateway === 'function' ? options.useGateway() : options.useGateway)

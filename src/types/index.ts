@@ -1,14 +1,18 @@
 /**
  * Domain types for the AI Gateway SDK (OpenAI-compatible HTTP API).
+ *
+ * Modules that intentionally expose matching runtime constants and type aliases
+ * (for example `ErrorCode` and `type ErrorCode`) stay on `export *` to preserve
+ * the ergonomic import surface without reintroducing the giant barrel everywhere.
  */
 
-export * from './util';
+export type { ObjectValues } from './util';
 export * from './codes';
-export * from './error-shapes';
+export type { GatewayApiErrorItem, GatewayApiErrorResponse, OpenAIErrorResponse } from './error-shapes';
 export * from './chat';
 export * from './responses';
 export * from './embeddings';
 export * from './images';
 export * from './audio';
-export * from './models';
-export * from './request-options';
+export type { ModelInfo, ModelEntry, ModelInfoResponse } from './models';
+export type { RequestOptions, WithResponseResult } from './request-options';

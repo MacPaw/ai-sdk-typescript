@@ -12,8 +12,10 @@ export { createAIGatewayProvider } from './ai-gateway-provider';
 export type { AIGatewayProviderOptions } from './ai-gateway-provider';
 
 export { createAIGatewayCustomProvider } from './custom-registry';
+export type { AIGatewayCustomProviderRegistry } from './custom-registry';
 export { createAIGatewayDualProvider } from './dual-provider';
 export type { AIGatewayDualProviderOptions } from './dual-provider';
+export type { AIGatewayProviderSource } from './provider-source';
 
 export { createOpenAI, openai } from '@ai-sdk/openai';
 export type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
