@@ -39,6 +39,14 @@ function generateRequestId(): string {
   return `sdk-${timestamp}-${counter}-${random}`;
 }
 
+function redactSensitiveHeaders(headers: Record<string, string>): Record<string, string> {
+  const redacted: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    redacted[key] = key.toLowerCase() === 'authorization' ? '[REDACTED]' : value;
+  }
+  return redacted;
+}
+
 export async function runRequest(
   config: ResolvedConfig,
   path: string,
@@ -164,7 +172,13 @@ async function executeRequest(
       isNetworkError,
       onRetry: async (attempt, err) => {
         config.logger.info?.('[ai-gateway-sdk] retrying', attempt, err);
-        await hooks.onRetry?.(attempt, err, { url, method: init.method, headers, body: init.body, signal: userSignal });
+        await hooks.onRetry?.(attempt, err, {
+          url,
+          method: init.method,
+          headers: redactSensitiveHeaders(headers),
+          body: init.body,
+          signal: userSignal,
+        });
       },
     });
   }

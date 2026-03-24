@@ -162,7 +162,7 @@ export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string 
             pendingRefresh = rawGetAuthToken(forceRefresh).then(
               (token) => {
                 cachedToken = token;
-                cacheExpiresAt = Date.now() + tokenCacheTTL;
+                cacheExpiresAt = token == null ? 0 : Date.now() + tokenCacheTTL;
                 pendingRefresh = null;
                 return token;
               },

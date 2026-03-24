@@ -44,6 +44,20 @@ function cloneHeaders(headers?: RequestInit['headers']): Headers {
   return new Headers(headers);
 }
 
+function joinBaseUrl(baseURL: string, path: string): string {
+  return `${baseURL}${path.startsWith('/') ? '' : '/'}${path}`;
+}
+
+function isGatewayUrl(url: URL, gatewayBaseUrl: URL): boolean {
+  const gatewayPath = gatewayBaseUrl.pathname.replace(/\/$/, '');
+  const requestPath = url.pathname.replace(/\/$/, '');
+
+  return (
+    url.origin === gatewayBaseUrl.origin &&
+    (requestPath === gatewayPath || requestPath.startsWith(`${gatewayPath}/`))
+  );
+}
+
 export function createAIGatewayFetch(
   options: CreateAIGatewayFetchOptions,
 ): (input: FetchInput, init?: RequestInit) => Promise<Response> {
@@ -58,6 +72,7 @@ export function createAIGatewayFetch(
   } = options;
 
   const base = baseURL.replace(/\/$/, '');
+  const gatewayBaseUrl = new URL(base);
   let cachedToken: string | null = null;
   let cacheExpiresAt = 0;
   let pendingRefresh: Promise<string | null> | null = null;
@@ -81,7 +96,7 @@ export function createAIGatewayFetch(
       pendingRefresh = getAuthToken(forceRefresh).then(
         (token) => {
           cachedToken = token;
-          cacheExpiresAt = Date.now() + tokenCacheTTL;
+          cacheExpiresAt = token == null ? 0 : Date.now() + tokenCacheTTL;
           pendingRefresh = null;
           return token;
         },
@@ -105,9 +120,8 @@ export function createAIGatewayFetch(
   return async function aiGatewayFetch(input: FetchInput, init?: RequestInit): Promise<Response> {
     const rawUrl = resolveRequestUrl(input);
     const isAbsolute = rawUrl.startsWith('http://') || rawUrl.startsWith('https://');
-    const isAbsoluteExternal = isAbsolute && !rawUrl.startsWith(base);
-    const isGatewayRequest = !isAbsoluteExternal;
-    const resolvedUrl = isAbsolute ? rawUrl : `${base}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+    const resolvedUrl = new URL(isAbsolute ? rawUrl : joinBaseUrl(base, rawUrl));
+    const isGatewayRequest = isGatewayUrl(resolvedUrl, gatewayBaseUrl);
 
     const request = typeof Request !== 'undefined' && input instanceof Request ? input : undefined;
 
@@ -150,7 +164,7 @@ export function createAIGatewayFetch(
         }
       }
 
-      const response = await fetch(resolvedUrl, {
+      const response = await fetch(resolvedUrl.toString(), {
         ...init,
         method: init?.method ?? requestClone?.method,
         headers,

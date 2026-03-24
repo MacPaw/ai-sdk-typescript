@@ -51,7 +51,17 @@ export async function assertSSEResponse(response: Response): Promise<ReadableStr
  * Per SSE spec: if there's a space after the colon, strip it (only the first one).
  */
 function extractFieldValue(line: string, colonOffset: number): string {
-  return (line[colonOffset] === ' ' ? line.slice(colonOffset + 1) : line.slice(colonOffset)).trim();
+  return line[colonOffset] === ' ' ? line.slice(colonOffset + 1) : line.slice(colonOffset);
+}
+
+function isCompleteSSEPayload(data: string): boolean {
+  if (data === '[DONE]') return true;
+  try {
+    JSON.parse(data);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenerator<string, void, undefined> {
@@ -59,40 +69,94 @@ export async function* parseSSE(stream: ReadableStream<Uint8Array>): AsyncGenera
   const decoder = new TextDecoder();
   let buffer = '';
   let currentEvent = '';
+  let currentDataLines: string[] = [];
+
+  const flushEvent = (): { done: boolean; data?: string } => {
+    if (currentDataLines.length === 0) {
+      currentEvent = '';
+      return { done: false };
+    }
+
+    const data = currentDataLines.join('\n');
+    const event = currentEvent;
+    currentDataLines = [];
+    currentEvent = '';
+
+    if (data === '[DONE]') {
+      return { done: true };
+    }
+
+    if (event === 'error') {
+      throwStreamError(data);
+    }
+
+    return { done: false, data };
+  };
+
   try {
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        buffer += decoder.decode();
+        break;
+      }
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split(/\r\n|\r|\n/);
       buffer = lines.pop() ?? '';
       for (const line of lines) {
+        if (line.startsWith(':')) {
+          continue;
+        }
         if (line.startsWith('event:')) {
+          if (currentDataLines.length > 0 && isCompleteSSEPayload(currentDataLines.join('\n'))) {
+            const event = flushEvent();
+            if (event.done) return;
+            if (event.data !== undefined) {
+              yield event.data;
+            }
+          }
           currentEvent = extractFieldValue(line, 6);
           continue;
         }
         if (line.startsWith('data:')) {
-          const data = extractFieldValue(line, 5);
-          if (data === '[DONE]') return;
-
-          if (currentEvent === 'error') {
-            currentEvent = '';
-            throwStreamError(data);
+          const nextDataLine = extractFieldValue(line, 5);
+          if (
+            currentDataLines.length > 0 &&
+            (isCompleteSSEPayload(currentDataLines.join('\n')) || isCompleteSSEPayload(nextDataLine))
+          ) {
+            const event = flushEvent();
+            if (event.done) return;
+            if (event.data !== undefined) {
+              yield event.data;
+            }
           }
-
-          currentEvent = '';
-          yield data;
+          currentDataLines.push(nextDataLine);
+          continue;
         }
         if (line.trim() === '') {
-          currentEvent = '';
+          const event = flushEvent();
+          if (event.done) return;
+          if (event.data !== undefined) {
+            yield event.data;
+          }
         }
       }
     }
-    if (buffer.startsWith('data:')) {
-      const data = extractFieldValue(buffer, 5);
-      if (data === '[DONE]') return;
-      if (currentEvent === 'error') throwStreamError(data);
-      yield data;
+
+    if (buffer.length > 0) {
+      if (buffer.startsWith(':')) {
+        buffer = '';
+      } else if (buffer.startsWith('event:')) {
+        currentEvent = extractFieldValue(buffer, 6);
+      } else if (buffer.startsWith('data:')) {
+        currentDataLines.push(extractFieldValue(buffer, 5));
+      }
+    }
+
+    const event = flushEvent();
+    if (event.done) return;
+    if (event.data !== undefined) {
+      yield event.data;
     }
   } finally {
     try {
