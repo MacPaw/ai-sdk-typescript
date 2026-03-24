@@ -14,7 +14,7 @@ import type {
   TranslationResponse,
   ModelInfoResponse,
   ModelEntry,
-} from '../core/types';
+} from '../types';
 
 // ---------------------------------------------------------------------------
 // Chat
@@ -123,9 +123,7 @@ export interface MockEmbeddingResponseOptions {
  * );
  * ```
  */
-export function createMockEmbeddingResponse(
-  opts?: MockEmbeddingResponseOptions,
-): CreateEmbeddingResponse {
+export function createMockEmbeddingResponse(opts?: MockEmbeddingResponseOptions): CreateEmbeddingResponse {
   const vectors = opts?.embeddings ?? [[0.1, 0.2, 0.3]];
   return {
     object: 'list',
@@ -160,8 +158,7 @@ export interface MockImageResponseOptions {
  * ```
  */
 export function createMockImageResponse(opts?: MockImageResponseOptions): CreateImageResponse {
-  const data =
-    opts?.urls?.map((url) => ({ url })) ??
+  const data = opts?.urls?.map((url) => ({ url })) ??
     opts?.b64?.map((b64_json) => ({ b64_json })) ?? [{ url: 'https://mock.test/image.png' }];
 
   return {
@@ -190,9 +187,7 @@ export interface MockTranscriptionResponseOptions {
  * );
  * ```
  */
-export function createMockTranscriptionResponse(
-  opts?: MockTranscriptionResponseOptions,
-): TranscriptionResponse {
+export function createMockTranscriptionResponse(opts?: MockTranscriptionResponseOptions): TranscriptionResponse {
   return {
     text: opts?.text ?? 'Mock transcription',
     language: opts?.language,
@@ -220,9 +215,7 @@ export interface MockTranslationResponseOptions {
  * );
  * ```
  */
-export function createMockTranslationResponse(
-  opts?: MockTranslationResponseOptions,
-): TranslationResponse {
+export function createMockTranslationResponse(opts?: MockTranslationResponseOptions): TranslationResponse {
   return {
     text: opts?.text ?? 'Mock translation',
     language: opts?.language,
@@ -253,18 +246,14 @@ export interface MockModelInfoResponseOptions {
  * );
  * ```
  */
-export function createMockModelInfoResponse(
-  opts?: MockModelInfoResponseOptions,
-): ModelInfoResponse {
-  const entries: ModelEntry[] = (opts?.models ?? [{ name: 'mock-model', mode: 'chat' }]).map(
-    (m) => ({
-      model_name: m.name,
-      model_info: {
-        id: m.name,
-        mode: m.mode ?? 'chat',
-      },
-    }),
-  );
+export function createMockModelInfoResponse(opts?: MockModelInfoResponseOptions): ModelInfoResponse {
+  const entries: ModelEntry[] = (opts?.models ?? [{ name: 'mock-model', mode: 'chat' }]).map((m) => ({
+    model_name: m.name,
+    model_info: {
+      id: m.name,
+      mode: m.mode ?? 'chat',
+    },
+  }));
 
   return { data: entries };
 }

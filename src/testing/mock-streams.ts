@@ -1,11 +1,6 @@
-import type { StreamTextResult } from '../core/stream-result';
-import type { StreamResponseResult } from '../core/stream-result';
-import type {
-  ChatCompletionChunk,
-  ChatCompletionUsage,
-  ResponseStreamEvent,
-  ResponseUsage,
-} from '../core/types';
+import type { StreamTextResult } from '../runtime/stream-result';
+import type { StreamResponseResult } from '../runtime/stream-result';
+import type { ChatCompletionChunk, ChatCompletionUsage, ResponseStreamEvent, ResponseUsage } from '../types';
 
 /** `StreamTextResult` extended with an observable `aborted` flag for test assertions. */
 export type MockStreamTextResult = StreamTextResult & { aborted: boolean };
@@ -77,9 +72,7 @@ export function createMockStreamTextResult(opts: MockStreamTextOptions | string)
 
   const result = {
     stream: asyncIterableFrom(chunks),
-    textStream: asyncIterableFrom(
-      typeof resolved.text === 'string' ? [resolved.text] : resolved.text,
-    ),
+    textStream: asyncIterableFrom(typeof resolved.text === 'string' ? [resolved.text] : resolved.text),
     text: Promise.resolve(fullText),
     usage: Promise.resolve(resolved.usage),
     /** Whether `abort()` was called. Useful for asserting cancellation in tests. */
@@ -148,18 +141,14 @@ function buildResponseEvents(opts: MockStreamResponseOptions): ResponseStreamEve
  * );
  * ```
  */
-export function createMockStreamResponseResult(
-  opts: MockStreamResponseOptions | string,
-): MockStreamResponseResult {
+export function createMockStreamResponseResult(opts: MockStreamResponseOptions | string): MockStreamResponseResult {
   const resolved = typeof opts === 'string' ? { text: opts } : opts;
   const events = buildResponseEvents(resolved);
   const fullText = (typeof resolved.text === 'string' ? [resolved.text] : resolved.text).join('');
 
   const result = {
     stream: asyncIterableFrom(events),
-    textStream: asyncIterableFrom(
-      typeof resolved.text === 'string' ? [resolved.text] : resolved.text,
-    ),
+    textStream: asyncIterableFrom(typeof resolved.text === 'string' ? [resolved.text] : resolved.text),
     text: Promise.resolve(fullText),
     usage: Promise.resolve(resolved.usage),
     /** Whether `abort()` was called. Useful for asserting cancellation in tests. */

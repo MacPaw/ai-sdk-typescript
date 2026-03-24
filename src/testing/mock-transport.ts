@@ -4,8 +4,8 @@
  * the real client pipeline runs — auth, middleware, retry — without network calls.
  */
 
-import type { Transport, RequestConfig } from '../core/config';
-import { API_PATHS } from '../core/paths';
+import type { Transport, RequestConfig } from '../runtime/config';
+import { API_PATHS } from '../runtime/paths';
 import {
   createMockChatCompletion,
   createMockResponseObject,
@@ -20,10 +20,7 @@ import {
 // Types
 // ---------------------------------------------------------------------------
 
-export type MockRouteHandler = (
-  config: RequestConfig,
-  body: unknown,
-) => Response | Promise<Response>;
+export type MockRouteHandler = (config: RequestConfig, body: unknown) => Response | Promise<Response>;
 
 export interface MockTransportRequest {
   config: RequestConfig;
@@ -112,7 +109,7 @@ function parseBody(config: RequestConfig): unknown {
  *
  * @example
  * ```ts
- * import { createAIGatewayClient } from '@macpaw/ai-sdk';
+ * import { createAIGatewayClient } from '@macpaw/ai-sdk/client';
  * import { createMockTransport } from '@macpaw/ai-sdk/testing';
  *
  * const transport = createMockTransport();

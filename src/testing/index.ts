@@ -1,18 +1,5 @@
-export { createMockAIGatewayClient } from './mock-client';
-export type {
-  MockAIGatewayClient,
-  MockChatCompletionsAPI,
-  MockResponsesAPI,
-  MockEmbeddingsAPI,
-  MockModelsAPI,
-  MockImagesAPI,
-  MockAudioAPI,
-  MockAudioTranscriptionsAPI,
-  MockAudioTranslationsAPI,
-} from './mock-client';
-
-export { createMockFn } from './mock-fn';
-export type { MockFn } from './mock-fn';
+export { createMockOpenAIProvider } from './mock-provider';
+export type { MockOpenAIProvider } from './mock-provider';
 
 export { createMockStreamTextResult, createMockStreamResponseResult } from './mock-streams';
 export type {
@@ -43,3 +30,19 @@ export type {
 
 export { createMockTransport } from './mock-transport';
 export type { MockTransport, MockTransportRequest, MockRouteHandler } from './mock-transport';
+
+export { createMockAIGatewayClient } from './mock-client';
+export type {
+  MockAIGatewayClient,
+  MockChatCompletionsAPI,
+  MockResponsesAPI,
+  MockEmbeddingsAPI,
+  MockModelsAPI,
+  MockImagesAPI,
+  MockAudioAPI,
+  MockAudioTranscriptionsAPI,
+  MockAudioTranslationsAPI,
+} from './mock-client';
+
+export { createMockFn } from './mock-fn';
+export type { MockFn } from './mock-fn';
