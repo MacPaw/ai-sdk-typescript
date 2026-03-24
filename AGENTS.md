@@ -18,6 +18,7 @@ This is the `@macpaw/ai-sdk` SDK — a Vercel AI SDK extension layer for AI Gate
 ## Common mistakes
 
 - Use `@macpaw/ai-sdk/provider` instead of mixing direct `ai` / `@ai-sdk/openai` imports across the app. The provider entry exposes the curated AI SDK surface we support semver-wise, plus `createOpenAI` for dual-backend flows.
+- `createAIGatewayDualProvider()` and `createAIGatewayCustomProvider()` accept eager providers or lazy factories, which is useful for env-specific builds.
 - React hooks (`useChat`, `useCompletion`) still come from the Vercel AI SDK React package such as `@ai-sdk/react`.
 - `env` only supports `'production'`. For staging use `baseURL`.
 - Retry config uses `maxAttempts`, not `maxRetries`.

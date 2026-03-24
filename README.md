@@ -487,7 +487,7 @@ const provider = createAIGatewayDualProvider({
       return null;
     },
   },
-  direct: createOpenAI({ apiKey: process.env.OPENAI_API_KEY! }),
+  direct: () => createOpenAI({ apiKey: process.env.OPENAI_API_KEY! }),
 });
 
 const { text } = await generateText({
@@ -495,6 +495,8 @@ const { text } = await generateText({
   prompt: 'Hello!',
 });
 ```
+
+`gateway` and `direct` can both be passed eagerly or lazily. Lazy factories are useful when one branch depends on build-specific env such as `OPENAI_API_KEY` and should not be initialized unless selected.
 
 If you want explicit control instead of the helper, `@macpaw/ai-sdk/provider` also exports `createOpenAI`, so the old manual ternary still works. For alias registries (e.g. `fast`, `smart`) with gateway fallback, use `createAIGatewayCustomProvider` (see below).
 
@@ -553,7 +555,7 @@ const registry = createAIGatewayCustomProvider(gateway, {
 await generateText({ model: registry.languageModel('fast'), prompt: 'Hi' });
 ```
 
-You can pass either a prebuilt gateway provider or gateway options. For full control, import `customProvider` from `@macpaw/ai-sdk/provider` and pass `fallbackProvider: createAIGatewayProvider({ ... })`.
+You can pass a prebuilt gateway provider, gateway options, or a lazy factory for either. For full control, import `customProvider` from `@macpaw/ai-sdk/provider` and pass `fallbackProvider: createAIGatewayProvider({ ... })`.
 
 ### Option B: Low-level custom fetch
 

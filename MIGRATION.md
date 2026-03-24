@@ -54,6 +54,8 @@ After:
 import { createAIGatewayProvider, generateText, createOpenAI } from '@macpaw/ai-sdk/provider';
 ```
 
+For dual-backend apps, `createAIGatewayDualProvider()` accepts eager providers or lazy factories, so Setapp / vendor builds can avoid initializing the unused branch.
+
 ### Advanced runtime utilities
 
 Before:

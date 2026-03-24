@@ -18,7 +18,7 @@ Install `@macpaw/ai-sdk`. No other AI packages are required unless your app uses
 
 Auth: `getAuthToken: async () => string | null`. Use `env: 'production'` for production base URL, `baseURL: 'https://...'` for staging/custom.
 
-Prefer `@macpaw/ai-sdk/provider` for AI SDK integration. It exposes the curated AI SDK surface we support, plus `createOpenAI`, so apps can keep provider selection in one place. Exception: React hooks (`useChat`, `useCompletion`) still come from `@ai-sdk/react`. Import transport/config/validation internals from `@macpaw/ai-sdk/runtime`, not `@macpaw/ai-sdk/client`.
+Prefer `@macpaw/ai-sdk/provider` for AI SDK integration. It exposes the curated AI SDK surface we support, plus `createOpenAI`, so apps can keep provider selection in one place. `createAIGatewayDualProvider()` and `createAIGatewayCustomProvider()` accept eager providers or lazy factories for env-specific builds. Exception: React hooks (`useChat`, `useCompletion`) still come from `@ai-sdk/react`. Import transport/config/validation internals from `@macpaw/ai-sdk/runtime`, not `@macpaw/ai-sdk/client`.
 
 ## Developing the SDK
 
