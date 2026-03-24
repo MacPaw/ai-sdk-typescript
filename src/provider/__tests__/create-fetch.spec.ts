@@ -94,6 +94,21 @@ describe('createAIGatewayFetch', () => {
     expect(headers.has('X-Internal')).toBe(false);
   });
 
+  it('does not treat prefix-matching absolute URLs as gateway requests', async () => {
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'secret-token',
+      headers: { 'X-Internal': 'yes' },
+    });
+
+    await customFetch('https://api.macpaw.com/ai-staging/api/v1/chat/completions');
+
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const headers = fetchCall[1].headers as Headers;
+    expect(headers.has('Authorization')).toBe(false);
+    expect(headers.has('X-Internal')).toBe(false);
+  });
+
   it('does not set Content-Type for FormData body', async () => {
     const customFetch = createAIGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
@@ -175,5 +190,22 @@ describe('createAIGatewayFetch', () => {
     await expect(customFetch('https://api.macpaw.com/ai/api/v1/chat/completions')).rejects.toBeInstanceOf(
       AIGatewayError,
     );
+  });
+
+  it('does not cache null tokens for the full TTL', async () => {
+    const getAuthToken = vi.fn<() => Promise<string | null>>().mockResolvedValueOnce(null).mockResolvedValueOnce('fresh-token');
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken,
+      tokenCacheTTL: 60_000,
+    });
+
+    await customFetch('https://api.macpaw.com/ai/test');
+    await customFetch('https://api.macpaw.com/ai/test');
+
+    expect(getAuthToken).toHaveBeenCalledTimes(2);
+    const secondCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1];
+    const headers = secondCall[1].headers as Headers;
+    expect(headers.get('Authorization')).toBe('Bearer fresh-token');
   });
 });

@@ -70,6 +70,15 @@ describe('parseSSE', () => {
     expect(chunks).toEqual(['{"a":1}', '{"a":2}']);
   });
 
+  it('merges multi-line data fields into a single SSE event', async () => {
+    const stream = streamFromStrings(['data: {"a":1,', 'data: "b":2}', '', 'data: [DONE]']);
+    const chunks: string[] = [];
+    for await (const chunk of parseSSE(stream)) {
+      chunks.push(chunk);
+    }
+    expect(chunks).toEqual(['{"a":1,\n"b":2}']);
+  });
+
   it('handles bare \\r line endings', async () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream<Uint8Array>({
@@ -170,5 +179,14 @@ describe('parseSSEAsJSON', () => {
     expect(chunks).toHaveLength(1);
     expect(chunks[0].ok).toBe(true);
     expect(warns.length).toBeGreaterThan(0);
+  });
+
+  it('parses multi-line JSON SSE payloads', async () => {
+    const stream = streamFromStrings(['data: {"id":"a",', 'data: "ok":true}', '', 'data: [DONE]']);
+    const chunks: Array<{ id: string; ok: boolean }> = [];
+    for await (const chunk of parseSSEAsJSON<{ id: string; ok: boolean }>(stream)) {
+      chunks.push(chunk);
+    }
+    expect(chunks).toEqual([{ id: 'a', ok: true }]);
   });
 });

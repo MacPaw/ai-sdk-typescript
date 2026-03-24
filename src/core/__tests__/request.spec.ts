@@ -237,6 +237,36 @@ describe('token refresh on 401', () => {
   });
 });
 
+describe('retry hook redaction', () => {
+  it('redacts Authorization before calling onRetry', async () => {
+    const onRetry = vi.fn();
+    const transport = {
+      request: vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({ statusCode: 503, message: 'Unavailable', code: 'SERVICE_UNAVAILABLE', timestamp: '' }),
+            { status: 503, headers: { 'Content-Type': 'application/json' } },
+          ),
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+        ),
+    };
+    const config = createMockConfig({
+      transport,
+      retry: { maxAttempts: 2, initialDelayMs: 1, maxDelayMs: 1 },
+      hooks: { onRetry },
+      getAuthToken: vi.fn().mockResolvedValue('super-secret-token'),
+    });
+
+    await runRequest(config, '/test', { method: 'GET' });
+
+    expect(onRetry).toHaveBeenCalledTimes(1);
+    expect(onRetry.mock.calls[0][2].headers.Authorization).toBe('[REDACTED]');
+  });
+});
+
 describe('timeout handling', () => {
   it('rejects with timeout error when request exceeds timeout', async () => {
     const transport = {

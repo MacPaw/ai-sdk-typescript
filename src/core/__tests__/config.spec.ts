@@ -167,6 +167,19 @@ describe('resolveConfig', () => {
     expect(callCount).toBe(2);
   });
 
+  it('does not cache null tokens for the full TTL', async () => {
+    let callCount = 0;
+    const resolved = resolveConfig({
+      ...baseConfig,
+      getAuthToken: async () => (++callCount === 1 ? null : 'fresh-token'),
+      tokenCacheTTL: 60_000,
+    });
+
+    expect(await resolved.getAuthToken()).toBeNull();
+    expect(await resolved.getAuthToken()).toBe('fresh-token');
+    expect(callCount).toBe(2);
+  });
+
   it('defaults apiPaths to v1', () => {
     const resolved = resolveConfig(baseConfig);
     expect(resolved.apiPaths.ChatCompletions).toBe('/api/v1/chat/completions');
