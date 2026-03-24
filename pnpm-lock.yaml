@@ -2790,6 +2790,9 @@ snapshots:
   '@esbuild/win32-x64@0.27.3':
     optional: true
 
+  '@esbuild/win32-x64@0.27.4':
+    optional: true
+
   '@eslint-community/eslint-utils@4.9.1(eslint@10.0.3)':
     dependencies:
       eslint: 10.0.3
