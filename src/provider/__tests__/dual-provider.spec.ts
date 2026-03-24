@@ -121,4 +121,45 @@ describe('createAIGatewayDualProvider', () => {
     expect(provider.providerLabel).toBe('gateway-provider');
     expect(provider.experimentalHelper()).toBe('gateway-experimental');
   });
+
+  it('forwards proxy meta operations to the selected provider', () => {
+    const gateway = createMockProvider('gateway') as OpenAIProvider & Record<string | symbol, unknown>;
+    const direct = createMockProvider('direct') as OpenAIProvider & Record<string | symbol, unknown>;
+    let useGateway = false;
+
+    const provider = createAIGatewayDualProvider({
+      useGateway: () => useGateway,
+      gateway,
+      direct,
+    }) as OpenAIProvider & Record<string | symbol, unknown>;
+
+    expect('providerLabel' in provider).toBe(true);
+    expect(Reflect.ownKeys(provider)).toContain('providerLabel');
+    expect(Object.getOwnPropertyDescriptor(provider, 'providerLabel')?.value).toBe('direct-provider');
+
+    Object.defineProperty(provider, 'runtimeFlag', {
+      value: 'direct-runtime',
+      configurable: true,
+      enumerable: true,
+      writable: true,
+    });
+    expect(direct.runtimeFlag).toBe('direct-runtime');
+
+    provider.runtimeFlag = 'direct-runtime-updated';
+    expect(direct.runtimeFlag).toBe('direct-runtime-updated');
+
+    expect(delete provider.runtimeFlag).toBe(true);
+    expect('runtimeFlag' in direct).toBe(false);
+
+    useGateway = true;
+
+    Object.defineProperty(provider, 'runtimeFlag', {
+      value: 'gateway-runtime',
+      configurable: true,
+      enumerable: true,
+      writable: true,
+    });
+    expect(gateway.runtimeFlag).toBe('gateway-runtime');
+    expect(Object.getOwnPropertyDescriptor(provider, 'providerLabel')?.value).toBe('gateway-provider');
+  });
 });

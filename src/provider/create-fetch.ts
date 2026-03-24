@@ -7,6 +7,7 @@
  */
 
 import { parseErrorResponseFromResponse } from '../runtime/errors';
+import { createAuthTokenCache } from '../runtime/auth-token-cache';
 
 export interface CreateAIGatewayFetchOptions {
   baseURL: string;
@@ -76,49 +77,10 @@ export function createAIGatewayFetch(
 
   const base = baseURL.replace(/\/$/, '');
   const gatewayBaseUrl = new URL(base);
-  let cachedToken: string | null = null;
-  let cacheExpiresAt = 0;
-  let pendingRefresh: Promise<string | null> | null = null;
-  let pendingIsForced = false;
-
-  async function loadToken(forceRefresh = false): Promise<string | null> {
-    if (tokenCacheTTL <= 0) {
-      return getAuthToken(forceRefresh);
-    }
-
-    if (!forceRefresh && Date.now() < cacheExpiresAt) {
-      return cachedToken;
-    }
-
-    if (forceRefresh && pendingRefresh && !pendingIsForced) {
-      pendingRefresh = null;
-    }
-
-    if (!pendingRefresh) {
-      pendingIsForced = forceRefresh;
-      pendingRefresh = getAuthToken(forceRefresh).then(
-        (token) => {
-          cachedToken = token;
-          cacheExpiresAt = token == null ? 0 : Date.now() + tokenCacheTTL;
-          pendingRefresh = null;
-          return token;
-        },
-        (error) => {
-          pendingRefresh = null;
-          throw error;
-        },
-      );
-    }
-
-    return pendingRefresh;
-  }
-
-  function resetCachedToken(): void {
-    cachedToken = null;
-    cacheExpiresAt = 0;
-    pendingRefresh = null;
-    pendingIsForced = false;
-  }
+  const authTokenCache = createAuthTokenCache({
+    loadToken: getAuthToken,
+    ttlMs: tokenCacheTTL,
+  });
 
   return async function aiGatewayFetch(input: FetchInput, init?: RequestInit): Promise<Response> {
     const rawUrl = resolveRequestUrl(input);
@@ -139,7 +101,7 @@ export function createAIGatewayFetch(
       }
 
       if (isGatewayRequest) {
-        const token = await loadToken(forceRefresh);
+        const token = await authTokenCache.get(forceRefresh);
         if (token) {
           headers.set('Authorization', `Bearer ${token}`);
         } else {
@@ -176,7 +138,7 @@ export function createAIGatewayFetch(
       });
 
       if (isGatewayRequest && response.status === 401 && autoRefreshToken && !forceRefresh) {
-        resetCachedToken();
+        authTokenCache.clear();
         return execute(true);
       }
 

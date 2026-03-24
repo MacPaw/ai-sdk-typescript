@@ -1,5 +1,9 @@
 # @macpaw/ai-sdk
 
+[![CI](https://github.com/macpaw/ai-sdk-typescript/actions/workflows/ci.yml/badge.svg)](https://github.com/macpaw/ai-sdk-typescript/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/%40macpaw%2Fai-sdk)](https://www.npmjs.com/package/@macpaw/ai-sdk)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+
 Vercel AI SDK extension layer for AI Gateway with MacPaw and Setapp auth flows, plus an advanced low-level Gateway client when you need direct HTTP control.
 
 `@macpaw/ai-sdk/provider` is the primary product surface for apps already built on Vercel AI SDK. It exposes a curated AI SDK surface for gateway-backed flows rather than attempting to mirror every export from `ai`. `@macpaw/ai-sdk/client` is the focused advanced path for multipart APIs and direct Gateway control. `@macpaw/ai-sdk/runtime` exposes advanced transport, validation, and request-pipeline primitives when you intentionally need the internals.
@@ -36,6 +40,13 @@ If your app also imports upstream packages directly, install those explicitly in
 - `ai` or `@ai-sdk/openai` if you intentionally import from them alongside `@macpaw/ai-sdk/provider`
 
 For breaking import-path changes in this major, see [`MIGRATION.md`](./MIGRATION.md).
+
+## Release Signals
+
+- CI validates `typecheck`, `lint`, `test`, coverage, and `build` on Node `18`, `20`, and `22`
+- Releases are automated with `semantic-release`
+- PRs run a publish dry run and report package size / unpacked size
+- Run `pnpm size:pack` locally to inspect what would be published to npm
 
 ### TypeScript types
 
@@ -143,6 +154,15 @@ const client = createAIGatewayClient({
 ```
 
 If you need lower-level request-pipeline primitives such as `API_PATHS`, `createFetchTransport`, or `SDKValidationError`, import them from `@macpaw/ai-sdk/runtime` instead of the client entry.
+
+## Examples
+
+Runnable examples live in [`examples/`](./examples/README.md):
+
+- `pnpm example:mock` — local demo with `createMockTransport`
+- `pnpm example:client` — direct Gateway HTTP client flow
+- `pnpm example:provider` — Vercel AI SDK-style provider flow
+- `examples/nestjs/` — copy-ready NestJS module/controller/service skeleton
 
 ## API Reference
 

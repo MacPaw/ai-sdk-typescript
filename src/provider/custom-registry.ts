@@ -16,6 +16,13 @@ import { customProvider } from 'ai';
 import { resolveAIGatewayProvider } from './provider-source';
 import type { AIGatewayProviderSource } from './provider-source';
 
+function requireRerankingModel(provider: ProviderV3): NonNullable<ProviderV3['rerankingModel']> {
+  if (typeof provider.rerankingModel !== 'function') {
+    throw new Error('AI Gateway fallback provider does not implement rerankingModel()');
+  }
+  return provider.rerankingModel.bind(provider);
+}
+
 export interface AIGatewayCustomProviderRegistry<
   LANGUAGE_MODELS extends Record<string, LanguageModelV3> = Record<string, never>,
   EMBEDDING_MODELS extends Record<string, EmbeddingModelV3> = Record<string, never>,
@@ -108,11 +115,7 @@ export function createAIGatewayCustomProvider<
       return resolveFallbackProvider().speech(modelId);
     },
     rerankingModel(modelId) {
-      const provider = resolveFallbackProvider() as ProviderV3;
-      if (typeof provider.rerankingModel !== 'function') {
-        throw new Error('AI Gateway fallback provider does not implement rerankingModel()');
-      }
-      return provider.rerankingModel(modelId);
+      return requireRerankingModel(resolveFallbackProvider() as ProviderV3)(modelId);
     },
   };
 

@@ -116,6 +116,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "size:pack": "npm pack --dry-run",
+    "example:mock": "pnpm build && node examples/mock-transport.mjs",
+    "example:client": "pnpm build && node examples/node-client.mjs",
+    "example:provider": "pnpm build && node examples/vercel-provider.mjs",
     "prepublishOnly": "pnpm build"
   },
   "keywords": [

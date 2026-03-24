@@ -4,6 +4,7 @@
 
 import type { RequestOptions } from '../types';
 import type { ApiVersion, ApiPaths } from './paths';
+import { createAuthTokenCache } from './auth-token-cache';
 import { buildApiPaths } from './paths';
 
 export type Environment = 'production';
@@ -143,38 +144,11 @@ export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string 
   const generateRequestId = config.generateRequestId ?? true;
   const autoRefreshToken = config.autoRefreshToken ?? true;
   const tokenCacheTTL = config.tokenCacheTTL ?? 0;
-
-  const rawGetAuthToken = config.getAuthToken;
-  let cachedToken: string | null = null;
-  let cacheExpiresAt = 0;
-  let pendingRefresh: Promise<string | null> | null = null;
-  let pendingIsForced = false;
-
-  const getAuthToken =
-    tokenCacheTTL > 0
-      ? async (forceRefresh?: boolean): Promise<string | null> => {
-          if (!forceRefresh && Date.now() < cacheExpiresAt) return cachedToken;
-          if (forceRefresh && pendingRefresh && !pendingIsForced) {
-            pendingRefresh = null;
-          }
-          if (!pendingRefresh) {
-            pendingIsForced = !!forceRefresh;
-            pendingRefresh = rawGetAuthToken(forceRefresh).then(
-              (token) => {
-                cachedToken = token;
-                cacheExpiresAt = token == null ? 0 : Date.now() + tokenCacheTTL;
-                pendingRefresh = null;
-                return token;
-              },
-              (err) => {
-                pendingRefresh = null;
-                throw err;
-              },
-            );
-          }
-          return pendingRefresh;
-        }
-      : rawGetAuthToken;
+  const authTokenCache = createAuthTokenCache({
+    loadToken: config.getAuthToken,
+    ttlMs: tokenCacheTTL,
+  });
+  const getAuthToken: AuthTokenProvider = (forceRefresh?: boolean) => authTokenCache.get(forceRefresh);
 
   const apiPaths = buildApiPaths(config.apiVersion);
 

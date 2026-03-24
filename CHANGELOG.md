@@ -6,6 +6,8 @@
 
 ### Added
 
+- Runnable examples for mock transport, direct client, Vercel-style provider flow, and a copy-ready NestJS skeleton.
+- README badges and release signals documentation; local `pnpm size:pack` script for publish-size inspection.
 - README and COMPATIBILITY: when to use `@macpaw/ai-sdk/provider` vs `createAIGatewayClient`, optional dual-backend (env flag) example, and auth placement notes.
 - CONTRIBUTING: package layout, `__tests__` convention, and linting/formatting notes.
 - `@macpaw/ai-sdk/types` subpath for domain types; `GatewayApiCode`, `GatewayApiErrorResponse`, and related symbols.
@@ -15,6 +17,7 @@
 
 ### Changed
 
+- Shared auth token caching logic between the client runtime and provider fetch path; stronger integration coverage around retries, token refresh, middleware, and multipart flows.
 - HTTP facades moved from `src/api/` to `src/client/api/` (internal structure only; public imports unchanged).
 - Tests live under colocated `src/**/__tests__/` directories.
 - Client entry moved to `src/client/index.ts`; `@macpaw/ai-sdk/core` no longer re-exports domain types (use the main entry or `@macpaw/ai-sdk/types`).
