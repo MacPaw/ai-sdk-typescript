@@ -9,6 +9,22 @@ describe('withRetry', () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
+  it('normalizes maxAttempts 0 so fn runs at least once', async () => {
+    const fn = vi.fn().mockResolvedValue('ok');
+    const result = await withRetry(fn, { retryConfig: { maxAttempts: 0 } });
+    expect(result).toBe('ok');
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
+  it('normalizes invalid maxAttempts and retries up to default attempts', async () => {
+    const err = Object.assign(new Error('rate limit'), { statusCode: 429 });
+    const fn = vi.fn().mockRejectedValue(err);
+    await expect(
+      withRetry(fn, { retryConfig: { maxAttempts: 0, initialDelayMs: 1, maxDelayMs: 1 } }),
+    ).rejects.toBe(err);
+    expect(fn).toHaveBeenCalledTimes(3);
+  });
+
   it('retries on retryable status (429) and eventually succeeds', async () => {
     const fn = vi
       .fn()

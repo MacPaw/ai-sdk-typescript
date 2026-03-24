@@ -26,70 +26,88 @@ const cases = [
     macpaw: macpawXai,
     vercel: vercelXai,
     factory: 'createXai' as const,
+    gatewayFactory: 'createGatewayXai' as const,
   },
   {
     label: '@macpaw/ai-sdk/groq',
     macpaw: macpawGroq,
     vercel: vercelGroq,
     factory: 'createGroq' as const,
+    gatewayFactory: 'createGatewayGroq' as const,
   },
   {
     label: '@macpaw/ai-sdk/mistral',
     macpaw: macpawMistral,
     vercel: vercelMistral,
     factory: 'createMistral' as const,
+    gatewayFactory: 'createGatewayMistral' as const,
   },
   {
     label: '@macpaw/ai-sdk/amazon-bedrock',
     macpaw: macpawAmazonBedrock,
     vercel: vercelAmazonBedrock,
     factory: 'createAmazonBedrock' as const,
+    gatewayFactory: 'createGatewayBedrock' as const,
   },
   {
     label: '@macpaw/ai-sdk/azure',
     macpaw: macpawAzure,
     vercel: vercelAzure,
     factory: 'createAzure' as const,
+    gatewayFactory: 'createGatewayAzure' as const,
   },
   {
     label: '@macpaw/ai-sdk/cohere',
     macpaw: macpawCohere,
     vercel: vercelCohere,
     factory: 'createCohere' as const,
+    gatewayFactory: 'createGatewayCohere' as const,
   },
   {
     label: '@macpaw/ai-sdk/perplexity',
     macpaw: macpawPerplexity,
     vercel: vercelPerplexity,
     factory: 'createPerplexity' as const,
+    gatewayFactory: 'createGatewayPerplexity' as const,
   },
   {
     label: '@macpaw/ai-sdk/deepseek',
     macpaw: macpawDeepseek,
     vercel: vercelDeepseek,
     factory: 'createDeepSeek' as const,
+    gatewayFactory: 'createGatewayDeepseek' as const,
   },
   {
     label: '@macpaw/ai-sdk/togetherai',
     macpaw: macpawTogetherai,
     vercel: vercelTogetherai,
     factory: 'createTogetherAI' as const,
+    gatewayFactory: 'createGatewayTogetherAI' as const,
   },
   {
     label: '@macpaw/ai-sdk/openai-compatible',
     macpaw: macpawOpenaiCompatible,
     vercel: vercelOpenaiCompatible,
     factory: 'createOpenAICompatible' as const,
+    gatewayFactory: 'createGatewayOpenAICompatible' as const,
   },
 ] as const;
 
 describe('@macpaw/ai-sdk provider mirrors', () => {
   it.each(cases)('$label re-exports the upstream package surface', ({ macpaw, vercel, factory }) => {
-    const macpawKeys = Object.keys(macpaw).sort();
     const vercelKeys = Object.keys(vercel).sort();
-    expect(macpawKeys).toEqual(vercelKeys);
     const m = macpaw as Record<string, unknown>;
     const v = vercel as Record<string, unknown>;
+    for (const key of vercelKeys) {
+      expect(m).toHaveProperty(key);
+      expect(m[key]).toBe(v[key]);
+    }
     expect(m[factory]).toBe(v[factory]);
+  });
+
+  it.each(cases)('$label exports a gateway factory ($gatewayFactory)', ({ macpaw, gatewayFactory }) => {
+    const m = macpaw as Record<string, unknown>;
+    expect(m[gatewayFactory]).toBeDefined();
+    expect(typeof m[gatewayFactory]).toBe('function');
   });
 });

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "src/index.ts",
+    "src/client-entry.ts",
+    "src/runtime/index.ts",
+    "src/types/index.ts",
+    "src/provider/index.ts",
+    "src/nestjs/index.ts",
+    "src/testing/index.ts",
+    "src/anthropic/index.ts",
+    "src/google/index.ts",
+    "src/xai/index.ts",
+    "src/groq/index.ts",
+    "src/mistral/index.ts",
+    "src/amazon-bedrock/index.ts",
+    "src/azure/index.ts",
+    "src/cohere/index.ts",
+    "src/perplexity/index.ts",
+    "src/deepseek/index.ts",
+    "src/togetherai/index.ts",
+    "src/openai-compatible/index.ts"
+  ],
+  "entryPointStrategy": "expand",
+  "out": "docs",
+  "name": "@macpaw/ai-sdk",
+  "readme": "README.md",
+  "tsconfig": "tsconfig.json",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "externalPattern": [
+    "node_modules/**"
+  ],
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "sort": ["source-order"],
+  "kindSortOrder": [
+    "Function",
+    "Class",
+    "Interface",
+    "TypeAlias",
+    "Variable",
+    "Enum"
+  ],
+  "navigationLinks": {
+    "GitHub": "https://github.com/macpaw/ai-sdk-typescript",
+    "npm": "https://www.npmjs.com/package/@macpaw/ai-sdk"
+  },
+  "skipErrorChecking": true
+}

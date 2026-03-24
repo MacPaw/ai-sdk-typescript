@@ -4,7 +4,6 @@
 
 import type {
   EmbeddingModelV3,
-  Experimental_VideoModelV3,
   ImageModelV3,
   LanguageModelV3,
   ProviderV3,
@@ -50,7 +49,6 @@ export interface AIGatewayCustomProviderRegistry<
   TRANSCRIPTION_MODELS extends Record<string, TranscriptionModelV3> = Record<string, never>,
   SPEECH_MODELS extends Record<string, SpeechModelV3> = Record<string, never>,
   RERANKING_MODELS extends Record<string, RerankingModelV3> = Record<string, never>,
-  VIDEO_MODELS extends Record<string, Experimental_VideoModelV3> = Record<string, never>,
 > {
   languageModels?: LANGUAGE_MODELS;
   embeddingModels?: EMBEDDING_MODELS;
@@ -58,7 +56,6 @@ export interface AIGatewayCustomProviderRegistry<
   transcriptionModels?: TRANSCRIPTION_MODELS;
   speechModels?: SPEECH_MODELS;
   rerankingModels?: RERANKING_MODELS;
-  videoModels?: VIDEO_MODELS;
 }
 
 /**
@@ -93,7 +90,6 @@ export function createAIGatewayCustomProvider<
   TRANSCRIPTION_MODELS extends Record<string, TranscriptionModelV3> = Record<string, never>,
   SPEECH_MODELS extends Record<string, SpeechModelV3> = Record<string, never>,
   RERANKING_MODELS extends Record<string, RerankingModelV3> = Record<string, never>,
-  VIDEO_MODELS extends Record<string, Experimental_VideoModelV3> = Record<string, never>,
 >(
   gateway: AIGatewayProviderSource,
   registry: AIGatewayCustomProviderRegistry<
@@ -102,8 +98,7 @@ export function createAIGatewayCustomProvider<
     IMAGE_MODELS,
     TRANSCRIPTION_MODELS,
     SPEECH_MODELS,
-    RERANKING_MODELS,
-    VIDEO_MODELS
+    RERANKING_MODELS
   >,
 ): ProviderV3 & {
   languageModel(modelId: Extract<keyof LANGUAGE_MODELS, string>): LanguageModelV3;
@@ -112,7 +107,6 @@ export function createAIGatewayCustomProvider<
   transcriptionModel(modelId: Extract<keyof TRANSCRIPTION_MODELS, string>): TranscriptionModelV3;
   speechModel(modelId: Extract<keyof SPEECH_MODELS, string>): SpeechModelV3;
   rerankingModel(modelId: Extract<keyof RERANKING_MODELS, string>): RerankingModelV3;
-  videoModel(modelId: Extract<keyof VIDEO_MODELS, string>): Experimental_VideoModelV3;
 } {
   let fallbackProvider: ReturnType<typeof resolveAIGatewayProvider> | undefined;
   const resolveFallbackProvider = () => (fallbackProvider ??= resolveAIGatewayProvider(gateway));

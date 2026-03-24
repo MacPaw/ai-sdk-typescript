@@ -7,7 +7,7 @@
  */
 
 import type { RetryConfig } from './config';
-import { DEFAULT_RETRY } from './config';
+import { DEFAULT_RETRY, normalizeRetryConfig } from './config';
 import type { AIGatewayError } from './errors';
 
 function delay(ms: number, signal?: AbortSignal): Promise<void> {
@@ -47,10 +47,10 @@ export async function withRetry<T>(
     onRetry?: (attempt: number, error: unknown) => void | Promise<void>;
   },
 ): Promise<T> {
-  const { maxAttempts, initialDelayMs, maxDelayMs, retryableStatuses } = {
+  const { maxAttempts, initialDelayMs, maxDelayMs, retryableStatuses } = normalizeRetryConfig({
     ...DEFAULT_RETRY,
     ...options.retryConfig,
-  };
+  });
   let lastError: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {

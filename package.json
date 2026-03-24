@@ -278,6 +278,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "docs": "typedoc",
+    "docs:watch": "typedoc --watch",
     "size:pack": "npm pack --dry-run",
     "verify:release": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm size:pack",
     "example:mock": "pnpm build && node examples/mock-transport.mjs",
@@ -341,6 +343,7 @@
     "semantic-release": "^25.0.3",
     "stylelint": "^16.25.0",
     "tsup": "^8.5.1",
+    "typedoc": "^0.28.18",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.18"

@@ -7,7 +7,7 @@ This is the `@macpaw/ai-sdk` SDK — a Vercel AI SDK extension layer for AI Gate
 1. **Install:** `pnpm add @macpaw/ai-sdk` — add `react` + `@ai-sdk/react` only for UI hooks; add the matching `@ai-sdk/*` peer only for provider subpaths you import (e.g. `@ai-sdk/xai` for `@macpaw/ai-sdk/xai`).
 2. **Detect stack and choose path:**
    - **NestJS** (or **Node.js (NestJS)**) → `AIGatewayModule` from `@macpaw/ai-sdk/nestjs`, inject with `@InjectAIGateway()`, use `AIGatewayExceptionFilter`.
-   - **Next.js / Vercel AI SDK** → `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` (same module): `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createOpenAI`, `generateText`, `streamText`. Use `@macpaw/ai-sdk/ai/internal` and `@macpaw/ai-sdk/ai/test` where the app used `ai/internal` and `ai/test`. Optional mirrors: `@macpaw/ai-sdk/react`, `@macpaw/ai-sdk/anthropic`, `@macpaw/ai-sdk/google`, `@macpaw/ai-sdk/xai`, `@macpaw/ai-sdk/groq`, `@macpaw/ai-sdk/mistral`, `@macpaw/ai-sdk/amazon-bedrock`, `@macpaw/ai-sdk/azure`, `@macpaw/ai-sdk/cohere`, `@macpaw/ai-sdk/perplexity`, `@macpaw/ai-sdk/deepseek`, `@macpaw/ai-sdk/togetherai`, `@macpaw/ai-sdk/openai-compatible` — each re-exports the same API as `@ai-sdk/<name>`; install the peer you use.
+   - **Next.js / Vercel AI SDK** → `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` (same module): `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createOpenAI`, `generateText`, `streamText`. Use `@macpaw/ai-sdk/ai/internal` and `@macpaw/ai-sdk/ai/test` where the app used `ai/internal` and `ai/test`. Optional mirrors: `@macpaw/ai-sdk/react`, `@macpaw/ai-sdk/anthropic`, `@macpaw/ai-sdk/google`, `@macpaw/ai-sdk/xai`, `@macpaw/ai-sdk/groq`, `@macpaw/ai-sdk/mistral`, `@macpaw/ai-sdk/amazon-bedrock`, `@macpaw/ai-sdk/azure`, `@macpaw/ai-sdk/cohere`, `@macpaw/ai-sdk/perplexity`, `@macpaw/ai-sdk/deepseek`, `@macpaw/ai-sdk/togetherai`, `@macpaw/ai-sdk/openai-compatible` — each re-exports the same API as `@ai-sdk/<name>` **and** adds a `createGateway<Name>` factory (e.g. `createGatewayAnthropic`) for Gateway routing with automatic model ID prefixing; install the peer you use.
    - **Node / Express / Browser with direct Gateway HTTP usage** → `createAIGatewayClient` from `@macpaw/ai-sdk/client`.
    - **Advanced transport / request-pipeline primitives** → `@macpaw/ai-sdk/runtime` (`API_PATHS`, `createFetchTransport`, `SDKValidationError`, retry/SSE helpers).
 3. **Auth:** always `getAuthToken: async () => token` (Bearer). Use `env: 'production'` for prod URL, `baseURL` for staging.
@@ -25,6 +25,7 @@ This is the `@macpaw/ai-sdk` SDK — a Vercel AI SDK extension layer for AI Gate
 - Never hardcode tokens — use `getAuthToken`.
 - Import `createAIGatewayClient` from `@macpaw/ai-sdk/client`, not the root package.
 - Import transport/config/validation internals from `@macpaw/ai-sdk/runtime`, not `@macpaw/ai-sdk/client`.
+- Each `@macpaw/ai-sdk/<provider>` exports a `createGateway<Name>` factory (e.g. `createGatewayAnthropic`) — use these when the vendor wants all traffic through Gateway with provider-scoped model IDs (e.g. `anthropic('claude-sonnet-4-20250514')` → `anthropic/claude-sonnet-4-20250514`). IDs with `/` are sent as-is.
 
 ## When developing the SDK itself
 

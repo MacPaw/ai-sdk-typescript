@@ -29,6 +29,13 @@ export const DEFAULT_RETRY: Required<RetryConfig> = {
   retryableStatuses: [429, 500, 502, 503, 504],
 };
 
+/** Coerces invalid `maxAttempts` (0, negative, NaN, non-finite) to the default so the retry loop always runs at least once. */
+export function normalizeRetryConfig(merged: Required<RetryConfig>): Required<RetryConfig> {
+  const n = Math.floor(Number(merged.maxAttempts));
+  const maxAttempts = Number.isFinite(n) && n >= 1 ? n : DEFAULT_RETRY.maxAttempts;
+  return { ...merged, maxAttempts };
+}
+
 /**
  * Optional logger for SDK diagnostics.
  *
@@ -136,7 +143,10 @@ export interface ResolvedConfig {
 }
 
 export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string }): ResolvedConfig {
-  const retry = config.retry === false ? false : { ...DEFAULT_RETRY, ...config.retry };
+  const retry =
+    config.retry === false
+      ? false
+      : normalizeRetryConfig({ ...DEFAULT_RETRY, ...config.retry });
   const logger = config.logger ?? NOOP_LOGGER;
   const hooks = config.hooks ?? {};
   const middleware = [...(config.middleware ?? [])];

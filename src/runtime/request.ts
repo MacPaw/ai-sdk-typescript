@@ -24,10 +24,34 @@ const NODE_NETWORK_CODES = new Set([
   'UND_ERR_CONNECT_TIMEOUT',
 ]);
 
+/** Substrings of `TypeError.message` that commonly indicate a failed fetch (browser / Node undici). */
+const FETCH_NETWORK_TYPEERROR_HINTS = [
+  'failed to fetch',
+  'fetch failed',
+  'load failed',
+  'networkerror',
+  'network error when attempting to fetch',
+];
+
+function hasRetryableNodeErrorCode(err: unknown): boolean {
+  let cur: unknown = err;
+  for (let depth = 0; depth < 5 && cur != null; depth++) {
+    const code = (cur as { code?: string })?.code;
+    if (typeof code === 'string' && NODE_NETWORK_CODES.has(code)) return true;
+    cur = cur instanceof Error && cur.cause !== undefined ? cur.cause : undefined;
+  }
+  return false;
+}
+
+function isFetchFailureTypeError(err: unknown): boolean {
+  if (!(err instanceof TypeError)) return false;
+  const msg = String(err.message).toLowerCase();
+  return FETCH_NETWORK_TYPEERROR_HINTS.some((hint) => msg.includes(hint));
+}
+
 function isNetworkError(err: unknown): boolean {
-  if (err instanceof TypeError) return true;
-  const code = (err as { code?: string })?.code;
-  if (typeof code === 'string' && NODE_NETWORK_CODES.has(code)) return true;
+  if (hasRetryableNodeErrorCode(err)) return true;
+  if (isFetchFailureTypeError(err)) return true;
   return false;
 }
 

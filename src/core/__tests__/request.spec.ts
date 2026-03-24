@@ -344,6 +344,60 @@ describe('network errors', () => {
 
     await expect(runRequest(config, '/test', { method: 'GET' })).rejects.toThrow('Failed to fetch');
   });
+
+  it('retries on Failed to fetch when retry is enabled', async () => {
+    const transport = {
+      request: vi
+        .fn()
+        .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+        ),
+    };
+    const config = createMockConfig({
+      transport,
+      retry: { maxAttempts: 2, initialDelayMs: 1, maxDelayMs: 1 },
+    });
+
+    const response = await runRequest(config, '/test', { method: 'GET' });
+    expect(response.status).toBe(200);
+    expect(transport.request).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries when error cause carries a Node network code', async () => {
+    const inner = Object.assign(new Error('connect refused'), { code: 'ECONNREFUSED' });
+    const wrapped = new TypeError('fetch failed');
+    (wrapped as Error & { cause?: unknown }).cause = inner;
+    const transport = {
+      request: vi
+        .fn()
+        .mockRejectedValueOnce(wrapped)
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+        ),
+    };
+    const config = createMockConfig({
+      transport,
+      retry: { maxAttempts: 2, initialDelayMs: 1, maxDelayMs: 1 },
+    });
+
+    const response = await runRequest(config, '/test', { method: 'GET' });
+    expect(response.status).toBe(200);
+    expect(transport.request).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry unrelated TypeError when retry is enabled', async () => {
+    const transport = {
+      request: vi.fn().mockRejectedValue(new TypeError('Cannot read properties of undefined (reading x)')),
+    };
+    const config = createMockConfig({
+      transport,
+      retry: { maxAttempts: 3, initialDelayMs: 1, maxDelayMs: 1 },
+    });
+
+    await expect(runRequest(config, '/test', { method: 'GET' })).rejects.toThrow(/Cannot read properties/);
+    expect(transport.request).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('runRequest middleware', () => {

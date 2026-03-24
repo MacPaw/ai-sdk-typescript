@@ -23,6 +23,16 @@ describe('resolveConfig', () => {
     expect(resolved.retry).toEqual({ ...DEFAULT_RETRY, maxAttempts: 5 });
   });
 
+  it('normalizes invalid maxAttempts (0, NaN) to default', () => {
+    expect(resolveConfig({ ...baseConfig, retry: { maxAttempts: 0 } }).retry).toEqual(DEFAULT_RETRY);
+    expect(resolveConfig({ ...baseConfig, retry: { maxAttempts: Number.NaN } }).retry).toEqual(DEFAULT_RETRY);
+  });
+
+  it('floors fractional maxAttempts', () => {
+    const resolved = resolveConfig({ ...baseConfig, retry: { maxAttempts: 2.9 } });
+    expect(resolved.retry).toEqual({ ...DEFAULT_RETRY, maxAttempts: 2 });
+  });
+
   it('defaults timeout to 60000', () => {
     const resolved = resolveConfig(baseConfig);
     expect(resolved.timeout).toBe(60000);

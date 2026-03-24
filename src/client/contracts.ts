@@ -92,8 +92,8 @@ export interface EmbeddingsAPI {
 /** Models API — query available model metadata. */
 export interface ModelsAPI {
   getInfo(
-    params?: { litellm_model_id?: string },
-    options?: RequestOptions & { withResponse: true },
+    params: { litellm_model_id?: string } | undefined,
+    options: RequestOptions & { withResponse: true },
   ): Promise<WithResponseResult<ModelInfoResponse>>;
   /** Get information about available models. Optionally filter by `litellm_model_id`. */
   getInfo(params?: { litellm_model_id?: string }, options?: RequestOptions): Promise<ModelInfoResponse>;

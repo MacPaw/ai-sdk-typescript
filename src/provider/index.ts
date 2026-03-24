@@ -20,6 +20,9 @@ export { createAIGatewayDualProvider } from './dual-provider';
 export type { AIGatewayDualProviderOptions } from './dual-provider';
 export type { AIGatewayProviderSource, OpenAIProviderSource, Resolvable } from './provider-source';
 
+export { createGatewayProviderMirror } from './gateway-provider-mirror';
+export type { GatewayProviderMirrorOptions } from './gateway-provider-mirror';
+
 export { createOpenAI } from '@ai-sdk/openai';
 export type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
 

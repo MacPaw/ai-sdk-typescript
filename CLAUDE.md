@@ -20,6 +20,8 @@ Auth: `getAuthToken: async () => string | null`. Use `env: 'production'` for pro
 
 Prefer `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` for AI SDK integration (identical). The entry re-exports the full `ai` package and adds AI Gateway helpers plus `createOpenAI`, so apps can swap `from 'ai'` to `@macpaw/ai-sdk/ai` and keep one import path, including `ai/internal` and `ai/test` equivalents. `createAIGatewayDualProvider()` and `createAIGatewayCustomProvider()` accept eager providers or lazy factories for env-specific builds. React hooks: `@macpaw/ai-sdk/react` or `@ai-sdk/react`. Import transport/config/validation internals from `@macpaw/ai-sdk/runtime`, not `@macpaw/ai-sdk/client`.
 
+Each `@macpaw/ai-sdk/<provider>` subpath also exports a `createGateway<Name>` factory (e.g. `createGatewayAnthropic` from `@macpaw/ai-sdk/anthropic`) that creates an AI Gateway-backed provider with automatic model ID prefixing. Bare model IDs like `claude-sonnet-4-20250514` are sent as `anthropic/claude-sonnet-4-20250514` through the Gateway. IDs already containing `/` are passed as-is. Override the prefix with `modelPrefix`.
+
 ## Developing the SDK
 
 - Verify: `pnpm typecheck && pnpm lint && pnpm test`
