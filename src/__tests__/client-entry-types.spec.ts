@@ -35,6 +35,8 @@ describe('client entry type exports', () => {
 
     const result = client.models.getInfo();
     const resultWithResponse = client.models.getInfo(undefined, { withResponse: true });
+    void result;
+    void resultWithResponse;
 
     assertType<Assert<IsEqual<Awaited<typeof result>, ModelInfoResponse>>>(true);
     assertType<Assert<IsEqual<Awaited<typeof resultWithResponse>, WithResponseResult<ModelInfoResponse>>>>(true);
