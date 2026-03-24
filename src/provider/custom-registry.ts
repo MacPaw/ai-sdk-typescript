@@ -38,6 +38,7 @@ export interface AIGatewayCustomProviderRegistry<
  * Builds a {@link customProvider} whose `fallbackProvider` is an AI Gateway OpenAI-compatible
  * provider from {@link resolveAIGatewayProvider}. Use `languageModels`, `embeddingModels`, etc.
  * to register aliases or restrict models; unknown IDs resolve through the gateway fallback.
+ * The gateway source can be passed eagerly or lazily.
  *
  * @example
  * ```ts

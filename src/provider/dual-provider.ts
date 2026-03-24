@@ -1,6 +1,6 @@
 import type { OpenAIProvider } from '@ai-sdk/openai';
-import type { AIGatewayProviderSource } from './provider-source';
-import { resolveAIGatewayProvider } from './provider-source';
+import type { AIGatewayProviderSource, OpenAIProviderSource } from './provider-source';
+import { resolveAIGatewayProvider, resolveOpenAIProvider } from './provider-source';
 
 export interface AIGatewayDualProviderOptions {
   /**
@@ -8,10 +8,10 @@ export interface AIGatewayDualProviderOptions {
    * This is designed for environment-flag workflows such as `IS_SETAPP_BUILD`.
    */
   useGateway: boolean | (() => boolean);
-  /** AI Gateway provider options or a prebuilt gateway provider instance. */
+  /** AI Gateway provider options, a prebuilt gateway provider, or a lazy factory for either. */
   gateway: AIGatewayProviderSource;
-  /** Direct OpenAI-compatible provider used when `useGateway` is false. */
-  direct: OpenAIProvider;
+  /** Direct OpenAI-compatible provider or a lazy factory used when `useGateway` is false. */
+  direct: OpenAIProviderSource;
 }
 
 /**
@@ -19,12 +19,16 @@ export interface AIGatewayDualProviderOptions {
  * backend without changing the surrounding `ai-sdk` integration code.
  */
 export function createAIGatewayDualProvider(options: AIGatewayDualProviderOptions): OpenAIProvider {
-  const gatewayProvider = resolveAIGatewayProvider(options.gateway);
+  let cachedGatewayProvider: OpenAIProvider | undefined;
+  let cachedDirectProvider: OpenAIProvider | undefined;
+
+  const gatewayProvider = (): OpenAIProvider => (cachedGatewayProvider ??= resolveAIGatewayProvider(options.gateway));
+  const directProvider = (): OpenAIProvider => (cachedDirectProvider ??= resolveOpenAIProvider(options.direct));
 
   const pickProvider = (): OpenAIProvider =>
     (typeof options.useGateway === 'function' ? options.useGateway() : options.useGateway)
-      ? gatewayProvider
-      : options.direct;
+      ? gatewayProvider()
+      : directProvider();
 
   const provider = ((modelId: Parameters<OpenAIProvider>[0]) => pickProvider()(modelId)) as OpenAIProvider;
 
