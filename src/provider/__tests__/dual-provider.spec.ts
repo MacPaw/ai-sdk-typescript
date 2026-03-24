@@ -67,4 +67,27 @@ describe('createAIGatewayDualProvider', () => {
     expect(provider('openai/gpt-4.1-nano')).toBe('gateway-call');
     expect(provider.tools).toEqual({ label: 'gateway' });
   });
+
+  it('resolves providers lazily and only when selected', () => {
+    const gateway = createMockProvider('gateway');
+    const direct = createMockProvider('direct');
+    const gatewayFactory = vi.fn().mockReturnValue(gateway);
+    const directFactory = vi.fn().mockReturnValue(direct);
+
+    const provider = createAIGatewayDualProvider({
+      useGateway: false,
+      gateway: gatewayFactory,
+      direct: directFactory,
+    });
+
+    expect(gatewayFactory).not.toHaveBeenCalled();
+    expect(directFactory).not.toHaveBeenCalled();
+
+    expect(provider('openai/gpt-4.1-nano')).toBe('direct-call');
+    expect(directFactory).toHaveBeenCalledTimes(1);
+    expect(gatewayFactory).not.toHaveBeenCalled();
+
+    expect(provider.chat('openai/gpt-4.1-nano')).toBe('direct-chat');
+    expect(directFactory).toHaveBeenCalledTimes(1);
+  });
 });

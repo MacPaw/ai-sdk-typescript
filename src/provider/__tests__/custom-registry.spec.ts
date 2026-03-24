@@ -56,4 +56,18 @@ describe('createAIGatewayCustomProvider', () => {
 
     expect(registry.languageModel('fast')).toBe(gateway);
   });
+
+  it('supports lazy gateway provider factories', () => {
+    const gateway = createMockProvider();
+    const gatewayFactory = vi.fn().mockReturnValue(gateway);
+
+    const registry = createAIGatewayCustomProvider(gatewayFactory, {
+      languageModels: {
+        fast: gateway as never,
+      },
+    });
+
+    expect(gatewayFactory).toHaveBeenCalledTimes(1);
+    expect(registry.languageModel('fast')).toBe(gateway);
+  });
 });
