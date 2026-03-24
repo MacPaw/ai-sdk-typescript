@@ -114,7 +114,7 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
-    "ai": "^6.0.0"
+    "ai": "^6.0.137"
   },
   "devDependencies": {
     "@nestjs/common": "^11.1.17",
