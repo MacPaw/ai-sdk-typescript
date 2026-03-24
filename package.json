@@ -1,7 +1,7 @@
 {
   "name": "@macpaw/ai-sdk",
   "version": "0.1.0",
-  "description": "Commercial Web SDK for AI Gateway - universal TypeScript client for browser and Node.js",
+  "description": "Vercel AI SDK extension layer for AI Gateway with MacPaw and Setapp auth flows",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -17,6 +17,16 @@
         "default": "./dist/index.cjs"
       }
     },
+    "./client": {
+      "import": {
+        "types": "./dist/client/index.d.ts",
+        "default": "./dist/client/index.js"
+      },
+      "require": {
+        "types": "./dist/client/index.d.cts",
+        "default": "./dist/client/index.cjs"
+      }
+    },
     "./core": {
       "import": {
         "types": "./dist/core/index.d.ts",
@@ -25,6 +35,16 @@
       "require": {
         "types": "./dist/core/index.d.cts",
         "default": "./dist/core/index.cjs"
+      }
+    },
+    "./types": {
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/types/index.js"
+      },
+      "require": {
+        "types": "./dist/types/index.d.cts",
+        "default": "./dist/types/index.cjs"
       }
     },
     "./provider": {
@@ -64,6 +84,7 @@
   "files": [
     "dist",
     "README.md",
+    "MIGRATION.md",
     "CHANGELOG.md",
     "AGENTS.md",
     "CLAUDE.md",
@@ -80,10 +101,11 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint 'src/**/*.ts'",
-    "lint:fix": "eslint 'src/**/*.ts' --fix",
-    "format": "prettier --write 'src/**/*.ts'",
-    "format:check": "prettier --check 'src/**/*.ts'",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "lint:style": "stylelint '**/*.{css,scss}' --allow-empty-input",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -114,15 +136,18 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.0",
+    "@ai-sdk/provider": "^3.0.0",
     "ai": "^6.0.0"
   },
   "devDependencies": {
+    "@macpaw/eslint-config-typescript": "^3.1.4",
     "@nestjs/common": "^11.1.14",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/node": "^25.3.3",
     "@eslint/js": "^10.0.1",
     "eslint": "^10.0.2",
+    "stylelint": "^16.25.0",
     "typescript-eslint": "^8.56.1",
     "prettier": "^3.8.1",
     "rxjs": "^7.8.2",

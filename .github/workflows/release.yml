@@ -36,7 +36,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: "22"  # LTS; package.json engines: >=18
+          node-version: '22' # LTS; package.json engines: >=18
           cache: pnpm
           registry-url: https://registry.npmjs.org
 

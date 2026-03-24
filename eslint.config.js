@@ -1,28 +1,20 @@
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-import eslint from '@eslint/js';
+import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
 export default tseslint.config(
-  eslint.configs.recommended,
+  js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    languageOptions: {
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: __dirname,
-      },
-    },
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
-      'no-console': 'warn',
-    },
-  },
-  {
-    ignores: ['dist/', 'node_modules/', 'scripts/', '*.cjs', '*.js'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      'scripts/',
+      'vendor/',
+      '*.cjs',
+      'eslint.config.js',
+      'stylelint.config.js',
+      'tsup.config.ts',
+      'vitest.config.ts',
+    ],
   },
 );

@@ -39,8 +39,8 @@ body:
     id: version
     attributes:
       label: SDK version
-      description: "Output of: npm ls @macpaw/ai-sdk"
-      placeholder: "@macpaw/ai-sdk@0.1.0"
+      description: 'Output of: npm ls @macpaw/ai-sdk'
+      placeholder: '@macpaw/ai-sdk@0.1.0'
     validations:
       required: true
 
@@ -60,4 +60,4 @@ body:
     id: node-version
     attributes:
       label: Node.js version (if applicable)
-      placeholder: "22.0.0"
+      placeholder: '22.0.0'
