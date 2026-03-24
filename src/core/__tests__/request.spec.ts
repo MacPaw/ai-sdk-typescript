@@ -345,7 +345,7 @@ describe('runRequest middleware', () => {
   });
 
   it('middleware can short-circuit the chain', async () => {
-    const mw: Middleware = async (_req, _next) => {
+    const mw: Middleware = async () => {
       return new Response(JSON.stringify({ intercepted: true }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },

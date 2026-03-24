@@ -23,7 +23,7 @@ function createMockProvider(): OpenAIProvider {
 }
 
 describe('createAIGatewayCustomProvider', () => {
-  it('returns a provider with languageModel and uses gateway as fallback', () => {
+  it('returns a provider with languageModel and uses gateway options as fallback', () => {
     const mockReturn = createMockProvider();
     const mockCreateOpenAI = vi.fn().mockReturnValue(mockReturn);
 
@@ -43,5 +43,17 @@ describe('createAIGatewayCustomProvider', () => {
     expect(mockCreateOpenAI).toHaveBeenCalledTimes(1);
     expect(typeof registry.languageModel).toBe('function');
     expect(registry.languageModel('fast')).toBe(mockReturn);
+  });
+
+  it('reuses a prebuilt gateway provider without rebuilding it', () => {
+    const gateway = createMockProvider();
+
+    const registry = createAIGatewayCustomProvider(gateway, {
+      languageModels: {
+        fast: gateway as never,
+      },
+    });
+
+    expect(registry.languageModel('fast')).toBe(gateway);
   });
 });

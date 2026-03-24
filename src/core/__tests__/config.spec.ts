@@ -126,7 +126,7 @@ describe('resolveConfig', () => {
     const resolvers: Array<(v: string) => void> = [];
     const resolved = resolveConfig({
       ...baseConfig,
-      getAuthToken: async (_forceRefresh) => {
+      getAuthToken: async () => {
         callCount++;
         return new Promise<string>((r) => {
           resolvers.push(r);
