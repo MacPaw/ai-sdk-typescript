@@ -25,6 +25,7 @@ This is the `@macpaw/ai-sdk` SDK — a Vercel AI SDK extension layer for AI Gate
 - Never hardcode tokens — use `getAuthToken`.
 - Import `createAIGatewayClient` from `@macpaw/ai-sdk/client`, not the root package.
 - Import transport/config/validation internals from `@macpaw/ai-sdk/runtime`, not `@macpaw/ai-sdk/client`.
+- Provider fetches and the low-level client share the same request pipeline semantics for auth refresh, retries, middleware, hooks, timeout, and transport selection.
 - Use `createGatewayProvider(GATEWAY_PROVIDERS.<NAME>, options)` from `@macpaw/ai-sdk/provider` when the vendor wants all traffic through Gateway with provider-scoped model IDs (e.g. `anthropic('claude-sonnet-4-20250514')` → `anthropic/claude-sonnet-4-20250514`). Keep provider-specific imports on the upstream `@ai-sdk/*` packages. IDs with `/` are sent as-is, and `GATEWAY_PROVIDERS.OPENAI_COMPATIBLE` requires `modelPrefix`.
 
 ## When developing the SDK itself

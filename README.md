@@ -532,6 +532,7 @@ The provider entry includes:
 - OpenAI provider helpers such as `createOpenAI`
 - AI Gateway-specific helpers: `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createAIGatewayFetch`
 - Gateway-focused errors (`AIGatewayError`, `ErrorCode`, …) alongside upstream `AISDKError` types from `ai`
+- The same shared request pipeline semantics as the low-level client for retries, middleware, hooks, timeout, and transport configuration
 
 That means an app can keep its existing `ai-sdk` flow and swap the import path plus the provider layer. Keep `ai` and `@macpaw/ai-sdk` on **compatible major versions** (see peer dependency ranges on the package).
 
@@ -626,14 +627,14 @@ const fireworks = createGatewayProvider(GATEWAY_PROVIDERS.OPENAI_COMPATIBLE, {
 
 Direct-use imports like `createAnthropic` continue to come from the upstream `@ai-sdk/<name>` packages, while gateway-backed providers are created centrally from `@macpaw/ai-sdk/provider`.
 
-**Auth vs middleware:** Bearer acquisition and refresh belong in `getAuthToken` (and related provider options). If you need a shared HTTP pipeline with interceptors, retries, and lifecycle hooks on _raw_ Gateway calls, use `createAIGatewayClient` and `client.use(middleware)` for those code paths, or keep the provider for `generateText` / `streamText` and use the client only for multipart or other APIs the OpenAI-shaped provider does not cover (see the table below).
+**Shared request pipeline:** Bearer acquisition and refresh still belong in `getAuthToken`, but both the provider fetch and the low-level client now run through the same request pipeline primitives (`middleware`, `retry`, `hooks`, `timeout`, `transport`). Reach for `createAIGatewayClient` when you want the raw typed HTTP surface or endpoints that do not naturally fit the OpenAI-compatible provider shape.
 
 ### When to use the HTTP client vs the provider
 
 | Need                                                                                                                                 | Use                                                                                                                      |
 | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
 | Chat, responses, tools, embeddings, and existing `ai-sdk` flows                                                                      | `@macpaw/ai-sdk/provider` — `createAIGatewayProvider`, `createAIGatewayCustomProvider`, or `createAIGatewayDualProvider` |
-| Multipart endpoints (image **edits**, audio upload), or you want the SDK request pipeline (middleware, hooks, retries) on every call | `@macpaw/ai-sdk/client` — `createAIGatewayClient`                                                                        |
+| Multipart endpoints (image **edits**, audio upload), or you want the raw typed Gateway HTTP surface                                | `@macpaw/ai-sdk/client` — `createAIGatewayClient`                                                                        |
 | Both in one app                                                                                                                      | Use the **provider** for Vercel AI SDK flows and the **client** only where the OpenAI-compat provider is not enough      |
 
 Image **generation** (JSON body) may work through the OpenAI-shaped provider when the gateway exposes it like OpenAI; image **edits** and **audio** use `FormData` and are implemented on the HTTP client today.
@@ -774,7 +775,7 @@ What stays the same:
 ### Where authentication runs
 
 - **Gateway path:** `getAuthToken` passed to `createAIGatewayProvider` / `createAIGatewayClient` runs whenever the SDK issues a request; it can read cookies, session stores, or env. No need to put the Bearer string in application code paths if you centralize it here.
-- **Gateway provider fetch:** `createAIGatewayProvider` and `createAIGatewayFetch` support token refresh-aware `getAuthToken(forceRefresh?)`, token caching, request IDs, and gateway error normalization.
+- **Gateway provider fetch:** `createAIGatewayProvider` and `createAIGatewayFetch` support token refresh-aware `getAuthToken(forceRefresh?)`, token caching, request IDs, gateway error normalization, plus the shared SDK request pipeline options (`retry`, `middleware`, `hooks`, `timeout`, `transport`).
 - **Next.js App Router:** resolve the token in a **server** route or server action (same place you call `streamText`), or in middleware that attaches session info your `getAuthToken` reads — avoid exposing long-lived tokens to the browser.
 - **Express / Fastify:** read the session in your route handler and pass a closure: `getAuthToken: async () => req.session?.aiToken ?? null`.
 
@@ -846,6 +847,7 @@ const customFetch = createAIGatewayFetch({
   baseURL: 'https://api.macpaw.com/ai',
   getAuthToken: async () => myToken,
   autoRefreshToken: true,
+  retry: { maxAttempts: 2, initialDelayMs: 250 },
   normalizeErrors: true,
 });
 

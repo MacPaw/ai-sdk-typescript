@@ -16,5 +16,6 @@ Auth: `getAuthToken: async () => string | null`. Use `env: 'production'` for pro
 Prefer `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` for AI SDK integration (identical). The entry re-exports the full `ai` package and adds `createOpenAI` plus AI Gateway helpers, including subpaths for `ai/internal` and `ai/test`.
 React hooks such as `useChat` come from `@macpaw/ai-sdk/react` or `@ai-sdk/react`, not from the provider entry.
 If the app imports `ai` or `@ai-sdk/openai` directly for non-gateway helpers, keep those package versions aligned with `@macpaw/ai-sdk`.
+Provider fetches and the low-level client share the same request pipeline semantics for auth refresh, retries, middleware, hooks, timeout, and transport selection.
 
 Common mistakes: `env` only supports `'production'` (use `baseURL` for staging). Retry uses `maxAttempts`, not `maxRetries`. Never hardcode tokens — use `getAuthToken`.

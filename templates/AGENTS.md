@@ -22,3 +22,4 @@ Vercel AI SDK extension layer for AI Gateway, plus an advanced low-level HTTP cl
 - Retry config uses `maxAttempts`, not `maxRetries`.
 - Never hardcode tokens — use `getAuthToken`.
 - Import `createAIGatewayClient` from `@macpaw/ai-sdk/client`, not the root package.
+- Provider fetches and the low-level client share the same request pipeline semantics for auth refresh, retries, middleware, hooks, timeout, and transport selection.

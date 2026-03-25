@@ -113,6 +113,8 @@ export interface RequestConfig {
   headers: Record<string, string>;
   body?: RequestInit['body'];
   signal?: AbortSignal | undefined;
+  /** Transport-specific init passthrough for advanced cases such as custom fetch options. */
+  transportOptions?: Omit<RequestInit, 'method' | 'headers' | 'body' | 'signal'>;
 }
 
 export interface Transport {

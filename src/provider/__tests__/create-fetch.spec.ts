@@ -24,7 +24,7 @@ describe('createAIGatewayFetch', () => {
     });
 
     const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    const headers = fetchCall[1].headers as Headers;
+    const headers = new Headers(fetchCall[1].headers);
     expect(headers.get('Authorization')).toBe('Bearer my-jwt');
   });
 
@@ -50,7 +50,7 @@ describe('createAIGatewayFetch', () => {
     await customFetch('https://api.macpaw.com/ai/test');
 
     const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    const headers = fetchCall[1].headers as Headers;
+    const headers = new Headers(fetchCall[1].headers);
     expect(headers.get('X-Custom')).toBe('value');
   });
 
@@ -63,7 +63,7 @@ describe('createAIGatewayFetch', () => {
     await customFetch('https://api.macpaw.com/ai/test');
 
     const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    const headers = fetchCall[1].headers as Headers;
+    const headers = new Headers(fetchCall[1].headers);
     expect(headers.has('Authorization')).toBe(false);
   });
 
@@ -89,7 +89,7 @@ describe('createAIGatewayFetch', () => {
     await customFetch('https://evil.example.com/steal');
 
     const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    const headers = fetchCall[1].headers as Headers;
+    const headers = new Headers(fetchCall[1].headers);
     expect(headers.has('Authorization')).toBe(false);
     expect(headers.has('X-Internal')).toBe(false);
   });
@@ -104,7 +104,7 @@ describe('createAIGatewayFetch', () => {
     await customFetch('https://api.macpaw.com/ai-staging/api/v1/chat/completions');
 
     const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    const headers = fetchCall[1].headers as Headers;
+    const headers = new Headers(fetchCall[1].headers);
     expect(headers.has('Authorization')).toBe(false);
     expect(headers.has('X-Internal')).toBe(false);
   });
@@ -124,7 +124,7 @@ describe('createAIGatewayFetch', () => {
     });
 
     const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    const headers = fetchCall[1].headers as Headers;
+    const headers = new Headers(fetchCall[1].headers);
     expect(headers.has('Content-Type')).toBe(false);
   });
 
@@ -142,7 +142,7 @@ describe('createAIGatewayFetch', () => {
     });
 
     const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    const headers = fetchCall[1].headers as Headers;
+    const headers = new Headers(fetchCall[1].headers);
     expect(headers.has('Content-Type')).toBe(false);
   });
 
@@ -232,7 +232,106 @@ describe('createAIGatewayFetch', () => {
 
     expect(getAuthToken).toHaveBeenCalledTimes(2);
     const secondCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1];
-    const headers = secondCall[1].headers as Headers;
+    const headers = new Headers(secondCall[1].headers);
     expect(headers.get('Authorization')).toBe('Bearer fresh-token');
+  });
+
+  it('runs provider fetch middleware through the shared request pipeline', async () => {
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => null,
+      middleware: [
+        async (request, next) =>
+          next({
+            ...request,
+            headers: {
+              ...request.headers,
+              'X-Middleware': 'applied',
+            },
+          }),
+      ],
+    });
+
+    await customFetch('https://api.macpaw.com/ai/test', { method: 'GET' });
+
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const headers = fetchCall[1].headers as Record<string, string>;
+    expect(headers['X-Middleware']).toBe('applied');
+  });
+
+  it('retries retryable gateway failures through the shared request pipeline', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ statusCode: 503, message: 'Unavailable', code: 'SERVICE_UNAVAILABLE' }), {
+          status: 503,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(new Response('ok', { status: 200 }));
+
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'token',
+      retry: { maxAttempts: 2, initialDelayMs: 1, maxDelayMs: 1 },
+    });
+
+    const response = await customFetch('https://api.macpaw.com/ai/api/v1/chat/completions', { method: 'POST' });
+    expect(response.status).toBe(200);
+    expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(2);
+  });
+
+  it('fires lifecycle hooks through the shared request pipeline', async () => {
+    const onRequest = vi.fn();
+    const onResponse = vi.fn();
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'token',
+      hooks: { onRequest, onResponse },
+    });
+
+    await customFetch('https://api.macpaw.com/ai/test', { method: 'GET' });
+
+    expect(onRequest).toHaveBeenCalledTimes(1);
+    expect(onResponse).toHaveBeenCalledTimes(1);
+  });
+
+  it('applies timeout through the shared request pipeline', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation(
+      (_url: string, init?: RequestInit) =>
+        new Promise((resolve, reject) => {
+          const signal = init?.signal;
+          const id = setTimeout(() => resolve(new Response('ok', { status: 200 })), 5000);
+          signal?.addEventListener('abort', () => {
+            clearTimeout(id);
+            reject(signal.reason);
+          });
+        }),
+    );
+
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'token',
+      timeout: 50,
+      retry: false,
+    });
+
+    await expect(customFetch('https://api.macpaw.com/ai/test', { method: 'GET' })).rejects.toThrow(/timed out/i);
+  });
+
+  it('uses a custom transport from the shared request pipeline', async () => {
+    const transport = {
+      request: vi.fn().mockResolvedValue(new Response('ok', { status: 200 })),
+    };
+    const customFetch = createAIGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'token',
+      transport,
+    });
+
+    const response = await customFetch('https://api.macpaw.com/ai/test', { method: 'GET' });
+
+    expect(response.status).toBe(200);
+    expect(transport.request).toHaveBeenCalledTimes(1);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 });

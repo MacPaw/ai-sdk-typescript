@@ -1,5 +1,6 @@
 /**
  * Internal runtime primitives used by the client and provider layers.
+ * This entry owns the shared request pipeline that both high-level integrations use.
  */
 
 export * from './config';

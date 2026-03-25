@@ -9,7 +9,7 @@
 import { createOpenAI as builtinCreateOpenAI } from '@ai-sdk/openai';
 import type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
 import { createAIGatewayFetch } from './create-fetch';
-import type { Environment } from '../runtime/config';
+import type { Environment, LifecycleHooks, Logger, Middleware, RetryConfig, Transport } from '../runtime/config';
 import { DEFAULT_BASE_URLS } from '../runtime/config';
 import type { ApiVersion } from '../runtime/paths';
 import { DEFAULT_API_VERSION } from '../runtime/paths';
@@ -34,6 +34,18 @@ export interface AIGatewayProviderOptions extends Omit<OpenAIProviderSettings, '
   autoRefreshToken?: boolean;
   /** Cache the auth token for this many milliseconds. Default: 0. */
   tokenCacheTTL?: number;
+  /** Retry policy shared with the low-level client. Default: the SDK retry policy. */
+  retry?: RetryConfig | false;
+  /** Middleware chain shared with the low-level client. */
+  middleware?: Middleware[];
+  /** Request timeout in ms. Default: 60000. */
+  timeout?: number;
+  /** Optional logger used by the shared request pipeline. */
+  logger?: Logger;
+  /** Optional lifecycle hooks used by the shared request pipeline. */
+  hooks?: LifecycleHooks;
+  /** Optional custom transport shared with the low-level client. */
+  transport?: Transport;
   /** Generate `X-Request-ID` for provider fetch calls. Default: true. */
   generateRequestId?: boolean;
   /** Normalize gateway error responses into `AIGatewayError`. Default: true. */
@@ -67,6 +79,12 @@ export function createAIGatewayProvider(options: AIGatewayProviderOptions): Open
     headers: options.headers,
     autoRefreshToken: options.autoRefreshToken,
     tokenCacheTTL: options.tokenCacheTTL,
+    retry: options.retry,
+    middleware: options.middleware,
+    timeout: options.timeout,
+    logger: options.logger,
+    hooks: options.hooks,
+    transport: options.transport,
     generateRequestId: options.generateRequestId,
     normalizeErrors: options.normalizeErrors,
   });
