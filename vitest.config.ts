@@ -19,7 +19,10 @@ const providerMirrorSubpaths = [
 ] as const;
 
 const providerMirrorAliases = Object.fromEntries(
-  providerMirrorSubpaths.map((sub) => [`@macpaw/ai-sdk/${sub}`, resolve(__dirname, `./src/${sub}/index.ts`)]),
+  providerMirrorSubpaths.map((sub) => [
+    `@macpaw/ai-sdk/${sub}`,
+    resolve(__dirname, `./src/integrations/${sub}/index.ts`),
+  ]),
 );
 
 export default defineConfig({
@@ -36,8 +39,8 @@ export default defineConfig({
       '@macpaw/ai-sdk/ai/internal': resolve(__dirname, './src/ai-internal.ts'),
       '@macpaw/ai-sdk/ai/test': resolve(__dirname, './src/ai-test.ts'),
       '@macpaw/ai-sdk/react': resolve(__dirname, './src/react/index.ts'),
-      '@macpaw/ai-sdk/anthropic': resolve(__dirname, './src/anthropic/index.ts'),
-      '@macpaw/ai-sdk/google': resolve(__dirname, './src/google/index.ts'),
+      '@macpaw/ai-sdk/anthropic': resolve(__dirname, './src/integrations/anthropic/index.ts'),
+      '@macpaw/ai-sdk/google': resolve(__dirname, './src/integrations/google/index.ts'),
       ...providerMirrorAliases,
     },
   },

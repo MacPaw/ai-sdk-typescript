@@ -53,7 +53,7 @@ describe('package exports', () => {
       const exportConfig = packageJson.exports[exportKey];
 
       expect(exportConfig).toBeDefined();
-      expect(sourceFileExists(`${subpath}/index.ts`)).toBe(true);
+      expect(sourceFileExists(`integrations/${subpath}/index.ts`)).toBe(true);
       expect(exportConfig).toEqual({
         import: {
           types: `./dist/${subpath}/index.d.ts`,

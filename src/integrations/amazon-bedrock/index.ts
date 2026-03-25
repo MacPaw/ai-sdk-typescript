@@ -5,8 +5,8 @@
 export * from '@ai-sdk/amazon-bedrock';
 
 import type { OpenAIProvider } from '@ai-sdk/openai';
-import { createGatewayProviderMirror } from '../provider/gateway-provider-mirror';
-import type { GatewayProviderMirrorOptions } from '../provider/gateway-provider-mirror';
+import { createGatewayProviderMirror } from '../../provider/gateway-provider-mirror';
+import type { GatewayProviderMirrorOptions } from '../../provider/gateway-provider-mirror';
 
 export type GatewayBedrockOptions = GatewayProviderMirrorOptions;
 
