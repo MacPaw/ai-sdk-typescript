@@ -102,6 +102,15 @@ describe('StreamTextResult', () => {
     expect(text).toBe('Hi!');
   });
 
+  it('rejects late stream consumption after aggregated text path has already started', async () => {
+    const ac = new AbortController();
+    const result = createStreamTextResult(chatGen(['Hi', '!']), ac);
+
+    await expect(result.text).resolves.toBe('Hi!');
+
+    expect(() => result.textStream[Symbol.asyncIterator]()).toThrow('Stream iteration must start before aggregated consumption begins');
+  });
+
   it('propagates generator error to text promise', async () => {
     const ac = new AbortController();
     const result = createStreamTextResult(failingChatGen(['OK']), ac);

@@ -27,8 +27,10 @@ interface StreamState<T> {
   items: T[];
   done: boolean;
   error: unknown;
+  pumpStarted: boolean;
   consumerKind?: StreamConsumerKind;
   consumerClosed: boolean;
+  missedItemsBeforeConsumer: boolean;
   waiter?: Waiter;
   textResolve: (value: string) => void;
   textReject: (reason: unknown) => void;
@@ -38,10 +40,13 @@ interface StreamResultState<T, U> {
   state: StreamState<T>;
   textPromise: Promise<string>;
   usagePromise: Promise<U | undefined>;
+  ensureStarted: () => void;
 }
 
 const SINGLE_CONSUMER_ERROR =
   'Stream results support exactly one async iterator consumer. Use either `stream` or `textStream`, and use `text` for the final concatenated output.';
+const LATE_CONSUMER_ERROR =
+  'Stream iteration must start before aggregated consumption begins. Start `stream`/`textStream` immediately, or use `text`/`usage` without iterating.';
 
 function createSingleConsumerState<T, U>(
   generator: AsyncGenerator<T, void, undefined>,
@@ -52,8 +57,10 @@ function createSingleConsumerState<T, U>(
     items: [],
     done: false,
     error: undefined,
+    pumpStarted: false,
     consumerKind: undefined,
     consumerClosed: false,
+    missedItemsBeforeConsumer: false,
     waiter: undefined,
     textResolve: undefined!,
     textReject: undefined!,
@@ -75,6 +82,9 @@ function createSingleConsumerState<T, U>(
   usagePromise.catch(() => {});
 
   async function startPump(): Promise<void> {
+    if (state.pumpStarted) return;
+    state.pumpStarted = true;
+
     let fullText = '';
     let lastUsage: U | undefined;
 
@@ -84,10 +94,12 @@ function createSingleConsumerState<T, U>(
         const usage = extractUsage(item);
         if (usage !== undefined) lastUsage = usage;
 
-        if (!state.consumerClosed) {
+        if (state.consumerKind !== undefined && !state.consumerClosed) {
           state.items.push(item);
           state.waiter?.resolve();
           state.waiter = undefined;
+        } else if (!state.consumerClosed) {
+          state.missedItemsBeforeConsumer = true;
         }
       }
       state.done = true;
@@ -106,18 +118,22 @@ function createSingleConsumerState<T, U>(
     }
   }
 
-  void startPump();
-
   return {
     state,
     textPromise,
     usagePromise,
+    ensureStarted: () => {
+      void startPump();
+    },
   };
 }
 
 function claimConsumer<T>(state: StreamState<T>, kind: StreamConsumerKind): void {
   if (state.consumerKind !== undefined) {
     throw new Error(SINGLE_CONSUMER_ERROR);
+  }
+  if (state.missedItemsBeforeConsumer) {
+    throw new Error(LATE_CONSUMER_ERROR);
   }
   state.consumerKind = kind;
 }
@@ -177,11 +193,16 @@ export function createStreamTextResult(
   generator: AsyncGenerator<ChatCompletionChunk, void, undefined>,
   abortController: AbortController,
 ): StreamTextResult {
-  const { state, textPromise, usagePromise } = createSingleConsumerState(generator, extractChatDelta, extractChatUsage);
+  const { state, textPromise, usagePromise, ensureStarted } = createSingleConsumerState(
+    generator,
+    extractChatDelta,
+    extractChatUsage,
+  );
 
   const stream: AsyncIterable<ChatCompletionChunk> = {
     [Symbol.asyncIterator]() {
       claimConsumer(state, 'stream');
+      ensureStarted();
       return createSingleConsumerIterator(state, (chunk) => chunk);
     },
   };
@@ -189,6 +210,7 @@ export function createStreamTextResult(
   const textStream: AsyncIterable<string> = {
     [Symbol.asyncIterator]() {
       claimConsumer(state, 'textStream');
+      ensureStarted();
       return createSingleConsumerIterator(state, extractChatDelta);
     },
   };
@@ -196,8 +218,14 @@ export function createStreamTextResult(
   return {
     stream,
     textStream,
-    text: textPromise,
-    usage: usagePromise,
+    get text() {
+      ensureStarted();
+      return textPromise;
+    },
+    get usage() {
+      ensureStarted();
+      return usagePromise;
+    },
     abort() {
       abortController.abort();
     },
@@ -222,7 +250,7 @@ export function createStreamResponseResult(
   generator: AsyncGenerator<ResponseStreamEvent, void, undefined>,
   abortController: AbortController,
 ): StreamResponseResult {
-  const { state, textPromise, usagePromise } = createSingleConsumerState(
+  const { state, textPromise, usagePromise, ensureStarted } = createSingleConsumerState(
     generator,
     extractResponseDelta,
     extractResponseUsage,
@@ -231,6 +259,7 @@ export function createStreamResponseResult(
   const stream: AsyncIterable<ResponseStreamEvent> = {
     [Symbol.asyncIterator]() {
       claimConsumer(state, 'stream');
+      ensureStarted();
       return createSingleConsumerIterator(state, (event) => event);
     },
   };
@@ -238,6 +267,7 @@ export function createStreamResponseResult(
   const textStream: AsyncIterable<string> = {
     [Symbol.asyncIterator]() {
       claimConsumer(state, 'textStream');
+      ensureStarted();
       return createSingleConsumerIterator(state, extractResponseDelta);
     },
   };
@@ -245,8 +275,14 @@ export function createStreamResponseResult(
   return {
     stream,
     textStream,
-    text: textPromise,
-    usage: usagePromise,
+    get text() {
+      ensureStarted();
+      return textPromise;
+    },
+    get usage() {
+      ensureStarted();
+      return usagePromise;
+    },
     abort() {
       abortController.abort();
     },

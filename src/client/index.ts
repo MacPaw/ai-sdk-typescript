@@ -48,6 +48,12 @@ import type {
 /** Public client surface types — request/response DTOs live in `@macpaw/ai-sdk/types`. */
 export type * from './types';
 
+function assertNonStreamingWithResponseRequest(request: { stream?: boolean }, methodName: string): void {
+  if (request.stream === true) {
+    throw new Error(`${methodName} does not support stream: true. Use the streaming method instead.`);
+  }
+}
+
 function buildChatCompletions(config: ResolvedConfig): ChatCompletionsAPI {
   function create(
     request: CreateChatCompletionRequest,
@@ -63,6 +69,7 @@ function buildChatCompletions(config: ResolvedConfig): ChatCompletionsAPI {
     request: CreateChatCompletionRequest & { stream?: false | undefined },
     options?: RequestOptions,
   ): Promise<WithResponseResult<ChatCompletion>> {
+    assertNonStreamingWithResponseRequest(request, 'chat.completions.createWithResponse');
     return chatApi.createChatCompletion(config, request, { ...options, withResponse: true }) as Promise<
       WithResponseResult<ChatCompletion>
     >;
@@ -182,6 +189,7 @@ function buildAudio(config: ResolvedConfig): AudioAPI {
     request: CreateTranscriptionRequest & { stream?: false | undefined },
     options?: RequestOptions,
   ): Promise<WithResponseResult<TranscriptionResponse>> {
+    assertNonStreamingWithResponseRequest(request, 'audio.transcriptions.createWithResponse');
     return audioApi.createTranscription(config, request, { ...options, withResponse: true }) as Promise<
       WithResponseResult<TranscriptionResponse>
     >;

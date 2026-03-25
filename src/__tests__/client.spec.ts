@@ -135,4 +135,27 @@ describe('createAIGatewayClient', () => {
     expect(result).toHaveProperty('response');
     expect(result.response).toBeInstanceOf(Response);
   });
+
+  it('rejects stream:true for createWithResponse methods that are non-streaming only', async () => {
+    const client = createAIGatewayClient({
+      baseURL: 'https://api.example.com/ai',
+      getAuthToken: async () => 'token',
+    });
+
+    expect(() =>
+      client.chat.completions.createWithResponse({
+        model: 'openai/gpt-4.1-nano',
+        messages: [{ role: 'user', content: 'Hi' }],
+        stream: true,
+      } as never),
+    ).toThrow('chat.completions.createWithResponse does not support stream: true');
+
+    expect(() =>
+      client.audio.transcriptions.createWithResponse({
+        file: new Blob(['audio'], { type: 'audio/mp3' }),
+        model: 'whisper-1',
+        stream: true,
+      } as never),
+    ).toThrow('audio.transcriptions.createWithResponse does not support stream: true');
+  });
 });
