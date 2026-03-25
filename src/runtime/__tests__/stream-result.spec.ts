@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { createStreamTextResult, createStreamResponseResult } from '../stream-result';
-import type { ChatCompletionChunk, ChatCompletionUsage, ResponseStreamEvent, ResponseUsage } from '../types';
+import { createStreamTextResult, createStreamResponseResult } from '../index';
+import type { ChatCompletionChunk, ChatCompletionUsage, ResponseStreamEvent, ResponseUsage } from '../../types';
 
 function makeChatChunk(content: string, usage?: ChatCompletionUsage | null): ChatCompletionChunk {
   return {

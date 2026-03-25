@@ -32,8 +32,8 @@ The root package `@macpaw/ai-sdk` is also safe for Vercel-style app flows and no
 - **Tree-shakeable** — ESM + CJS with minimal runtime dependencies
 - **Advanced client path** — Explicit `@macpaw/ai-sdk/client` for multipart and low-level Gateway usage
 - **Explicit runtime layer** — `@macpaw/ai-sdk/runtime` for advanced transport/config/request primitives without overloading the client entry
-- **Scoped Vercel companions** — `@macpaw/ai-sdk/react` plus `@macpaw/ai-sdk/<provider>` mirrors (anthropic, google, xai, groq, mistral, amazon-bedrock, azure, cohere, perplexity, deepseek, togetherai, openai-compatible) re-export the matching `@ai-sdk/*` packages so imports can stay under `@macpaw/ai-sdk/*`
-- **Gateway provider mirrors** — each provider subpath also exports a `createGateway<Name>` factory (e.g. `createGatewayAnthropic`) that creates an AI Gateway-backed provider with automatic model ID prefixing — vendors can write `provider('claude-sonnet-4-20250514')` and traffic routes through Gateway as `anthropic/claude-sonnet-4-20250514`
+- **Scoped Vercel companions** — `@macpaw/ai-sdk/react` re-exports `@ai-sdk/react`, while gateway-aware provider creation stays centralized in `@macpaw/ai-sdk/provider`
+- **Gateway provider factory** — `@macpaw/ai-sdk/provider` exports `createGatewayProvider()` plus `GATEWAY_PROVIDERS` for creating AI Gateway-backed providers with automatic model ID prefixing
 
 ## Install
 
@@ -46,7 +46,7 @@ npm install @macpaw/ai-sdk
 If your app also imports upstream packages directly, install those explicitly in the app too:
 
 - `react` and `@ai-sdk/react` when using `@macpaw/ai-sdk/react` (or import hooks from `@ai-sdk/react` directly)
-- the matching `@ai-sdk/<provider>` peer for each `@macpaw/ai-sdk/<provider>` subpath you use (see `package.json` `exports` for the full list)
+- any provider-specific upstream packages you use directly, such as `@ai-sdk/anthropic` or `@ai-sdk/google`
 - `ai` or `@ai-sdk/openai` if you intentionally import from them alongside `@macpaw/ai-sdk/provider`
 
 For breaking import-path changes in this major, see [`MIGRATION.md`](./MIGRATION.md).
@@ -63,7 +63,7 @@ Use this table first. It avoids almost all integration mistakes.
 | Multipart APIs such as image edits or audio uploads                                                 | `@macpaw/ai-sdk/client`                                                      | These are implemented on the low-level HTTP client path                                                    |
 | Retry, transport, validation, SSE, and request-pipeline primitives                                  | `@macpaw/ai-sdk/runtime`                                                     | Advanced internal/runtime layer                                                                            |
 | React hooks under one MacPaw package scope                                                          | `@macpaw/ai-sdk/react`                                                       | Re-exports `@ai-sdk/react`                                                                                 |
-| Vercel provider factories under one MacPaw package scope                                            | `@macpaw/ai-sdk/anthropic`, `@macpaw/ai-sdk/google`, `@macpaw/ai-sdk/xai`, … | Each subpath re-exports `@ai-sdk/<same-name>` and adds a `createGateway<Name>` factory for Gateway routing |
+| Direct provider-specific packages from the upstream AI SDK                                          | `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/xai`, …                      | Keep provider-specific imports on the upstream package; use `createGatewayProvider` from `@macpaw/ai-sdk/provider` for Gateway routing |
 
 ### Common import swaps
 
@@ -560,30 +560,33 @@ Use this table when you already have an app on Vercel AI SDK (or any stack that 
 
 **Vendors (Electron, Tauri, existing JS apps):** you can keep `ai` and `@ai-sdk/openai` for the build that talks to OpenAI directly, add `@macpaw/ai-sdk` for the Gateway build, and share the same call sites by swapping the provider instance (especially with `createAIGatewayDualProvider`). You do not rewrite tool definitions or streaming loops—only how the model handle is constructed.
 
-### Gateway provider mirrors
+### Gateway provider factory
 
-Each `@macpaw/ai-sdk/<provider>` subpath exports a `createGateway<Name>` factory that creates an AI Gateway-backed provider with automatic model ID prefixing. This lets vendors use familiar provider-scoped model names without manually adding the routing prefix.
+Use `createGatewayProvider()` from `@macpaw/ai-sdk/provider` when you want a Gateway-backed provider with automatic model ID prefixing. Provider-specific packages come directly from the upstream AI SDK, while gateway provider creation stays centralized in one typed API.
 
-| Subpath                            | Gateway factory                 | Default prefix           |
-| ---------------------------------- | ------------------------------- | ------------------------ |
-| `@macpaw/ai-sdk/anthropic`         | `createGatewayAnthropic`        | `anthropic`              |
-| `@macpaw/ai-sdk/google`            | `createGatewayGoogle`           | `google`                 |
-| `@macpaw/ai-sdk/xai`               | `createGatewayXai`              | `xai`                    |
-| `@macpaw/ai-sdk/groq`              | `createGatewayGroq`             | `groq`                   |
-| `@macpaw/ai-sdk/mistral`           | `createGatewayMistral`          | `mistral`                |
-| `@macpaw/ai-sdk/amazon-bedrock`    | `createGatewayBedrock`          | `bedrock`                |
-| `@macpaw/ai-sdk/azure`             | `createGatewayAzure`            | `azure`                  |
-| `@macpaw/ai-sdk/cohere`            | `createGatewayCohere`           | `cohere`                 |
-| `@macpaw/ai-sdk/perplexity`        | `createGatewayPerplexity`       | `perplexity`             |
-| `@macpaw/ai-sdk/deepseek`          | `createGatewayDeepseek`         | `deepseek`               |
-| `@macpaw/ai-sdk/togetherai`        | `createGatewayTogetherAI`       | `togetherai`             |
-| `@macpaw/ai-sdk/openai-compatible` | `createGatewayOpenAICompatible` | (required `modelPrefix`) |
+| Provider constant                        | Default Gateway prefix | Notes                                        |
+| ---------------------------------------- | ---------------------- | -------------------------------------------- |
+| `GATEWAY_PROVIDERS.ANTHROPIC`            | `anthropic`            |                                              |
+| `GATEWAY_PROVIDERS.GOOGLE`               | `google`               |                                              |
+| `GATEWAY_PROVIDERS.XAI`                  | `xai`                  |                                              |
+| `GATEWAY_PROVIDERS.GROQ`                 | `groq`                 |                                              |
+| `GATEWAY_PROVIDERS.MISTRAL`              | `mistral`              |                                              |
+| `GATEWAY_PROVIDERS.AMAZON_BEDROCK`       | `bedrock`              | Subpath name stays `amazon-bedrock`          |
+| `GATEWAY_PROVIDERS.AZURE`                | `azure`                |                                              |
+| `GATEWAY_PROVIDERS.COHERE`               | `cohere`               |                                              |
+| `GATEWAY_PROVIDERS.PERPLEXITY`           | `perplexity`           |                                              |
+| `GATEWAY_PROVIDERS.DEEPSEEK`             | `deepseek`             |                                              |
+| `GATEWAY_PROVIDERS.TOGETHERAI`           | `togetherai`           |                                              |
+| `GATEWAY_PROVIDERS.OPENAI_COMPATIBLE`    | n/a                    | Requires explicit `modelPrefix` in options   |
 
 ```ts
-import { createGatewayAnthropic } from '@macpaw/ai-sdk/anthropic';
-import { generateText } from '@macpaw/ai-sdk/provider';
+import {
+  createGatewayProvider,
+  GATEWAY_PROVIDERS,
+  generateText,
+} from '@macpaw/ai-sdk/provider';
 
-const anthropic = createGatewayAnthropic({
+const anthropic = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, {
   env: 'production',
   getAuthToken: async () => (await getSetappSession()).accessToken,
 });
@@ -601,17 +604,27 @@ const { text: text2 } = await generateText({
 });
 ```
 
-Override the default prefix with `modelPrefix`:
+Override the default prefix with `modelPrefix` when needed:
 
 ```ts
-const bedrock = createGatewayBedrock({
+const bedrock = createGatewayProvider(GATEWAY_PROVIDERS.AMAZON_BEDROCK, {
   env: 'production',
   getAuthToken: async () => token,
   modelPrefix: 'amazon-bedrock',
 });
 ```
 
-Each mirror still re-exports the upstream `@ai-sdk/<name>` surface, so direct-use imports like `createAnthropic` remain available alongside the gateway factory.
+For openai-compatible backends, `modelPrefix` is required:
+
+```ts
+const fireworks = createGatewayProvider(GATEWAY_PROVIDERS.OPENAI_COMPATIBLE, {
+  env: 'production',
+  getAuthToken: async () => token,
+  modelPrefix: 'fireworks_ai',
+});
+```
+
+Direct-use imports like `createAnthropic` continue to come from the upstream `@ai-sdk/<name>` packages, while gateway-backed providers are created centrally from `@macpaw/ai-sdk/provider`.
 
 **Auth vs middleware:** Bearer acquisition and refresh belong in `getAuthToken` (and related provider options). If you need a shared HTTP pipeline with interceptors, retries, and lifecycle hooks on _raw_ Gateway calls, use `createAIGatewayClient` and `client.use(middleware)` for those code paths, or keep the provider for `generateText` / `streamText` and use the client only for multipart or other APIs the OpenAI-shaped provider does not cover (see the table below).
 
@@ -1362,7 +1375,7 @@ Then ask in natural language: _"Add AI Gateway chat to this Next.js app"_ or _"I
 
 ## Subpath exports
 
-> **Note:** `@macpaw/ai-sdk/provider` is the recommended app-developer entry point. `@macpaw/ai-sdk/client` is the focused low-level client path. `@macpaw/ai-sdk/runtime` is the explicit advanced runtime surface. `@macpaw/ai-sdk/core` remains a compatibility facade and may change more aggressively.
+> **Note:** `@macpaw/ai-sdk/provider` is the recommended app-developer entry point. `@macpaw/ai-sdk/client` is the focused low-level client path. `@macpaw/ai-sdk/runtime` is the explicit advanced runtime surface.
 
 | Import path               | Content                                                                                           |
 | ------------------------- | ------------------------------------------------------------------------------------------------- |
@@ -1370,7 +1383,6 @@ Then ask in natural language: _"Add AI Gateway chat to this Next.js app"_ or _"I
 | `@macpaw/ai-sdk/client`   | Advanced low-level Gateway HTTP client for direct API usage and multipart flows                   |
 | `@macpaw/ai-sdk/types`    | Domain TypeScript types (OpenAI-compatible request/response shapes)                               |
 | `@macpaw/ai-sdk/runtime`  | Advanced runtime primitives: transport, config, validation, request execution, SSE, retry         |
-| `@macpaw/ai-sdk/core`     | Runtime compatibility facade (**advanced/internal**; no domain type barrel)                       |
 | `@macpaw/ai-sdk/provider` | Curated Vercel AI SDK surface plus AI Gateway provider/fetch/dual-provider helpers                |
 | `@macpaw/ai-sdk/nestjs`   | NestJS module, decorator, exception filter                                                        |
 | `@macpaw/ai-sdk/testing`  | Provider and client-oriented mocks, fixtures, stream helpers, mock transport                      |

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createResponse, createResponseStream } from '../responses';
-import type { ResolvedConfig } from '../../../core/config';
+import type { ResolvedConfig } from '../../../runtime/config';
 import type { ResponseObject } from '../../../types';
-import { API_PATHS } from '../../../core/paths';
+import { API_PATHS } from '../../../runtime/paths';
 
 function createMockConfig(response: Response): ResolvedConfig {
   return {

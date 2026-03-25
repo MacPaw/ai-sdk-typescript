@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 
 type PackageExports = Record<
@@ -11,25 +11,6 @@ const packageJson = JSON.parse(readFileSync(fileURLToPath(new URL('../../package
   exports: PackageExports;
   files: string[];
 };
-
-const providerMirrorSubpaths = [
-  'anthropic',
-  'google',
-  'xai',
-  'groq',
-  'mistral',
-  'amazon-bedrock',
-  'azure',
-  'cohere',
-  'perplexity',
-  'deepseek',
-  'togetherai',
-  'openai-compatible',
-] as const;
-
-function sourceFileExists(relativePath: string): boolean {
-  return existsSync(fileURLToPath(new URL(`../${relativePath}`, import.meta.url)));
-}
 
 describe('package exports', () => {
   it('keeps the release-critical entrypoints in the export map', () => {
@@ -44,26 +25,6 @@ describe('package exports', () => {
       './react',
     ]) {
       expect(packageJson.exports[subpath]).toBeDefined();
-    }
-  });
-
-  it('keeps provider mirror subpaths aligned with source entries and dist targets', () => {
-    for (const subpath of providerMirrorSubpaths) {
-      const exportKey = `./${subpath}`;
-      const exportConfig = packageJson.exports[exportKey];
-
-      expect(exportConfig).toBeDefined();
-      expect(sourceFileExists(`integrations/${subpath}/index.ts`)).toBe(true);
-      expect(exportConfig).toEqual({
-        import: {
-          types: `./dist/${subpath}/index.d.ts`,
-          default: `./dist/${subpath}/index.js`,
-        },
-        require: {
-          types: `./dist/${subpath}/index.d.cts`,
-          default: `./dist/${subpath}/index.cjs`,
-        },
-      });
     }
   });
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { getModelInfo } from '../models';
-import type { ResolvedConfig } from '../../../core/config';
-import { API_PATHS } from '../../../core/paths';
+import type { ResolvedConfig } from '../../../runtime/config';
+import { API_PATHS } from '../../../runtime/paths';
 import { SDKValidationError } from '../../../runtime/validation';
 
 function createMockConfig(response: Response): ResolvedConfig {

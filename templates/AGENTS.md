@@ -4,10 +4,10 @@ Vercel AI SDK extension layer for AI Gateway, plus an advanced low-level HTTP cl
 
 ## Integrating with AI Gateway
 
-1. **Install:** `pnpm add @macpaw/ai-sdk` — add `react` + `@ai-sdk/react` for UI hooks; add the matching `@ai-sdk/*` peer only for provider subpaths you import (e.g. `@ai-sdk/xai` for `@macpaw/ai-sdk/xai`).
+1. **Install:** `pnpm add @macpaw/ai-sdk` — add `react` + `@ai-sdk/react` for UI hooks. If your app also uses provider-specific upstream packages such as `@ai-sdk/anthropic` or `@ai-sdk/google`, install those directly in the app.
 2. **Detect stack and choose path:**
    - **NestJS** (or **Node.js (NestJS)**) → `AIGatewayModule` from `@macpaw/ai-sdk/nestjs`, inject with `@InjectAIGateway()`, use `AIGatewayExceptionFilter`.
-   - **Next.js / Vercel AI SDK** → `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` (same module): `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createOpenAI`, `generateText`, `streamText`. Subpaths `@macpaw/ai-sdk/ai/internal`, `@macpaw/ai-sdk/ai/test` replace `ai/internal`, `ai/test`. Optional mirrors: `@macpaw/ai-sdk/react`, `@macpaw/ai-sdk/anthropic`, `@macpaw/ai-sdk/google`, `@macpaw/ai-sdk/xai`, `@macpaw/ai-sdk/groq`, `@macpaw/ai-sdk/mistral`, `@macpaw/ai-sdk/amazon-bedrock`, `@macpaw/ai-sdk/azure`, `@macpaw/ai-sdk/cohere`, `@macpaw/ai-sdk/perplexity`, `@macpaw/ai-sdk/deepseek`, `@macpaw/ai-sdk/togetherai`, `@macpaw/ai-sdk/openai-compatible` — each re-exports `@ai-sdk/<name>`; install the peer you use.
+   - **Next.js / Vercel AI SDK** → `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` (same module): `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createGatewayProvider`, `GATEWAY_PROVIDERS`, `createOpenAI`, `generateText`, `streamText`. Subpaths `@macpaw/ai-sdk/ai/internal`, `@macpaw/ai-sdk/ai/test` replace `ai/internal`, `ai/test`. For direct provider-specific packages such as `@ai-sdk/anthropic` or `@ai-sdk/google`, import them from the upstream AI SDK and create Gateway-backed providers centrally with `createGatewayProvider(GATEWAY_PROVIDERS.<NAME>, options)`.
    - **Node / Express / Browser with direct Gateway HTTP usage** → `createAIGatewayClient` from `@macpaw/ai-sdk/client`.
 3. **Auth:** always `getAuthToken: async () => token` (Bearer). Use `env: 'production'` for prod URL, `baseURL` for staging.
 4. **Errors:** catch `AIGatewayError` from `@macpaw/ai-sdk`. Key fields: `code` (ErrorCode enum), `paymentUrl`, `retryAfter`, `requestId`.

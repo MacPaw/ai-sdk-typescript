@@ -15,7 +15,7 @@ pnpm install
 
 ### Lint and format config
 
-ESLint, Stylelint, Prettier, and TypeScript are configured directly in this repository via `eslint.config.js`, `stylelint.config.js`, `.prettierrc`, and `tsconfig.json`. Keep `pnpm format:check` and `pnpm lint` both green after edits.
+ESLint, Prettier, and TypeScript are configured directly in this repository via `eslint.config.js`, `.prettierrc`, and `tsconfig.json`. Keep `pnpm format:check` and `pnpm lint` both green after edits.
 
 ## Development workflow
 
@@ -24,7 +24,6 @@ pnpm dev          # watch mode (rebuild on change)
 pnpm typecheck    # TypeScript type checking
 pnpm lint         # ESLint
 pnpm lint:fix     # ESLint with auto-fix
-pnpm lint:style   # Stylelint (no CSS in repo yet — config ignores all files)
 pnpm test         # run tests
 pnpm test:watch   # run tests in watch mode
 pnpm test:coverage # run tests with coverage

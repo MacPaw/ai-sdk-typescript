@@ -6,6 +6,8 @@ describe('provider entry', () => {
     expect(provider.createAIGatewayProvider).toBeDefined();
     expect(provider.createAIGatewayCustomProvider).toBeDefined();
     expect(provider.createAIGatewayDualProvider).toBeDefined();
+    expect(provider.createGatewayProvider).toBeDefined();
+    expect(provider.GATEWAY_PROVIDERS).toBeDefined();
     expect(provider.createAIGatewayFetch).toBeDefined();
     expect(provider.generateText).toBeDefined();
     expect(provider.streamText).toBeDefined();

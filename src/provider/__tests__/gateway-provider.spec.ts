@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { OpenAIProvider } from '@ai-sdk/openai';
-import { createGatewayProviderMirror } from '../gateway-provider-mirror';
+import { GATEWAY_PROVIDERS, createGatewayProvider } from '../gateway-provider';
 
 function createMockProvider(): OpenAIProvider {
   const callable = vi.fn().mockReturnValue('model-instance');
@@ -32,7 +32,7 @@ const baseOptions = {
   env: 'production' as const,
 };
 
-describe('createGatewayProviderMirror', () => {
+describe('createGatewayProvider', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -41,7 +41,7 @@ describe('createGatewayProviderMirror', () => {
     const mockProvider = createMockProvider();
     vi.mocked(createAIGatewayProvider).mockReturnValue(mockProvider);
 
-    const provider = createGatewayProviderMirror('anthropic', baseOptions);
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, baseOptions);
     provider('claude-sonnet-4-20250514');
 
     expect(mockProvider).toHaveBeenCalledWith('anthropic/claude-sonnet-4-20250514');
@@ -51,7 +51,7 @@ describe('createGatewayProviderMirror', () => {
     const mockProvider = createMockProvider();
     vi.mocked(createAIGatewayProvider).mockReturnValue(mockProvider);
 
-    const provider = createGatewayProviderMirror('anthropic', baseOptions);
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, baseOptions);
     provider('anthropic/claude-sonnet-4-20250514');
 
     expect(mockProvider).toHaveBeenCalledWith('anthropic/claude-sonnet-4-20250514');
@@ -61,7 +61,7 @@ describe('createGatewayProviderMirror', () => {
     const mockProvider = createMockProvider();
     vi.mocked(createAIGatewayProvider).mockReturnValue(mockProvider);
 
-    const provider = createGatewayProviderMirror('google', baseOptions);
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.GOOGLE, baseOptions);
     provider.languageModel('gemini-2.5-pro');
 
     expect(mockProvider.languageModel).toHaveBeenCalledWith('google/gemini-2.5-pro');
@@ -71,7 +71,7 @@ describe('createGatewayProviderMirror', () => {
     const mockProvider = createMockProvider();
     vi.mocked(createAIGatewayProvider).mockReturnValue(mockProvider);
 
-    const provider = createGatewayProviderMirror('xai', baseOptions);
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.XAI, baseOptions);
     provider.chat('grok-3');
 
     expect(mockProvider.chat).toHaveBeenCalledWith('xai/grok-3');
@@ -81,7 +81,7 @@ describe('createGatewayProviderMirror', () => {
     const mockProvider = createMockProvider();
     vi.mocked(createAIGatewayProvider).mockReturnValue(mockProvider);
 
-    const provider = createGatewayProviderMirror('cohere', baseOptions);
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.COHERE, baseOptions);
     provider.embedding('embed-english-v3.0');
 
     expect(mockProvider.embedding).toHaveBeenCalledWith('cohere/embed-english-v3.0');
@@ -91,30 +91,40 @@ describe('createGatewayProviderMirror', () => {
     const mockProvider = createMockProvider();
     vi.mocked(createAIGatewayProvider).mockReturnValue(mockProvider);
 
-    const provider = createGatewayProviderMirror('azure', baseOptions);
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.AZURE, baseOptions);
     provider.image('dall-e-3');
 
     expect(mockProvider.image).toHaveBeenCalledWith('azure/dall-e-3');
   });
 
-  it('uses custom modelPrefix when provided', () => {
+  it('maps amazon-bedrock to the canonical bedrock prefix', () => {
     const mockProvider = createMockProvider();
     vi.mocked(createAIGatewayProvider).mockReturnValue(mockProvider);
 
-    const provider = createGatewayProviderMirror('anthropic', {
-      ...baseOptions,
-      modelPrefix: 'custom-prefix',
-    });
-    provider('claude-sonnet-4-20250514');
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.AMAZON_BEDROCK, baseOptions);
+    provider('anthropic.claude-v2');
 
-    expect(mockProvider).toHaveBeenCalledWith('custom-prefix/claude-sonnet-4-20250514');
+    expect(mockProvider).toHaveBeenCalledWith('bedrock/anthropic.claude-v2');
+  });
+
+  it('uses required modelPrefix for openai-compatible providers', () => {
+    const mockProvider = createMockProvider();
+    vi.mocked(createAIGatewayProvider).mockReturnValue(mockProvider);
+
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.OPENAI_COMPATIBLE, {
+      ...baseOptions,
+      modelPrefix: 'fireworks_ai',
+    });
+    provider('accounts/fireworks/models/llama-v3p1-70b-instruct');
+
+    expect(mockProvider).toHaveBeenCalledWith('accounts/fireworks/models/llama-v3p1-70b-instruct');
   });
 
   it('passes through provider options to createAIGatewayProvider without modelPrefix', () => {
     const mockProvider = createMockProvider();
     vi.mocked(createAIGatewayProvider).mockReturnValue(mockProvider);
 
-    createGatewayProviderMirror('anthropic', {
+    createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, {
       ...baseOptions,
       modelPrefix: 'custom',
       autoRefreshToken: false,
@@ -132,7 +142,7 @@ describe('createGatewayProviderMirror', () => {
     const mockProvider = createMockProvider();
     vi.mocked(createAIGatewayProvider).mockReturnValue(mockProvider);
 
-    const provider = createGatewayProviderMirror('anthropic', baseOptions);
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, baseOptions);
     expect('languageModel' in provider).toBe(true);
     expect('chat' in provider).toBe(true);
   });
@@ -141,7 +151,7 @@ describe('createGatewayProviderMirror', () => {
     const mockProvider = createMockProvider();
     vi.mocked(createAIGatewayProvider).mockReturnValue(mockProvider);
 
-    const provider = createGatewayProviderMirror('anthropic', baseOptions);
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, baseOptions);
     expect(provider.tools).toEqual({});
   });
 
@@ -149,9 +159,15 @@ describe('createGatewayProviderMirror', () => {
     const mockProvider = createMockProvider();
     vi.mocked(createAIGatewayProvider).mockReturnValue(mockProvider);
 
-    const provider = createGatewayProviderMirror('google', baseOptions);
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.GOOGLE, baseOptions);
     provider.languageModel('vertex_ai/gemini-pro');
 
     expect(mockProvider.languageModel).toHaveBeenCalledWith('vertex_ai/gemini-pro');
+  });
+
+  it('exposes stable provider constants', () => {
+    expect(GATEWAY_PROVIDERS.ANTHROPIC).toBe('anthropic');
+    expect(GATEWAY_PROVIDERS.AMAZON_BEDROCK).toBe('amazon-bedrock');
+    expect(GATEWAY_PROVIDERS.OPENAI_COMPATIBLE).toBe('openai-compatible');
   });
 });

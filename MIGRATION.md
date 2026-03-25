@@ -155,7 +155,7 @@ Those remain on `@macpaw/ai-sdk/client` and `@macpaw/ai-sdk/runtime`.
 5. Move any low-level client imports to `@macpaw/ai-sdk/client`.
 6. Move advanced transport/config/runtime imports to `@macpaw/ai-sdk/runtime`.
 7. Move domain request/response type imports to `@macpaw/ai-sdk/types`.
-8. React hooks: `@macpaw/ai-sdk/react` (re-export) or `@ai-sdk/react`. Optional scoped provider factories: `@macpaw/ai-sdk/anthropic`, `@macpaw/ai-sdk/google` (install matching `@ai-sdk/*` in the app).
+8. React hooks: `@macpaw/ai-sdk/react` (re-export) or `@ai-sdk/react`. If you use provider-specific upstream packages such as `@ai-sdk/anthropic` or `@ai-sdk/google`, install them directly in the app and use `createGatewayProvider(...)` from `@macpaw/ai-sdk/provider` for Gateway-backed model handles.
 
 ## Vendor-oriented migration patterns
 

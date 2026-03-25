@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { withRetry } from '../retry';
+import { withRetry } from '../index';
 
 describe('withRetry', () => {
   it('returns result on first success', async () => {
@@ -65,7 +65,6 @@ describe('withRetry', () => {
       signal: ac.signal,
     });
 
-    // Let the first attempt fail and enter backoff, then abort
     await new Promise((r) => setTimeout(r, 50));
     ac.abort(new Error('user cancelled'));
 

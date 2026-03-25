@@ -28,16 +28,6 @@
         "default": "./dist/client/index.cjs"
       }
     },
-    "./core": {
-      "import": {
-        "types": "./dist/core/index.d.ts",
-        "default": "./dist/core/index.js"
-      },
-      "require": {
-        "types": "./dist/core/index.d.cts",
-        "default": "./dist/core/index.cjs"
-      }
-    },
     "./runtime": {
       "import": {
         "types": "./dist/runtime/index.d.ts",
@@ -127,126 +117,6 @@
         "types": "./dist/react/index.d.cts",
         "default": "./dist/react/index.cjs"
       }
-    },
-    "./anthropic": {
-      "import": {
-        "types": "./dist/anthropic/index.d.ts",
-        "default": "./dist/anthropic/index.js"
-      },
-      "require": {
-        "types": "./dist/anthropic/index.d.cts",
-        "default": "./dist/anthropic/index.cjs"
-      }
-    },
-    "./google": {
-      "import": {
-        "types": "./dist/google/index.d.ts",
-        "default": "./dist/google/index.js"
-      },
-      "require": {
-        "types": "./dist/google/index.d.cts",
-        "default": "./dist/google/index.cjs"
-      }
-    },
-    "./xai": {
-      "import": {
-        "types": "./dist/xai/index.d.ts",
-        "default": "./dist/xai/index.js"
-      },
-      "require": {
-        "types": "./dist/xai/index.d.cts",
-        "default": "./dist/xai/index.cjs"
-      }
-    },
-    "./groq": {
-      "import": {
-        "types": "./dist/groq/index.d.ts",
-        "default": "./dist/groq/index.js"
-      },
-      "require": {
-        "types": "./dist/groq/index.d.cts",
-        "default": "./dist/groq/index.cjs"
-      }
-    },
-    "./mistral": {
-      "import": {
-        "types": "./dist/mistral/index.d.ts",
-        "default": "./dist/mistral/index.js"
-      },
-      "require": {
-        "types": "./dist/mistral/index.d.cts",
-        "default": "./dist/mistral/index.cjs"
-      }
-    },
-    "./amazon-bedrock": {
-      "import": {
-        "types": "./dist/amazon-bedrock/index.d.ts",
-        "default": "./dist/amazon-bedrock/index.js"
-      },
-      "require": {
-        "types": "./dist/amazon-bedrock/index.d.cts",
-        "default": "./dist/amazon-bedrock/index.cjs"
-      }
-    },
-    "./azure": {
-      "import": {
-        "types": "./dist/azure/index.d.ts",
-        "default": "./dist/azure/index.js"
-      },
-      "require": {
-        "types": "./dist/azure/index.d.cts",
-        "default": "./dist/azure/index.cjs"
-      }
-    },
-    "./cohere": {
-      "import": {
-        "types": "./dist/cohere/index.d.ts",
-        "default": "./dist/cohere/index.js"
-      },
-      "require": {
-        "types": "./dist/cohere/index.d.cts",
-        "default": "./dist/cohere/index.cjs"
-      }
-    },
-    "./perplexity": {
-      "import": {
-        "types": "./dist/perplexity/index.d.ts",
-        "default": "./dist/perplexity/index.js"
-      },
-      "require": {
-        "types": "./dist/perplexity/index.d.cts",
-        "default": "./dist/perplexity/index.cjs"
-      }
-    },
-    "./deepseek": {
-      "import": {
-        "types": "./dist/deepseek/index.d.ts",
-        "default": "./dist/deepseek/index.js"
-      },
-      "require": {
-        "types": "./dist/deepseek/index.d.cts",
-        "default": "./dist/deepseek/index.cjs"
-      }
-    },
-    "./togetherai": {
-      "import": {
-        "types": "./dist/togetherai/index.d.ts",
-        "default": "./dist/togetherai/index.js"
-      },
-      "require": {
-        "types": "./dist/togetherai/index.d.cts",
-        "default": "./dist/togetherai/index.cjs"
-      }
-    },
-    "./openai-compatible": {
-      "import": {
-        "types": "./dist/openai-compatible/index.d.ts",
-        "default": "./dist/openai-compatible/index.js"
-      },
-      "require": {
-        "types": "./dist/openai-compatible/index.d.cts",
-        "default": "./dist/openai-compatible/index.cjs"
-      }
     }
   },
   "bin": {
@@ -272,7 +142,6 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "lint:style": "stylelint '**/*.{css,scss}' --allow-empty-input",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
@@ -316,54 +185,29 @@
     "ai": "^6.0.137"
   },
   "devDependencies": {
-    "@ai-sdk/amazon-bedrock": "^4.0.0",
-    "@ai-sdk/anthropic": "^3.0.0",
-    "@ai-sdk/azure": "^3.0.49",
-    "@ai-sdk/cohere": "^3.0.27",
-    "@ai-sdk/deepseek": "^2.0.26",
-    "@ai-sdk/google": "^3.0.0",
-    "@ai-sdk/groq": "^3.0.31",
-    "@ai-sdk/mistral": "^3.0.27",
-    "@ai-sdk/openai-compatible": "^2.0.37",
-    "@ai-sdk/perplexity": "^3.0.26",
     "@ai-sdk/react": "^3.0.0",
-    "@ai-sdk/togetherai": "^2.0.41",
-    "@ai-sdk/xai": "^3.0.74",
     "@eslint/js": "^10.0.1",
     "@macpaw/eslint-config-typescript": "^3.1.4",
     "@nestjs/common": "^11.1.17",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/node": "^25.5.0",
+    "@vitest/coverage-v8": "^4.1.0",
     "eslint": "^10.0.3",
-    "typescript-eslint": "^8.57.0",
     "prettier": "^3.8.1",
     "react": "^19.2.0",
     "rxjs": "^7.8.2",
     "semantic-release": "^25.0.3",
-    "stylelint": "^16.25.0",
     "tsup": "^8.5.1",
     "typedoc": "^0.28.18",
     "typescript": "^5.9.3",
-    "@vitest/coverage-v8": "^4.1.0",
+    "typescript-eslint": "^8.57.0",
     "vitest": "^4.1.0"
   },
   "peerDependencies": {
-    "@ai-sdk/amazon-bedrock": "^4.0.0",
-    "@ai-sdk/anthropic": "^3.0.0",
-    "@ai-sdk/azure": "^3.0.0",
-    "@ai-sdk/cohere": "^3.0.0",
-    "@ai-sdk/deepseek": "^2.0.0",
-    "@ai-sdk/google": "^3.0.0",
-    "@ai-sdk/groq": "^3.0.0",
-    "@ai-sdk/mistral": "^3.0.0",
     "@ai-sdk/openai": "^3.0.0",
-    "@ai-sdk/openai-compatible": "^2.0.0",
-    "@ai-sdk/perplexity": "^3.0.0",
     "@ai-sdk/provider": "^3.0.0",
     "@ai-sdk/react": "^3.0.0",
-    "@ai-sdk/togetherai": "^2.0.0",
-    "@ai-sdk/xai": "^3.0.0",
     "@nestjs/common": ">=10.0.0",
     "ai": "^6.0.0",
     "react": "^18 || ^19",
@@ -371,42 +215,6 @@
   },
   "peerDependenciesMeta": {
     "ai": {
-      "optional": true
-    },
-    "@ai-sdk/amazon-bedrock": {
-      "optional": true
-    },
-    "@ai-sdk/anthropic": {
-      "optional": true
-    },
-    "@ai-sdk/azure": {
-      "optional": true
-    },
-    "@ai-sdk/cohere": {
-      "optional": true
-    },
-    "@ai-sdk/deepseek": {
-      "optional": true
-    },
-    "@ai-sdk/google": {
-      "optional": true
-    },
-    "@ai-sdk/groq": {
-      "optional": true
-    },
-    "@ai-sdk/mistral": {
-      "optional": true
-    },
-    "@ai-sdk/openai-compatible": {
-      "optional": true
-    },
-    "@ai-sdk/perplexity": {
-      "optional": true
-    },
-    "@ai-sdk/togetherai": {
-      "optional": true
-    },
-    "@ai-sdk/xai": {
       "optional": true
     },
     "@ai-sdk/openai": {

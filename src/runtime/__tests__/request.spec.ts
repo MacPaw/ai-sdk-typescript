@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { runRequest } from '../request';
-import type { ResolvedConfig, Middleware } from '../config';
-import { API_PATHS } from '../paths';
+import { runRequest, API_PATHS } from '../index';
+import type { ResolvedConfig, Middleware } from '../index';
 
 function createMockConfig(overrides?: Partial<ResolvedConfig>): ResolvedConfig {
   return {

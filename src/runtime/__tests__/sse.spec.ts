@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseSSE, parseSSEAsJSON } from '../sse';
-import { AIGatewayError, AuthError, RateLimitError } from '../errors';
+import { parseSSE, parseSSEAsJSON, AIGatewayError, AuthError, RateLimitError } from '../index';
 
 function streamFromStrings(lines: string[]): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
@@ -57,7 +56,7 @@ describe('parseSSE', () => {
     expect(chunks).toEqual(['{"ok":true}']);
   });
 
-  it('handles \\r\\n line endings', async () => {
+  it('handles \r\n line endings', async () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
@@ -79,7 +78,7 @@ describe('parseSSE', () => {
     expect(chunks).toEqual(['{"a":1,\n"b":2}']);
   });
 
-  it('handles bare \\r line endings', async () => {
+  it('handles bare \r line endings', async () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
@@ -146,7 +145,6 @@ describe('parseSSE', () => {
     const encoder = new TextEncoder();
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
-        // No trailing \n after the data line — forces it into the buffer path
         controller.enqueue(encoder.encode('event: error\ndata: {"message":"final error","statusCode":503}'));
         controller.close();
       },

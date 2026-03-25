@@ -4,7 +4,7 @@ This is `@macpaw/ai-sdk` — a Vercel AI SDK extension layer for AI Gateway with
 
 ## Integrating an app with AI Gateway
 
-Install `@macpaw/ai-sdk`. Add `react` + `@ai-sdk/react` for UI hooks (or import hooks from `@macpaw/ai-sdk/react`). Add the matching `@ai-sdk/*` peer only for provider subpaths you use (anthropic, google, xai, groq, mistral, amazon-bedrock, azure, cohere, perplexity, deepseek, togetherai, openai-compatible).
+Install `@macpaw/ai-sdk`. Add `react` + `@ai-sdk/react` for UI hooks (or import hooks from `@macpaw/ai-sdk/react`). If your app also uses provider-specific upstream packages such as `@ai-sdk/anthropic` or `@ai-sdk/google`, install those directly in the app.
 
 | Stack                      | Import from                                             | Key export                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | -------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -20,12 +20,12 @@ Auth: `getAuthToken: async () => string | null`. Use `env: 'production'` for pro
 
 Prefer `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` for AI SDK integration (identical). The entry re-exports the full `ai` package and adds AI Gateway helpers plus `createOpenAI`, so apps can swap `from 'ai'` to `@macpaw/ai-sdk/ai` and keep one import path, including `ai/internal` and `ai/test` equivalents. `createAIGatewayDualProvider()` and `createAIGatewayCustomProvider()` accept eager providers or lazy factories for env-specific builds. React hooks: `@macpaw/ai-sdk/react` or `@ai-sdk/react`. Import transport/config/validation internals from `@macpaw/ai-sdk/runtime`, not `@macpaw/ai-sdk/client`.
 
-Each `@macpaw/ai-sdk/<provider>` subpath also exports a `createGateway<Name>` factory (e.g. `createGatewayAnthropic` from `@macpaw/ai-sdk/anthropic`) that creates an AI Gateway-backed provider with automatic model ID prefixing. Bare model IDs like `claude-sonnet-4-20250514` are sent as `anthropic/claude-sonnet-4-20250514` through the Gateway. IDs already containing `/` are passed as-is. Override the prefix with `modelPrefix`.
+Use `createGatewayProvider()` from `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` together with `GATEWAY_PROVIDERS` to create AI Gateway-backed providers with automatic model ID prefixing. Provider-specific packages come from the upstream `@ai-sdk/*` packages; bare model IDs like `claude-sonnet-4-20250514` are sent as `anthropic/claude-sonnet-4-20250514` through the Gateway. IDs already containing `/` are passed as-is. For `GATEWAY_PROVIDERS.OPENAI_COMPATIBLE`, pass `modelPrefix` explicitly.
 
 ## Developing the SDK
 
 - Verify: `pnpm typecheck && pnpm lint && pnpm test`
 - Commit style: Conventional Commits (`feat:`, `fix:`, etc.)
-- Entry points: `src/index.ts`, `src/client-entry.ts`, `src/client/index.ts`, `src/client/api/*`, `src/runtime/index.ts`, `src/types/index.ts`, `src/core/index.ts`, `src/provider/index.ts`, `src/react/index.ts`, `src/integrations/anthropic/index.ts`, `src/integrations/google/index.ts`, `src/integrations/xai/index.ts`, `src/integrations/groq/index.ts`, `src/integrations/mistral/index.ts`, `src/integrations/amazon-bedrock/index.ts`, `src/integrations/azure/index.ts`, `src/integrations/cohere/index.ts`, `src/integrations/perplexity/index.ts`, `src/integrations/deepseek/index.ts`, `src/integrations/togetherai/index.ts`, `src/integrations/openai-compatible/index.ts`, `src/nestjs/index.ts`, `src/testing/index.ts`
+- Entry points: `src/index.ts`, `src/client-entry.ts`, `src/client/index.ts`, `src/client/api/*`, `src/runtime/index.ts`, `src/types/index.ts`, `src/provider/index.ts`, `src/react/index.ts`, `src/nestjs/index.ts`, `src/testing/index.ts`
 - Tests live under `src/**/__tests__/` only.
-- `@macpaw/ai-sdk/core` is internal/advanced runtime API (no domain type barrel) — prefer the main entry or `@macpaw/ai-sdk/types`
+- `@macpaw/ai-sdk/runtime` is the advanced internal/runtime API surface; prefer the main entry or `@macpaw/ai-sdk/types` unless you intentionally need transport/request primitives

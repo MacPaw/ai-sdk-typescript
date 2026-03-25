@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { resolveConfig, DEFAULT_BASE_URLS, DEFAULT_RETRY } from '../config';
-import type { Middleware, RequestConfig } from '../../runtime/config';
+import { resolveConfig, DEFAULT_BASE_URLS, DEFAULT_RETRY } from '../index';
+import type { Middleware, RequestConfig } from '../index';
 
 describe('resolveConfig', () => {
   const baseConfig = {
@@ -145,15 +145,12 @@ describe('resolveConfig', () => {
       tokenCacheTTL: 60_000,
     });
 
-    // Start a non-forced refresh
     void resolved.getAuthToken(false);
     expect(callCount).toBe(1);
 
-    // Force refresh while non-forced is pending — must start a NEW call
     const p2 = resolved.getAuthToken(true);
     expect(callCount).toBe(2);
 
-    // Resolve both
     resolvers[0]('stale-token');
     resolvers[1]('fresh-token');
     expect(await p2).toBe('fresh-token');

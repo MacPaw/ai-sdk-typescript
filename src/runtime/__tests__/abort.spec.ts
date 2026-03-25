@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { anySignal } from '../abort';
+import { anySignal } from '../index';
 
 describe('anySignal', () => {
   it('returns a signal that is not aborted when none of the inputs are', () => {

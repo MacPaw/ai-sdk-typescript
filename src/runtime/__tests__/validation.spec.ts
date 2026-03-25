@@ -5,7 +5,7 @@ import {
   validateResponseRequest,
   validateEmbeddingRequest,
   validateImageGenerationRequest,
-} from '../validation';
+} from '../index';
 
 describe('validateChatCompletionRequest', () => {
   it('passes with valid request', () => {

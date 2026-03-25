@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createTranscription, createTranscriptionStream, createTranslation } from '../audio';
-import type { ResolvedConfig } from '../../../core/config';
-import { API_PATHS } from '../../../core/paths';
+import type { ResolvedConfig } from '../../../runtime/config';
+import { API_PATHS } from '../../../runtime/paths';
 
 function createMockConfig(response: Response): ResolvedConfig {
   return {

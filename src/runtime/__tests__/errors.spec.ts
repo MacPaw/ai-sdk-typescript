@@ -8,7 +8,7 @@ import {
   ModelNotAllowedError,
   ValidationError,
   isAIGatewayError,
-} from '../errors';
+} from '../index';
 
 describe('parseErrorResponse', () => {
   it('parses Gateway API format and throws AIGatewayError with normalized code', () => {

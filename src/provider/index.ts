@@ -3,7 +3,8 @@
  *
  * Migration: replace `from 'ai'` with `from '@macpaw/ai-sdk/ai'` or `from '@macpaw/ai-sdk/provider'`
  * (same module). Subpaths: `ai/internal` → `@macpaw/ai-sdk/ai/internal`, `ai/test` → `@macpaw/ai-sdk/ai/test`.
- * Wire `createAIGatewayProvider` (or dual/custom registry); use gateway errors from this package where needed.
+ * Wire `createAIGatewayProvider`, `createGatewayProvider`, or dual/custom registry helpers;
+ * use gateway errors from this package where needed.
  */
 
 export * from 'ai';
@@ -20,8 +21,15 @@ export { createAIGatewayDualProvider } from './dual-provider';
 export type { AIGatewayDualProviderOptions } from './dual-provider';
 export type { AIGatewayProviderSource, OpenAIProviderSource, Resolvable } from './provider-source';
 
-export { createGatewayProviderMirror } from './gateway-provider-mirror';
-export type { GatewayProviderMirrorOptions } from './gateway-provider-mirror';
+export { createGatewayProvider, GATEWAY_PROVIDERS } from './gateway-provider';
+export type {
+  GatewayOpenAICompatibleOptions,
+  GatewayProviderBaseOptions,
+  GatewayProvider,
+  GatewayProviderOptions,
+  GatewayProviderOptionsMap,
+  GatewayProviderWithDefaultPrefix,
+} from './gateway-provider';
 
 export { createOpenAI } from '@ai-sdk/openai';
 export type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';

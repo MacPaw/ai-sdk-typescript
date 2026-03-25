@@ -12,7 +12,6 @@ export default tseslint.config(
       'vendor/',
       '*.cjs',
       'eslint.config.js',
-      'stylelint.config.js',
       'tsup.config.ts',
       'vitest.config.ts',
     ],
