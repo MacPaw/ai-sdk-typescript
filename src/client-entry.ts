@@ -8,6 +8,6 @@
  */
 
 export { createAIGatewayClient } from './client';
-export type * from './client/contracts';
+export type * from './client/types';
 export type { AIGatewayClientConfig, Middleware, RequestConfig } from './runtime/config';
 export type { StreamTextResult, StreamResponseResult } from './runtime/stream-result';

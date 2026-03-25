@@ -1,7 +1,8 @@
 /**
- * AI Gateway HTTP client contracts (method signatures only).
+ * AI Gateway HTTP client API surface types.
  * Domain request/response types are imported from `@macpaw/ai-sdk/types` — not re-exported here.
  */
+import type { Middleware } from '../runtime/config';
 import type { StreamTextResult, StreamResponseResult } from '../runtime/stream-result';
 import type {
   ChatCompletion,
@@ -10,8 +11,8 @@ import type {
   CreateEmbeddingRequest,
   CreateEmbeddingResponse,
   CreateImageEditRequest,
-  CreateImageResponse,
   CreateImageRequest,
+  CreateImageResponse,
   CreateResponseRequest,
   CreateTranscriptionRequest,
   CreateTranslationRequest,
@@ -24,7 +25,6 @@ import type {
   TranslationResponse,
   WithResponseResult,
 } from '../types';
-import type { Middleware } from '../runtime/config';
 
 /**
  * Chat completions API — OpenAI-compatible chat endpoint.

@@ -38,10 +38,10 @@ import type {
   ImagesAPI,
   ModelsAPI,
   ResponsesAPI,
-} from './contracts';
+} from './types';
 
 /** Public client surface types — request/response DTOs live in `@macpaw/ai-sdk/types`. */
-export type * from './contracts';
+export type * from './types';
 
 function buildChatCompletions(config: ResolvedConfig): ChatCompletionsAPI {
   function create(
