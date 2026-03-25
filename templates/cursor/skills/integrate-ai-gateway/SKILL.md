@@ -97,7 +97,7 @@ export class ChatController {
 
 ### Vercel AI SDK / Next.js
 
-Use `@macpaw/ai-sdk/provider` for provider + generation functions. Never import from `@ai-sdk/openai` directly. React hooks (`useChat`, `useCompletion`) stay as `ai/react`.
+Use upstream `ai` for generation functions and `@macpaw/ai-sdk/provider` for gateway-aware provider helpers. Keep direct OpenAI-compatible providers on upstream `@ai-sdk/openai` when needed. React hooks (`useChat`, `useCompletion`) stay as `ai/react`.
 
 ```ts
 // lib/ai.ts — shared provider instance
@@ -109,7 +109,7 @@ export const gateway = createAIGatewayProvider({
 });
 
 // app/api/chat/route.ts — streaming API route
-import { streamText } from '@macpaw/ai-sdk/provider';
+import { streamText } from 'ai';
 import { gateway } from '@/lib/ai';
 
 export async function POST(req: Request) {
@@ -302,10 +302,10 @@ When the codebase already uses `openai`, `@ai-sdk/openai`, or imports from `ai`:
 | ----------------------------------------- | --------------------------------------------------------------------- |
 | `import OpenAI from 'openai'`             | `import { createAIGatewayClient } from '@macpaw/ai-sdk/client'`       |
 | `new OpenAI({ apiKey })`                  | `createAIGatewayClient({ env: 'production', getAuthToken })`          |
-| `import { openai } from '@ai-sdk/openai'` | `createAIGatewayProvider(...)` from `@macpaw/ai-sdk/provider`         |
-| `import { generateText } from 'ai'`       | `import { generateText } from '@macpaw/ai-sdk/ai'` (or `…/provider`)  |
-| `import { streamText } from 'ai'`         | `import { streamText } from '@macpaw/ai-sdk/ai'` (or `…/provider`)    |
-| `from 'ai/internal'` / `from 'ai/test'`   | `from '@macpaw/ai-sdk/ai/internal'` / `from '@macpaw/ai-sdk/ai/test'` |
+| `import { openai } from '@ai-sdk/openai'` | `createAIGatewayProvider(...)` from `@macpaw/ai-sdk/provider` when the call should go through Gateway |
+| `import { generateText } from 'ai'`       | keep as-is; swap only the provider/model handle                        |
+| `import { streamText } from 'ai'`         | keep as-is; swap only the provider/model handle                        |
+| `from 'ai/internal'` / `from 'ai/test'`   | keep as-is on upstream `ai`                                            |
 | `import { useChat } from 'ai/react'`      | Keep as-is — `useChat` is a React hook, not re-exported by provider   |
 
 After migration, remove `openai`, `@ai-sdk/openai` from `package.json` unless they are used elsewhere.
@@ -315,14 +315,14 @@ After migration, remove `openai`, `@ai-sdk/openai` from `package.json` unless th
 - Use `getAuthToken: async () => tokenOrNull` for auth.
 - `env` supports only `'production'`; use `baseURL` for staging/custom hosts.
 - Do not hardcode secrets or tokens.
-- Prefer imports from `@macpaw/ai-sdk`, `@macpaw/ai-sdk/client`, `@macpaw/ai-sdk/provider`, `@macpaw/ai-sdk/react`, `@macpaw/ai-sdk/nestjs`, `@macpaw/ai-sdk/testing`, and `@macpaw/ai-sdk/<provider>` for any Vercel provider package you use (anthropic, google, xai, groq, mistral, amazon-bedrock, azure, cohere, perplexity, deepseek, togetherai, openai-compatible — each mirrors `@ai-sdk/<name>`).
+- Prefer imports from `@macpaw/ai-sdk`, `@macpaw/ai-sdk/client`, `@macpaw/ai-sdk/provider`, `@macpaw/ai-sdk/react`, `@macpaw/ai-sdk/nestjs`, and `@macpaw/ai-sdk/testing` for MacPaw-owned surfaces. Keep Vercel AI SDK primitives on upstream `ai` / `@ai-sdk/*`.
 - For retries, use `maxAttempts` (not `maxRetries`).
-- Never import generation helpers from `ai` directly — use `@macpaw/ai-sdk/provider`. Exception: `useChat` / `useCompletion` from `@macpaw/ai-sdk/react`, `ai/react`, or `@ai-sdk/react`. For a dual-backend toggle, `createOpenAI` from `@ai-sdk/openai` is allowed only for the non-gateway branch next to `createAIGatewayProvider`.
+- Keep `generateText` / `streamText` imports on upstream `ai`; replace only the provider/model construction with `createAIGatewayProvider`, `createGatewayProvider`, or `createAIGatewayDualProvider`.
 
 ## Common mistakes to auto-fix
 
 - Replace direct gateway-bound OpenAI usage with `createAIGatewayProvider` (keep `createOpenAI` only when intentionally supporting a non-gateway branch).
-- Replace `generateText` / `streamText` imports from `ai` with `@macpaw/ai-sdk/provider`. Keep `useChat`/`useCompletion` from `@macpaw/ai-sdk/react` or `ai/react`.
+- Keep `generateText` / `streamText` imports from `ai`; replace only the provider/model handle.
 - Replace `env: 'staging'` with `baseURL`.
 - Replace token literals with `getAuthToken`.
 - Normalize retry option names to `maxAttempts`.

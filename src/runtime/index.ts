@@ -8,7 +8,7 @@ export * from './errors';
 export { anySignal } from './abort';
 export { API_PATHS, DEFAULT_API_VERSION, buildApiPaths } from './paths';
 export type { ApiPaths, ApiVersion } from './paths';
-export { runRequest, setDefaultTransport, resetDefaultTransport } from './request';
+export { runRequest } from './request';
 export * from './retry';
 export * from './sse';
 export { createStreamTextResult, createStreamResponseResult } from './stream-result';

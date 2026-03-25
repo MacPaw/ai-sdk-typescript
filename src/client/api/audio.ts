@@ -16,6 +16,8 @@ import type {
   RequestOptions,
 } from '../../types';
 
+type InternalRequestOptions = RequestOptions & { withResponse?: boolean };
+
 function buildTranscriptionFormData(request: CreateTranscriptionRequest): FormData {
   const formData = new FormData();
   formData.append('file', request.file);
@@ -36,7 +38,7 @@ function buildTranscriptionFormData(request: CreateTranscriptionRequest): FormDa
 export async function createTranscription(
   config: ResolvedConfig,
   request: CreateTranscriptionRequest,
-  options?: RequestOptions,
+  options?: InternalRequestOptions,
 ): Promise<TranscriptionResponse | { data: TranscriptionResponse; response: Response }> {
   validateTranscriptionRequest(request);
   const formData = buildTranscriptionFormData(request);
@@ -54,7 +56,7 @@ export async function createTranscription(
 export async function* createTranscriptionStream(
   config: ResolvedConfig,
   request: CreateTranscriptionRequest,
-  options?: RequestOptions,
+  options?: InternalRequestOptions,
 ): AsyncGenerator<TranscriptionStreamEvent, void, undefined> {
   validateTranscriptionRequest(request);
   const streamRequest = { ...request, stream: true as const };
@@ -72,7 +74,7 @@ export async function* createTranscriptionStream(
 export async function createTranslation(
   config: ResolvedConfig,
   request: CreateTranslationRequest,
-  options?: RequestOptions,
+  options?: InternalRequestOptions,
 ): Promise<TranslationResponse | { data: TranslationResponse; response: Response }> {
   validateTranslationRequest(request);
   const formData = new FormData();

@@ -36,7 +36,7 @@ describe('client entry type exports', () => {
     });
 
     const result = client.models.getInfo();
-    const resultWithResponse = client.models.getInfo(undefined, { withResponse: true });
+    const resultWithResponse = client.models.getInfoWithResponse();
     void result;
     void resultWithResponse;
 

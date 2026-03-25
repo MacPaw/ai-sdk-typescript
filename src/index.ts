@@ -1,8 +1,8 @@
 /**
  * Root package entry.
  *
- * Re-exports the Vercel-compatible provider surface for easier migrations from `ai`,
- * while keeping advanced Gateway HTTP/client and runtime internals on explicit subpaths.
+ * Exposes the MacPaw AI Gateway surface while keeping upstream Vercel AI SDK
+ * primitives on their original packages (`ai`, `@ai-sdk/openai`, etc.).
  */
 
 export * from './provider';

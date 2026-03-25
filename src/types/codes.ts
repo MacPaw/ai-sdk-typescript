@@ -33,8 +33,3 @@ export const ErrorCode = {
   Conflict: 'CONFLICT',
 } as const;
 export type ErrorCode = ObjectValues<typeof ErrorCode>;
-
-/**
- * @deprecated Use `ErrorCode` instead. Will be removed in a future major version.
- */
-export type AIGatewayErrorCode = ErrorCode;

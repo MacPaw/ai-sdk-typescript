@@ -7,17 +7,13 @@ settings:
 importers:
 
   .:
-    dependencies:
+    devDependencies:
       '@ai-sdk/openai':
-        specifier: ^3.0.47
+        specifier: 3.0.48
         version: 3.0.48(zod@4.3.6)
       '@ai-sdk/provider':
-        specifier: ^3.0.0
+        specifier: 3.0.8
         version: 3.0.8
-      ai:
-        specifier: ^6.0.137
-        version: 6.0.137(zod@4.3.6)
-    devDependencies:
       '@ai-sdk/react':
         specifier: ^3.0.0
         version: 3.0.139(react@19.2.4)(zod@4.3.6)
@@ -42,6 +38,9 @@ importers:
       '@vitest/coverage-v8':
         specifier: ^4.1.0
         version: 4.1.0(vitest@4.1.0(@opentelemetry/api@1.9.0)(@types/node@25.5.0)(vite@7.3.1(@types/node@25.5.0)(yaml@2.8.3)))
+      ai:
+        specifier: 6.0.137
+        version: 6.0.137(zod@4.3.6)
       eslint:
         specifier: ^10.0.3
         version: 10.0.3

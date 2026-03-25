@@ -1,13 +1,10 @@
 /**
- * Vercel AI SDK-compatible entry: re-exports the full `ai` package and adds MacPaw AI Gateway.
+ * AI Gateway provider entry.
  *
- * Migration: replace `from 'ai'` with `from '@macpaw/ai-sdk/ai'` or `from '@macpaw/ai-sdk/provider'`
- * (same module). Subpaths: `ai/internal` → `@macpaw/ai-sdk/ai/internal`, `ai/test` → `@macpaw/ai-sdk/ai/test`.
- * Wire `createAIGatewayProvider`, `createGatewayProvider`, or dual/custom registry helpers;
- * use gateway errors from this package where needed.
+ * This entry exposes MacPaw's gateway-aware provider helpers only.
+ * Import `generateText`, `streamText`, `customProvider`, and other Vercel AI SDK
+ * primitives directly from the upstream `ai` package.
  */
-
-export * from 'ai';
 
 export { createAIGatewayFetch } from './create-fetch';
 export type { CreateAIGatewayFetchOptions } from './create-fetch';
@@ -31,12 +28,8 @@ export type {
   GatewayProviderWithDefaultPrefix,
 } from './gateway-provider';
 
-export { createOpenAI } from '@ai-sdk/openai';
-export type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
-
 export {
   AIGatewayError,
-  AIGatewayErrorCodes,
   AuthError,
   CreditsError,
   ModelNotAllowedError,

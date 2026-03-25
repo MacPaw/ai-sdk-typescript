@@ -58,36 +58,6 @@
         "default": "./dist/provider/index.cjs"
       }
     },
-    "./ai": {
-      "import": {
-        "types": "./dist/provider/index.d.ts",
-        "default": "./dist/provider/index.js"
-      },
-      "require": {
-        "types": "./dist/provider/index.d.cts",
-        "default": "./dist/provider/index.cjs"
-      }
-    },
-    "./ai/internal": {
-      "import": {
-        "types": "./shims/ai-internal.d.ts",
-        "default": "./dist/ai/internal.js"
-      },
-      "require": {
-        "types": "./shims/ai-internal.d.ts",
-        "default": "./dist/ai/internal.cjs"
-      }
-    },
-    "./ai/test": {
-      "import": {
-        "types": "./shims/ai-test.d.ts",
-        "default": "./dist/ai/test.js"
-      },
-      "require": {
-        "types": "./shims/ai-test.d.ts",
-        "default": "./dist/ai/test.cjs"
-      }
-    },
     "./nestjs": {
       "import": {
         "types": "./dist/nestjs/index.d.ts",
@@ -124,7 +94,6 @@
   },
   "files": [
     "dist",
-    "shims",
     "README.md",
     "MIGRATION.md",
     "CHANGELOG.md",
@@ -137,7 +106,7 @@
   },
   "packageManager": "pnpm@10.15.1",
   "scripts": {
-    "build": "tsup && tsup --config tsup.ai-shims.config.ts",
+    "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
@@ -179,12 +148,9 @@
   "bugs": {
     "url": "https://github.com/macpaw/ai-sdk-typescript/issues"
   },
-  "dependencies": {
-    "@ai-sdk/openai": "^3.0.47",
-    "@ai-sdk/provider": "^3.0.0",
-    "ai": "^6.0.137"
-  },
   "devDependencies": {
+    "@ai-sdk/openai": "3.0.48",
+    "@ai-sdk/provider": "3.0.8",
     "@ai-sdk/react": "^3.0.0",
     "@eslint/js": "^10.0.1",
     "@macpaw/eslint-config-typescript": "^3.1.4",
@@ -193,6 +159,7 @@
     "@semantic-release/git": "^10.0.1",
     "@types/node": "^25.5.0",
     "@vitest/coverage-v8": "^4.1.0",
+    "ai": "6.0.137",
     "eslint": "^10.0.3",
     "prettier": "^3.8.1",
     "react": "^19.2.0",

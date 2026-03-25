@@ -68,7 +68,7 @@ describe('createTranscription', () => {
     expect(fd.getAll('timestamp_granularities[]')).toEqual(['word', 'segment']);
   });
 
-  it('supports withResponse option', async () => {
+  it('returns { data, response } when internal withResponse flag is set', async () => {
     const transcription = { text: 'Hello' };
     const response = new Response(JSON.stringify(transcription), {
       status: 200,

@@ -67,7 +67,8 @@ export interface AIGatewayCustomProviderRegistry<
  *
  * @example
  * ```ts
- * import { createAIGatewayProvider, createAIGatewayCustomProvider, generateText } from '@macpaw/ai-sdk/provider';
+ * import { generateText } from 'ai';
+ * import { createAIGatewayProvider, createAIGatewayCustomProvider } from '@macpaw/ai-sdk/provider';
  *
  * const gateway = createAIGatewayProvider({
  *   getAuthToken: async () => token,

@@ -8,10 +8,12 @@ import { assertSSEResponse, parseSSEAsJSON } from '../../runtime/sse';
 import { validateResponseRequest } from '../../runtime/validation';
 import type { CreateResponseRequest, ResponseObject, ResponseStreamEvent, RequestOptions } from '../../types';
 
+type InternalRequestOptions = RequestOptions & { withResponse?: boolean };
+
 export async function createResponse(
   config: ResolvedConfig,
   request: CreateResponseRequest,
-  options?: RequestOptions,
+  options?: InternalRequestOptions,
 ): Promise<ResponseObject | { data: ResponseObject; response: Response }> {
   validateResponseRequest(request);
   const body = JSON.stringify(request);
@@ -24,7 +26,7 @@ export async function createResponse(
 export async function* createResponseStream(
   config: ResolvedConfig,
   request: CreateResponseRequest,
-  options?: RequestOptions,
+  options?: InternalRequestOptions,
 ): AsyncGenerator<ResponseStreamEvent, void, undefined> {
   validateResponseRequest(request);
   const streamRequest = { ...request, stream: true };

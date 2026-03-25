@@ -6,9 +6,7 @@
 
 import type { ResolvedConfig } from './config';
 import type { RequestOptions } from '../types';
-import { executeRequestPipeline, resetDefaultTransport, setDefaultTransport } from './request-executor';
-
-export { setDefaultTransport, resetDefaultTransport };
+import { executeRequestPipeline } from './request-executor';
 
 export async function runRequest(
   config: ResolvedConfig,

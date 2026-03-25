@@ -56,16 +56,24 @@ describe('createAIGatewayClient', () => {
     });
 
     expect(typeof client.chat.completions.create).toBe('function');
+    expect(typeof client.chat.completions.createWithResponse).toBe('function');
     expect(typeof client.chat.completions.stream).toBe('function');
     expect(typeof client.responses.create).toBe('function');
+    expect(typeof client.responses.createWithResponse).toBe('function');
     expect(typeof client.responses.createStream).toBe('function');
     expect(typeof client.responses.stream).toBe('function');
     expect(typeof client.embeddings.create).toBe('function');
+    expect(typeof client.embeddings.createWithResponse).toBe('function');
     expect(typeof client.models.getInfo).toBe('function');
+    expect(typeof client.models.getInfoWithResponse).toBe('function');
     expect(typeof client.images.generate).toBe('function');
+    expect(typeof client.images.generateWithResponse).toBe('function');
     expect(typeof client.images.edit).toBe('function');
+    expect(typeof client.images.editWithResponse).toBe('function');
     expect(typeof client.audio.transcriptions.create).toBe('function');
+    expect(typeof client.audio.transcriptions.createWithResponse).toBe('function');
     expect(typeof client.audio.translations.create).toBe('function');
+    expect(typeof client.audio.translations.createWithResponse).toBe('function');
   });
 
   it('chat.completions.stream uses the client pipeline and injects stream usage options', async () => {
@@ -111,5 +119,20 @@ describe('createAIGatewayClient', () => {
       input: 'Hi',
       stream: true,
     });
+  });
+
+  it('createWithResponse methods return data plus raw response', async () => {
+    const transport = createMockTransport();
+    const client = createAIGatewayClient({
+      baseURL: 'https://api.example.com/ai',
+      getAuthToken: async () => 'token',
+      transport,
+    });
+
+    const result = await client.models.getInfoWithResponse();
+
+    expect(result).toHaveProperty('data');
+    expect(result).toHaveProperty('response');
+    expect(result.response).toBeInstanceOf(Response);
   });
 });

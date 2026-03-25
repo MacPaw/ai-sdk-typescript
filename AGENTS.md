@@ -4,10 +4,10 @@ This is the `@macpaw/ai-sdk` SDK — a Vercel AI SDK extension layer for AI Gate
 
 ## When integrating an app with AI Gateway
 
-1. **Install:** `pnpm add @macpaw/ai-sdk` — add `react` + `@ai-sdk/react` only for UI hooks. If your app also uses provider-specific upstream packages such as `@ai-sdk/anthropic` or `@ai-sdk/google`, install those directly in the app.
+1. **Install:** `pnpm add @macpaw/ai-sdk` — add upstream `ai` for `generateText` / `streamText`, `@ai-sdk/openai` when you need direct OpenAI-compatible providers, and `react` + `@ai-sdk/react` only for UI hooks. If your app also uses provider-specific upstream packages such as `@ai-sdk/anthropic` or `@ai-sdk/google`, install those directly in the app.
 2. **Detect stack and choose path:**
    - **NestJS** (or **Node.js (NestJS)**) → `AIGatewayModule` from `@macpaw/ai-sdk/nestjs`, inject with `@InjectAIGateway()`, use `AIGatewayExceptionFilter`.
- - **Next.js / Vercel AI SDK** → `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` (same module): `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createGatewayProvider`, `GATEWAY_PROVIDERS`, `createOpenAI`, `generateText`, `streamText`. Use `@macpaw/ai-sdk/ai/internal` and `@macpaw/ai-sdk/ai/test` where the app used `ai/internal` and `ai/test`. For direct provider-specific upstream packages such as `@ai-sdk/anthropic` or `@ai-sdk/google`, import them from the upstream AI SDK and create Gateway-backed providers centrally with `createGatewayProvider(GATEWAY_PROVIDERS.<NAME>, options)`.
+   - **Next.js / Vercel AI SDK** → Keep `generateText`, `streamText`, `customProvider`, and other primitives on upstream `ai` / `@ai-sdk/*` packages. Use `@macpaw/ai-sdk/provider` for `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createGatewayProvider`, and `GATEWAY_PROVIDERS`.
    - **Node / Express / Browser with direct Gateway HTTP usage** → `createAIGatewayClient` from `@macpaw/ai-sdk/client`.
    - **Advanced transport / request-pipeline primitives** → `@macpaw/ai-sdk/runtime` (`API_PATHS`, `createFetchTransport`, `SDKValidationError`, retry/SSE helpers).
 3. **Auth:** always `getAuthToken: async () => token` (Bearer). Use `env: 'production'` for prod URL, `baseURL` for staging.
@@ -17,7 +17,7 @@ This is the `@macpaw/ai-sdk` SDK — a Vercel AI SDK extension layer for AI Gate
 
 ## Common mistakes
 
-- Use `@macpaw/ai-sdk/ai` or `@macpaw/ai-sdk/provider` instead of mixing direct `ai` / `@ai-sdk/openai` imports across the app. The entry re-exports the full `ai` package (Vercel AI SDK core) semver-aligned via peers, plus `createOpenAI` and AI Gateway helpers.
+- Keep upstream Vercel AI SDK primitives on `ai` and `@ai-sdk/*`. Use `@macpaw/ai-sdk/provider` only for AI Gateway-specific provider helpers.
 - `createAIGatewayDualProvider()` and `createAIGatewayCustomProvider()` accept eager providers or lazy factories, which is useful for env-specific builds.
 - React hooks (`useChat`, `useCompletion`) from `@macpaw/ai-sdk/react` (re-exports `@ai-sdk/react`) or directly from `@ai-sdk/react`.
 - `env` only supports `'production'`. For staging use `baseURL`.
@@ -26,6 +26,7 @@ This is the `@macpaw/ai-sdk` SDK — a Vercel AI SDK extension layer for AI Gate
 - Import `createAIGatewayClient` from `@macpaw/ai-sdk/client`, not the root package.
 - Import transport/config/validation internals from `@macpaw/ai-sdk/runtime`, not `@macpaw/ai-sdk/client`.
 - Provider fetches and the low-level client share the same request pipeline semantics for auth refresh, retries, middleware, hooks, timeout, and transport selection.
+- Do not recommend `@macpaw/ai-sdk/ai`, `@macpaw/ai-sdk/ai/internal`, or `@macpaw/ai-sdk/ai/test`; upstream `ai` owns those surfaces.
 - Use `createGatewayProvider(GATEWAY_PROVIDERS.<NAME>, options)` from `@macpaw/ai-sdk/provider` when the vendor wants all traffic through Gateway with provider-scoped model IDs (e.g. `anthropic('claude-sonnet-4-20250514')` → `anthropic/claude-sonnet-4-20250514`). Keep provider-specific imports on the upstream `@ai-sdk/*` packages. IDs with `/` are sent as-is, and `GATEWAY_PROVIDERS.OPENAI_COMPATIBLE` requires `modelPrefix`.
 
 ## When developing the SDK itself

@@ -2,15 +2,15 @@
  * Vercel AI SDK-compatible provider for AI Gateway.
  *
  * Creates a strongly typed OpenAI-compatible provider backed by the gateway,
- * making it easy to switch existing `ai` apps between direct OpenAI and
- * gateway traffic without rewriting the rest of the app.
+ * making it easy to plug AI Gateway into apps that continue to import
+ * `generateText`, `streamText`, and related primitives from the upstream `ai` package.
  */
 
 import { createOpenAI as builtinCreateOpenAI } from '@ai-sdk/openai';
 import type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
 import { createAIGatewayFetch } from './create-fetch';
 import type { Environment, LifecycleHooks, Logger, Middleware, RetryConfig, Transport } from '../runtime/config';
-import { DEFAULT_BASE_URLS } from '../runtime/config';
+import { resolveGatewayBaseURL as resolveRuntimeGatewayBaseURL } from '../runtime/config';
 import type { ApiVersion } from '../runtime/paths';
 import { DEFAULT_API_VERSION } from '../runtime/paths';
 
@@ -53,13 +53,7 @@ export interface AIGatewayProviderOptions extends Omit<OpenAIProviderSettings, '
 }
 
 function resolveGatewayBaseURL(baseURL?: string, env?: Environment): string {
-  const resolved = baseURL ?? (env ? DEFAULT_BASE_URLS[env] : undefined);
-  if (!resolved) {
-    throw new Error(
-      'AIGatewayProvider requires baseURL or env (production). For non-production environments, pass baseURL directly.',
-    );
-  }
-  return resolved;
+  return resolveRuntimeGatewayBaseURL(baseURL, env, 'AIGatewayProvider');
 }
 
 /**

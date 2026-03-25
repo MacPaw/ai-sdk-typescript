@@ -6,8 +6,7 @@
 
 ### Added
 
-- `@macpaw/ai-sdk/react` subpath re-exports `@ai-sdk/react` so apps can import hooks from the MacPaw package scope alongside `@macpaw/ai-sdk/ai` / `provider`.
-- `@macpaw/ai-sdk/provider` now re-exports the entire `ai` package (`export * from 'ai'`) for drop-in migration; AI Gateway symbols remain additive.
+- `@macpaw/ai-sdk/react` subpath re-exports `@ai-sdk/react` so apps can import hooks from the MacPaw package scope alongside the gateway provider helpers.
 - ESLint: `examples/**/*.{js,mjs,cjs}` use Node globals so `pnpm lint` passes on demo scripts.
 - Runnable examples for mock transport, direct client, Vercel-style provider flow, and a copy-ready NestJS skeleton.
 - README badges and release signals documentation; local `pnpm size:pack` script for publish-size inspection.

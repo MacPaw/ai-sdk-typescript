@@ -3,7 +3,7 @@
  */
 
 import type { AIGatewayClientConfig, Middleware, ResolvedConfig } from '../runtime/config';
-import { resolveConfig, DEFAULT_BASE_URLS } from '../runtime/config';
+import { resolveConfig, resolveGatewayBaseURL } from '../runtime/config';
 import * as chatApi from './api/chat';
 import * as responsesApi from './api/responses';
 import * as embeddingsApi from './api/embeddings';
@@ -18,14 +18,19 @@ import type {
   ChatCompletionChunk,
   CreateChatCompletionRequest,
   CreateEmbeddingRequest,
+  CreateEmbeddingResponse,
   CreateImageEditRequest,
   CreateImageRequest,
+  CreateImageResponse,
   CreateResponseRequest,
   CreateTranscriptionRequest,
-  TranscriptionStreamEvent,
   CreateTranslationRequest,
+  ModelInfoResponse,
   RequestOptions,
+  ResponseObject,
   TranscriptionResponse,
+  TranscriptionStreamEvent,
+  TranslationResponse,
   WithResponseResult,
 } from '../types';
 import type {
@@ -47,11 +52,20 @@ function buildChatCompletions(config: ResolvedConfig): ChatCompletionsAPI {
   function create(
     request: CreateChatCompletionRequest,
     options?: RequestOptions,
-  ): Promise<ChatCompletion | WithResponseResult<ChatCompletion>> | AsyncIterableIterator<ChatCompletionChunk> {
+  ): Promise<ChatCompletion> | AsyncIterableIterator<ChatCompletionChunk> {
     if (request.stream) {
       return chatApi.createChatCompletionStream(config, request, options) as AsyncIterableIterator<ChatCompletionChunk>;
     }
-    return chatApi.createChatCompletion(config, request, options);
+    return chatApi.createChatCompletion(config, request, options) as Promise<ChatCompletion>;
+  }
+
+  function createWithResponse(
+    request: CreateChatCompletionRequest & { stream?: false | undefined },
+    options?: RequestOptions,
+  ): Promise<WithResponseResult<ChatCompletion>> {
+    return chatApi.createChatCompletion(config, request, { ...options, withResponse: true }) as Promise<
+      WithResponseResult<ChatCompletion>
+    >;
   }
 
   function stream(request: Omit<CreateChatCompletionRequest, 'stream'>, options?: RequestOptions): StreamTextResult {
@@ -74,13 +88,18 @@ function buildChatCompletions(config: ResolvedConfig): ChatCompletionsAPI {
 
   // `as` cast required: TS cannot unify a union return type with overloaded signatures.
   // Safety is ensured by the explicit ChatCompletionsAPI return type on buildChatCompletions.
-  return { create, stream } as ChatCompletionsAPI;
+  return { create, createWithResponse, stream } as ChatCompletionsAPI;
 }
 
 function buildResponses(config: ResolvedConfig): ResponsesAPI {
   return {
     create(request: CreateResponseRequest, options?: RequestOptions) {
-      return responsesApi.createResponse(config, request, options);
+      return responsesApi.createResponse(config, request, options) as Promise<ResponseObject>;
+    },
+    createWithResponse(request: CreateResponseRequest, options?: RequestOptions) {
+      return responsesApi.createResponse(config, request, { ...options, withResponse: true }) as Promise<
+        WithResponseResult<ResponseObject>
+      >;
     },
     createStream(request: CreateResponseRequest, options?: RequestOptions) {
       return responsesApi.createResponseStream(config, request, options);
@@ -104,7 +123,12 @@ function buildResponses(config: ResolvedConfig): ResponsesAPI {
 function buildEmbeddings(config: ResolvedConfig): EmbeddingsAPI {
   return {
     create(request: CreateEmbeddingRequest, options?: RequestOptions) {
-      return embeddingsApi.createEmbedding(config, request, options);
+      return embeddingsApi.createEmbedding(config, request, options) as Promise<CreateEmbeddingResponse>;
+    },
+    createWithResponse(request: CreateEmbeddingRequest, options?: RequestOptions) {
+      return embeddingsApi.createEmbedding(config, request, { ...options, withResponse: true }) as Promise<
+        WithResponseResult<CreateEmbeddingResponse>
+      >;
     },
   } as EmbeddingsAPI;
 }
@@ -112,7 +136,12 @@ function buildEmbeddings(config: ResolvedConfig): EmbeddingsAPI {
 function buildModels(config: ResolvedConfig): ModelsAPI {
   return {
     getInfo(params?: { litellm_model_id?: string }, options?: RequestOptions) {
-      return modelsApi.getModelInfo(config, params, options);
+      return modelsApi.getModelInfo(config, params, options) as Promise<ModelInfoResponse>;
+    },
+    getInfoWithResponse(params?: { litellm_model_id?: string }, options?: RequestOptions) {
+      return modelsApi.getModelInfo(config, params, { ...options, withResponse: true }) as Promise<
+        WithResponseResult<ModelInfoResponse>
+      >;
     },
   } as ModelsAPI;
 }
@@ -120,10 +149,20 @@ function buildModels(config: ResolvedConfig): ModelsAPI {
 function buildImages(config: ResolvedConfig): ImagesAPI {
   return {
     generate(request: CreateImageRequest, options?: RequestOptions) {
-      return imagesApi.createImage(config, request, options);
+      return imagesApi.createImage(config, request, options) as Promise<CreateImageResponse>;
+    },
+    generateWithResponse(request: CreateImageRequest, options?: RequestOptions) {
+      return imagesApi.createImage(config, request, { ...options, withResponse: true }) as Promise<
+        WithResponseResult<CreateImageResponse>
+      >;
     },
     edit(request: CreateImageEditRequest, options?: RequestOptions) {
-      return imagesApi.createImageEdit(config, request, options);
+      return imagesApi.createImageEdit(config, request, options) as Promise<CreateImageResponse>;
+    },
+    editWithResponse(request: CreateImageEditRequest, options?: RequestOptions) {
+      return imagesApi.createImageEdit(config, request, { ...options, withResponse: true }) as Promise<
+        WithResponseResult<CreateImageResponse>
+      >;
     },
   } as ImagesAPI;
 }
@@ -132,20 +171,32 @@ function buildAudio(config: ResolvedConfig): AudioAPI {
   function createTranscription(
     request: CreateTranscriptionRequest,
     options?: RequestOptions,
-  ):
-    | Promise<TranscriptionResponse | WithResponseResult<TranscriptionResponse>>
-    | AsyncGenerator<TranscriptionStreamEvent, void, undefined> {
+  ): Promise<TranscriptionResponse> | AsyncGenerator<TranscriptionStreamEvent, void, undefined> {
     if (request.stream) {
       return audioApi.createTranscriptionStream(config, request, options);
     }
-    return audioApi.createTranscription(config, request, options);
+    return audioApi.createTranscription(config, request, options) as Promise<TranscriptionResponse>;
+  }
+
+  function createTranscriptionWithResponse(
+    request: CreateTranscriptionRequest & { stream?: false | undefined },
+    options?: RequestOptions,
+  ): Promise<WithResponseResult<TranscriptionResponse>> {
+    return audioApi.createTranscription(config, request, { ...options, withResponse: true }) as Promise<
+      WithResponseResult<TranscriptionResponse>
+    >;
   }
 
   return {
-    transcriptions: { create: createTranscription } as AudioTranscriptionsAPI,
+    transcriptions: { create: createTranscription, createWithResponse: createTranscriptionWithResponse } as AudioTranscriptionsAPI,
     translations: {
       create(request: CreateTranslationRequest, options?: RequestOptions) {
-        return audioApi.createTranslation(config, request, options);
+        return audioApi.createTranslation(config, request, options) as Promise<TranslationResponse>;
+      },
+      createWithResponse(request: CreateTranslationRequest, options?: RequestOptions) {
+        return audioApi.createTranslation(config, request, { ...options, withResponse: true }) as Promise<
+          WithResponseResult<TranslationResponse>
+        >;
       },
     } as AudioTranslationsAPI,
   };
@@ -167,12 +218,7 @@ function buildAudio(config: ResolvedConfig): AudioAPI {
  * ```
  */
 export function createAIGatewayClient(config: AIGatewayClientConfig): AIGatewayClient {
-  const baseURL = config.baseURL ?? (config.env ? DEFAULT_BASE_URLS[config.env] : undefined);
-  if (!baseURL) {
-    throw new Error(
-      'AIGatewayClient requires baseURL or env (production). For non-production environments, pass baseURL directly.',
-    );
-  }
+  const baseURL = resolveGatewayBaseURL(config.baseURL, config.env, 'AIGatewayClient');
   const resolved: ResolvedConfig = resolveConfig({ ...config, baseURL });
 
   let _chat: { completions: ChatCompletionsAPI } | undefined;

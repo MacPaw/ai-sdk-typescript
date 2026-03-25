@@ -9,12 +9,6 @@ import type { GatewayApiErrorResponse, OpenAIErrorResponse, GatewayApiErrorItem 
 import { ErrorCode, GatewayApiCode } from '../types';
 import type { ErrorCode as ErrorCodeType } from '../types';
 
-/**
- * @deprecated Use `ErrorCode` from `@macpaw/ai-sdk` instead.
- * Kept for backward compatibility — will be removed in a future major version.
- */
-export const AIGatewayErrorCodes = ErrorCode;
-
 function mapGatewayApiCodeToNormalized(code: string, statusCode: number): ErrorCodeType {
   switch (code) {
     case GatewayApiCode.Unauthorized:

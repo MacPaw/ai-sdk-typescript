@@ -2,57 +2,59 @@
  * Rich stream result objects inspired by Vercel AI SDK.
  *
  * Instead of returning a raw AsyncGenerator, `.stream()` methods return a result
- * object that offers multiple consumption patterns:
- *   - `stream`     — raw AsyncIterable of typed chunks (for `for await`)
- *   - `textStream` — AsyncIterable of just the text deltas
- *   - `text`       — Promise that resolves to the full concatenated text
- *   - `abort()`    — cancel the underlying request
+ * object that offers:
+ *   - `stream` or `textStream` — choose one async iterator view for the stream
+ *   - `text`                   — Promise that resolves to the full concatenated text
+ *   - `abort()`                — cancel the underlying request
+ *
+ * The underlying network stream is single-consumer by design. Supporting
+ * multi-subscribe would add substantial buffering/coordination complexity,
+ * while the SDK only needs one live iterator plus derived `text`/`usage`
+ * promises that resolve even when the caller never iterates the stream.
  */
 
 import type { ChatCompletionChunk, ChatCompletionUsage, ResponseStreamEvent, ResponseUsage } from '../types';
 import { extractChatDelta, extractResponseDelta } from '../helpers';
 
-interface Waiter<T> {
-  resolve: (value: IteratorResult<T>) => void;
+interface Waiter {
+  resolve: () => void;
   reject: (reason: unknown) => void;
 }
 
-interface IteratorPosition {
-  idx: number;
-}
+type StreamConsumerKind = 'stream' | 'textStream';
 
-interface PumpState<T> {
+interface StreamState<T> {
   items: T[];
-  trimOffset: number;
-  activeIterators: Set<IteratorPosition>;
-  pumpStarted: boolean;
-  pumpDone: boolean;
-  pumpError: unknown;
-  waiters: Waiter<T>[];
+  done: boolean;
+  error: unknown;
+  consumerKind?: StreamConsumerKind;
+  consumerClosed: boolean;
+  waiter?: Waiter;
   textResolve: (value: string) => void;
   textReject: (reason: unknown) => void;
 }
 
-interface PumpResult<T, U> {
-  state: PumpState<T>;
+interface StreamResultState<T, U> {
+  state: StreamState<T>;
   textPromise: Promise<string>;
   usagePromise: Promise<U | undefined>;
-  ensureStarted: () => void;
 }
 
-function createPump<T, U>(
+const SINGLE_CONSUMER_ERROR =
+  'Stream results support exactly one async iterator consumer. Use either `stream` or `textStream`, and use `text` for the final concatenated output.';
+
+function createSingleConsumerState<T, U>(
   generator: AsyncGenerator<T, void, undefined>,
   extractDelta: (item: T) => string,
   extractUsage: (item: T) => U | undefined,
-): PumpResult<T, U> {
-  const state: PumpState<T> = {
+): StreamResultState<T, U> {
+  const state: StreamState<T> = {
     items: [],
-    trimOffset: 0,
-    activeIterators: new Set(),
-    pumpStarted: false,
-    pumpDone: false,
-    pumpError: undefined,
-    waiters: [],
+    done: false,
+    error: undefined,
+    consumerKind: undefined,
+    consumerClosed: false,
+    waiter: undefined,
     textResolve: undefined!,
     textReject: undefined!,
   };
@@ -72,151 +74,95 @@ function createPump<T, U>(
   textPromise.catch(() => {});
   usagePromise.catch(() => {});
 
-  async function startPump() {
-    if (state.pumpStarted) return;
-    state.pumpStarted = true;
+  async function startPump(): Promise<void> {
     let fullText = '';
     let lastUsage: U | undefined;
+
     try {
       for await (const item of generator) {
-        state.items.push(item);
         fullText += extractDelta(item);
         const usage = extractUsage(item);
-        if (usage) lastUsage = usage;
-        wakeWaiters(state, { value: item, done: false });
+        if (usage !== undefined) lastUsage = usage;
+
+        if (!state.consumerClosed) {
+          state.items.push(item);
+          state.waiter?.resolve();
+          state.waiter = undefined;
+        }
       }
-      state.pumpDone = true;
+      state.done = true;
       state.textResolve(fullText);
       usageResolve!(lastUsage);
-      wakeWaiters(state, { value: undefined as unknown as T, done: true });
+      state.waiter?.resolve();
+      state.waiter = undefined;
     } catch (err) {
-      state.pumpDone = true;
-      state.pumpError = err;
+      state.done = true;
+      state.error = err;
+      state.items.length = 0;
       state.textReject(err);
       usageReject!(err);
-      rejectWaiters(state, err);
+      state.waiter?.reject(err);
+      state.waiter = undefined;
     }
   }
+
+  void startPump();
 
   return {
     state,
     textPromise,
     usagePromise,
-    ensureStarted: () => {
-      startPump();
-    },
   };
 }
 
-function wakeWaiters<T>(state: PumpState<T>, result: IteratorResult<T>): void {
-  if (state.waiters.length === 0) return;
-  const snapshot = state.waiters.splice(0);
-  for (const waiter of snapshot) waiter.resolve(result);
+function claimConsumer<T>(state: StreamState<T>, kind: StreamConsumerKind): void {
+  if (state.consumerKind !== undefined) {
+    throw new Error(SINGLE_CONSUMER_ERROR);
+  }
+  state.consumerKind = kind;
 }
 
-function rejectWaiters<T>(state: PumpState<T>, error: unknown): void {
-  if (state.waiters.length === 0) return;
-  const snapshot = state.waiters.splice(0);
-  for (const waiter of snapshot) waiter.reject(error);
-}
-
-function maybeTrim<T>(state: PumpState<T>): void {
-  if (state.activeIterators.size === 0) {
-    if (state.pumpDone && state.items.length > 0) {
-      state.trimOffset += state.items.length;
-      state.items.length = 0;
+function createSingleConsumerIterator<T, R>(
+  state: StreamState<T>,
+  mapValue: (item: T) => R,
+): AsyncIterableIterator<R> {
+  async function next(): Promise<IteratorResult<R>> {
+    if (state.items.length > 0) {
+      const value = state.items.shift()!;
+      return { value: mapValue(value), done: false };
     }
-    return;
-  }
-  let minIdx = Infinity;
-  for (const pos of state.activeIterators) {
-    if (pos.idx < minIdx) minIdx = pos.idx;
-  }
-  const trimCount = minIdx - state.trimOffset;
-  if (trimCount > 0) {
-    state.items.splice(0, trimCount);
-    state.trimOffset += trimCount;
-  }
-}
 
-function createChunkIterator<T>(state: PumpState<T>, ensureStarted: () => void): AsyncIterableIterator<T> {
-  const pos: IteratorPosition = { idx: state.trimOffset };
-  state.activeIterators.add(pos);
-  ensureStarted();
+    if (state.done) {
+      if (state.error) throw state.error;
+      return { value: undefined as unknown as R, done: true };
+    }
 
-  function finish(): void {
-    state.activeIterators.delete(pos);
-    maybeTrim(state);
+    await new Promise<void>((resolve, reject) => {
+      state.waiter = { resolve, reject };
+    });
+
+    return next();
   }
 
-  const iter: AsyncIterableIterator<T> = {
-    next(): Promise<IteratorResult<T>> {
-      const arrayIdx = pos.idx - state.trimOffset;
-      if (arrayIdx >= 0 && arrayIdx < state.items.length) {
-        const value = state.items[arrayIdx];
-        pos.idx++;
-        maybeTrim(state);
-        return Promise.resolve({ value, done: false });
-      }
-      if (state.pumpDone) {
-        finish();
-        if (state.pumpError) return Promise.reject(state.pumpError);
-        return Promise.resolve({ value: undefined as unknown as T, done: true });
-      }
-      return new Promise<IteratorResult<T>>((resolve, reject) => {
-        state.waiters.push({
-          resolve: (result) => {
-            if (!result.done) {
-              pos.idx = state.trimOffset + state.items.length;
-              maybeTrim(state);
-            } else {
-              finish();
-            }
-            resolve(result);
-          },
-          reject: (err) => {
-            finish();
-            reject(err);
-          },
-        });
-      });
-    },
-    return(): Promise<IteratorResult<T>> {
-      finish();
-      return Promise.resolve({ value: undefined as unknown as T, done: true });
+  const iter: AsyncIterableIterator<R> = {
+    next,
+    return(): Promise<IteratorResult<R>> {
+      state.consumerClosed = true;
+      state.items.length = 0;
+      return Promise.resolve({ value: undefined as unknown as R, done: true });
     },
     [Symbol.asyncIterator]() {
       return iter;
     },
   };
-  return iter;
-}
 
-function createDeltaIterator<T>(
-  state: PumpState<T>,
-  ensureStarted: () => void,
-  extractDelta: (item: T) => string,
-): AsyncIterableIterator<string> {
-  const inner = createChunkIterator(state, ensureStarted);
-  const iter: AsyncIterableIterator<string> = {
-    async next(): Promise<IteratorResult<string>> {
-      const result = await inner.next();
-      if (result.done) return { value: undefined as unknown as string, done: true };
-      return { value: extractDelta(result.value), done: false };
-    },
-    return(): Promise<IteratorResult<string>> {
-      inner.return?.();
-      return Promise.resolve({ value: undefined as unknown as string, done: true });
-    },
-    [Symbol.asyncIterator]() {
-      return iter;
-    },
-  };
   return iter;
 }
 
 export interface StreamTextResult {
+  /** Raw chunk view. Use either this or `textStream`, not both. */
   readonly stream: AsyncIterable<ChatCompletionChunk>;
+  /** Text-delta view. Use either this or `stream`, not both. */
   readonly textStream: AsyncIterable<string>;
   readonly text: Promise<string>;
   readonly usage: Promise<ChatCompletionUsage | undefined>;
@@ -231,19 +177,19 @@ export function createStreamTextResult(
   generator: AsyncGenerator<ChatCompletionChunk, void, undefined>,
   abortController: AbortController,
 ): StreamTextResult {
-  const { state, textPromise, usagePromise, ensureStarted } = createPump(generator, extractChatDelta, extractChatUsage);
-
-  ensureStarted();
+  const { state, textPromise, usagePromise } = createSingleConsumerState(generator, extractChatDelta, extractChatUsage);
 
   const stream: AsyncIterable<ChatCompletionChunk> = {
     [Symbol.asyncIterator]() {
-      return createChunkIterator(state, ensureStarted);
+      claimConsumer(state, 'stream');
+      return createSingleConsumerIterator(state, (chunk) => chunk);
     },
   };
 
   const textStream: AsyncIterable<string> = {
     [Symbol.asyncIterator]() {
-      return createDeltaIterator(state, ensureStarted, extractChatDelta);
+      claimConsumer(state, 'textStream');
+      return createSingleConsumerIterator(state, extractChatDelta);
     },
   };
 
@@ -259,7 +205,9 @@ export function createStreamTextResult(
 }
 
 export interface StreamResponseResult {
+  /** Raw event view. Use either this or `textStream`, not both. */
   readonly stream: AsyncIterable<ResponseStreamEvent>;
+  /** Text-delta view. Use either this or `stream`, not both. */
   readonly textStream: AsyncIterable<string>;
   readonly text: Promise<string>;
   readonly usage: Promise<ResponseUsage | undefined>;
@@ -274,23 +222,23 @@ export function createStreamResponseResult(
   generator: AsyncGenerator<ResponseStreamEvent, void, undefined>,
   abortController: AbortController,
 ): StreamResponseResult {
-  const { state, textPromise, usagePromise, ensureStarted } = createPump(
+  const { state, textPromise, usagePromise } = createSingleConsumerState(
     generator,
     extractResponseDelta,
     extractResponseUsage,
   );
 
-  ensureStarted();
-
   const stream: AsyncIterable<ResponseStreamEvent> = {
     [Symbol.asyncIterator]() {
-      return createChunkIterator(state, ensureStarted);
+      claimConsumer(state, 'stream');
+      return createSingleConsumerIterator(state, (event) => event);
     },
   };
 
   const textStream: AsyncIterable<string> = {
     [Symbol.asyncIterator]() {
-      return createDeltaIterator(state, ensureStarted, extractResponseDelta);
+      claimConsumer(state, 'textStream');
+      return createSingleConsumerIterator(state, extractResponseDelta);
     },
   };
 

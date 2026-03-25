@@ -97,10 +97,8 @@ function shouldAutoSetJsonContentType(body: RequestInit['body'], headers: Record
 
 const builtinFetchTransport: Transport = createFetchTransport();
 
-let customDefaultTransport: Transport | undefined;
-
 function resolveTransport(config: ResolvedConfig): Transport {
-  return config.transport ?? customDefaultTransport ?? builtinFetchTransport;
+  return config.transport ?? builtinFetchTransport;
 }
 
 export async function executeRequestPipeline(
@@ -258,24 +256,4 @@ async function executeRequest(
   }
 
   return doRequest();
-}
-
-/**
- * Override the default transport for all clients that don't specify their own.
- *
- * @deprecated Mutates module-level state affecting all clients in the process.
- * In serverless/edge environments this can cause cross-request interference.
- * Pass `transport` in the per-client config instead.
- */
-export function setDefaultTransport(transport: Transport): void {
-  customDefaultTransport = transport;
-}
-
-/**
- * Remove the custom default transport, reverting to the built-in fetch transport.
- *
- * @deprecated See {@link setDefaultTransport} deprecation notice.
- */
-export function resetDefaultTransport(): void {
-  customDefaultTransport = undefined;
 }
