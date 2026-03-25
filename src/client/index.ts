@@ -104,6 +104,7 @@ function buildResponses(config: ResolvedConfig): ResponsesAPI {
       return responsesApi.createResponse(config, request, options) as Promise<ResponseObject>;
     },
     createWithResponse(request: CreateResponseRequest, options?: RequestOptions) {
+      assertNonStreamingWithResponseRequest(request, 'responses.createWithResponse');
       return responsesApi.createResponse(config, request, { ...options, withResponse: true }) as Promise<
         WithResponseResult<ResponseObject>
       >;

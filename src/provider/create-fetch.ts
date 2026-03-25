@@ -13,6 +13,7 @@
 import type { LifecycleHooks, Logger, Middleware, RetryConfig, Transport } from '../runtime/config';
 import { resolveConfig } from '../runtime/config';
 import { executeRequestPipeline } from '../runtime/request-executor';
+import { GATEWAY_PLACEHOLDER_API_KEY } from './openai-placeholder';
 
 export interface CreateAIGatewayFetchOptions {
   baseURL: string;
@@ -54,6 +55,13 @@ function resolveRequestUrl(input: FetchInput): string {
 
 function cloneHeaders(headers?: RequestInit['headers']): Headers {
   return new Headers(headers);
+}
+
+function stripPlaceholderAuthorization(headers: Headers): void {
+  const auth = headers.get('authorization');
+  if (auth === `Bearer ${GATEWAY_PLACEHOLDER_API_KEY}`) {
+    headers.delete('authorization');
+  }
 }
 
 function headersToRecord(headers: Headers): Record<string, string> {
@@ -137,6 +145,10 @@ export function createAIGatewayFetch(
       for (const [key, value] of new Headers(init.headers).entries()) {
         headers.set(key, value);
       }
+    }
+
+    if (!isGatewayRequest) {
+      stripPlaceholderAuthorization(headers);
     }
 
     return executeRequestPipeline(

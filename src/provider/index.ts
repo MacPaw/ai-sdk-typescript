@@ -32,11 +32,11 @@ export {
   AIGatewayError,
   AuthError,
   CreditsError,
+  GatewayValidationError,
   ModelNotAllowedError,
   RateLimitError,
-  ValidationError,
   isAIGatewayError,
   parseErrorResponse,
 } from '../runtime/errors';
 export type { NormalizedErrorMetadata } from '../runtime/errors';
-export { ErrorCode } from '../types';
+export { ErrorCode, GatewayApiCode } from '../types';

@@ -9,6 +9,7 @@
 import { createOpenAI as builtinCreateOpenAI } from '@ai-sdk/openai';
 import type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
 import { createAIGatewayFetch } from './create-fetch';
+import { GATEWAY_PLACEHOLDER_API_KEY } from './openai-placeholder';
 import type { Environment, LifecycleHooks, Logger, Middleware, RetryConfig, Transport } from '../runtime/config';
 import { resolveGatewayBaseURL as resolveRuntimeGatewayBaseURL } from '../runtime/config';
 import type { ApiVersion } from '../runtime/paths';
@@ -100,6 +101,4 @@ export function createAIGatewayProvider(options: AIGatewayProviderOptions): Open
  * `@ai-sdk/openai` requires a non-empty `apiKey`; this value is never sent over the wire
  * because `createAIGatewayFetch` replaces the Authorization header for gateway URLs.
  */
-const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
-
 export { resolveGatewayBaseURL };

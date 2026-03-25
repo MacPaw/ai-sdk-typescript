@@ -143,6 +143,10 @@ function createSingleConsumerIterator<T, R>(
   mapValue: (item: T) => R,
 ): AsyncIterableIterator<R> {
   async function next(): Promise<IteratorResult<R>> {
+    if (state.consumerClosed) {
+      return { value: undefined as unknown as R, done: true };
+    }
+
     if (state.items.length > 0) {
       const value = state.items.shift()!;
       return { value: mapValue(value), done: false };
@@ -165,6 +169,8 @@ function createSingleConsumerIterator<T, R>(
     return(): Promise<IteratorResult<R>> {
       state.consumerClosed = true;
       state.items.length = 0;
+      state.waiter?.resolve();
+      state.waiter = undefined;
       return Promise.resolve({ value: undefined as unknown as R, done: true });
     },
     [Symbol.asyncIterator]() {

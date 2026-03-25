@@ -6,7 +6,7 @@ import {
   CreditsError,
   RateLimitError,
   ModelNotAllowedError,
-  ValidationError,
+  GatewayValidationError,
   isAIGatewayError,
 } from '../index';
 
@@ -150,7 +150,7 @@ describe('error subclass instanceof', () => {
     }
   });
 
-  it('throws ValidationError on 422 VALIDATION', () => {
+  it('throws GatewayValidationError on 422 VALIDATION', () => {
     try {
       parseErrorResponse(422, {
         statusCode: 422,
@@ -159,7 +159,7 @@ describe('error subclass instanceof', () => {
         timestamp: '',
       });
     } catch (e) {
-      expect(e).toBeInstanceOf(ValidationError);
+      expect(e).toBeInstanceOf(GatewayValidationError);
       expect(e).toBeInstanceOf(AIGatewayError);
     }
   });

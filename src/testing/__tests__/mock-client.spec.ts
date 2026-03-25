@@ -24,13 +24,21 @@ describe('createMockAIGatewayClient', () => {
 
     expect(client.chat).toBeDefined();
     expect(client.chat.completions).toBeDefined();
+    expect(client.chat.completions.createWithResponse).toBeDefined();
     expect(client.responses).toBeDefined();
+    expect(client.responses.createWithResponse).toBeDefined();
     expect(client.embeddings).toBeDefined();
+    expect(client.embeddings.createWithResponse).toBeDefined();
     expect(client.models).toBeDefined();
+    expect(client.models.getInfoWithResponse).toBeDefined();
     expect(client.images).toBeDefined();
+    expect(client.images.generateWithResponse).toBeDefined();
+    expect(client.images.editWithResponse).toBeDefined();
     expect(client.audio).toBeDefined();
     expect(client.audio.transcriptions).toBeDefined();
+    expect(client.audio.transcriptions.createWithResponse).toBeDefined();
     expect(client.audio.translations).toBeDefined();
+    expect(client.audio.translations.createWithResponse).toBeDefined();
     expect(client.use).toBeDefined();
   });
 

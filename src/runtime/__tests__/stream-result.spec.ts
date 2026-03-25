@@ -202,6 +202,19 @@ describe('StreamTextResult', () => {
     expect(await result.text).toBe('ABCD');
   });
 
+  it('resolves a pending next() when the iterator is returned manually', async () => {
+    const ac = new AbortController();
+    const result = createStreamTextResult(chatGen(['A', 'B', 'C']), ac);
+    const iterator = result.textStream[Symbol.asyncIterator]();
+
+    await expect(iterator.next()).resolves.toEqual({ value: 'A', done: false });
+
+    const pendingNext = iterator.next();
+    await expect(iterator.return?.()).resolves.toEqual({ value: undefined, done: true });
+    await expect(pendingNext).resolves.toMatchObject({ done: expect.any(Boolean) });
+    await expect(iterator.next()).resolves.toEqual({ value: undefined, done: true });
+  });
+
   it('allows only one async iterator consumer across stream and textStream', async () => {
     const ac = new AbortController();
     const result = createStreamTextResult(chatGen(['A', 'B', 'C']), ac);

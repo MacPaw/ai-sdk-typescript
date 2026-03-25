@@ -10,7 +10,9 @@ describe('provider entry', () => {
     expect(provider.GATEWAY_PROVIDERS).toBeDefined();
     expect(provider.createAIGatewayFetch).toBeDefined();
     expect(provider.ErrorCode).toBeDefined();
+    expect(provider.GatewayApiCode).toBeDefined();
     expect(provider.AIGatewayError).toBeDefined();
+    expect(provider.GatewayValidationError).toBeDefined();
   });
 
   it('does not expose upstream ai helpers or the low-level Gateway client', () => {

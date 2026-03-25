@@ -157,5 +157,13 @@ describe('createAIGatewayClient', () => {
         stream: true,
       } as never),
     ).toThrow('audio.transcriptions.createWithResponse does not support stream: true');
+
+    expect(() =>
+      client.responses.createWithResponse({
+        model: 'openai/gpt-4.1-nano',
+        input: 'Hi',
+        stream: true,
+      } as never),
+    ).toThrow('responses.createWithResponse does not support stream: true');
   });
 });

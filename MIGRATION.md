@@ -132,7 +132,7 @@ import { API_PATHS, createFetchTransport, SDKValidationError } from '@macpaw/ai-
 `@macpaw/ai-sdk` is now a convenience entry for MacPaw-owned app-facing helpers. It includes:
 
 - the same provider-oriented surface as `@macpaw/ai-sdk/provider`
-- shared exports such as `AIGatewayError`, `ErrorCode`, and stream helpers
+- shared exports such as `AIGatewayError`, `ErrorCode`, `SDKValidationError`, and stream helpers
 
 It does **not** expose:
 

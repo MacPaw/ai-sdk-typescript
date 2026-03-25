@@ -149,10 +149,10 @@ export class ModelNotAllowedError extends AIGatewayError {
   }
 }
 
-export class ValidationError extends AIGatewayError {
+export class GatewayValidationError extends AIGatewayError {
   constructor(message: string, statusCode: number, metadata?: NormalizedErrorMetadata, options?: { cause?: unknown }) {
     super(message, ErrorCode.Validation, statusCode, metadata, options);
-    this.name = 'ValidationError';
+    this.name = 'GatewayValidationError';
   }
 }
 
@@ -183,7 +183,7 @@ function createTypedError(
     case ErrorCode.ModelNotAllowed:
       return new ModelNotAllowedError(message, statusCode, meta, options);
     case ErrorCode.Validation:
-      return new ValidationError(message, statusCode, meta, options);
+      return new GatewayValidationError(message, statusCode, meta, options);
     default:
       return new AIGatewayError(message, code, statusCode, meta, options);
   }

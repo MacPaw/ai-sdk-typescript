@@ -527,7 +527,7 @@ Today this layer targets the OpenAI-compatible Vercel provider path via `@ai-sdk
 The provider entry includes:
 
 - AI Gateway-specific helpers: `createAIGatewayProvider`, `createAIGatewayCustomProvider`, `createAIGatewayDualProvider`, `createAIGatewayFetch`
-- Gateway-focused errors (`AIGatewayError`, `ErrorCode`, …) alongside upstream `AISDKError` types from `ai`
+- Gateway-focused errors and parsers (`AIGatewayError`, `ErrorCode`, `parseErrorResponse`, …) alongside upstream `AISDKError` types from `ai`
 - The same shared request pipeline semantics as the low-level client for retries, middleware, hooks, timeout, and transport configuration
 
 That means an app can keep its existing `ai-sdk` flow and change only provider construction and model routing. Keep upstream `ai`, `@ai-sdk/openai`, and `@macpaw/ai-sdk` on **compatible major versions** (see peer dependency ranges on the package).
@@ -1164,13 +1164,13 @@ All endpoints are covered:
 
 | Namespace              | Mock methods                       |
 | ---------------------- | ---------------------------------- |
-| `chat.completions`     | `create`, `stream`                 |
-| `responses`            | `create`, `createStream`, `stream` |
-| `embeddings`           | `create`                           |
-| `models`               | `getInfo`                          |
-| `images`               | `generate`, `edit`                 |
-| `audio.transcriptions` | `create`                           |
-| `audio.translations`   | `create`                           |
+| `chat.completions`     | `create`, `createWithResponse`, `stream` |
+| `responses`            | `create`, `createWithResponse`, `createStream`, `stream` |
+| `embeddings`           | `create`, `createWithResponse`     |
+| `models`               | `getInfo`, `getInfoWithResponse`   |
+| `images`               | `generate`, `generateWithResponse`, `edit`, `editWithResponse` |
+| `audio.transcriptions` | `create`, `createWithResponse`     |
+| `audio.translations`   | `create`, `createWithResponse`     |
 | (root)                 | `use`                              |
 
 ### Response fixture helpers
