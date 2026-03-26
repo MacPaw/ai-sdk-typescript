@@ -108,7 +108,9 @@ describe('StreamTextResult', () => {
 
     await expect(result.text).resolves.toBe('Hi!');
 
-    expect(() => result.textStream[Symbol.asyncIterator]()).toThrow('Stream iteration must start before aggregated consumption begins');
+    expect(() => result.textStream[Symbol.asyncIterator]()).toThrow(
+      'Stream iteration must start before aggregated consumption begins',
+    );
   });
 
   it('propagates generator error to text promise', async () => {

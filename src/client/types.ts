@@ -63,7 +63,10 @@ export interface ResponsesAPI {
   /** Create a response (non-streaming). */
   create(request: CreateResponseRequest, options?: RequestOptions): Promise<ResponseObject>;
   /** Create a response and return both parsed data and raw response. */
-  createWithResponse(request: CreateResponseRequest, options?: RequestOptions): Promise<WithResponseResult<ResponseObject>>;
+  createWithResponse(
+    request: CreateResponseRequest,
+    options?: RequestOptions,
+  ): Promise<WithResponseResult<ResponseObject>>;
   /** Create a streaming response. Returns a raw async generator. */
   createStream(
     request: CreateResponseRequest,

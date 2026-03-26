@@ -197,7 +197,10 @@ function buildAudio(config: ResolvedConfig): AudioAPI {
   }
 
   return {
-    transcriptions: { create: createTranscription, createWithResponse: createTranscriptionWithResponse } as AudioTranscriptionsAPI,
+    transcriptions: {
+      create: createTranscription,
+      createWithResponse: createTranscriptionWithResponse,
+    } as AudioTranscriptionsAPI,
     translations: {
       create(request: CreateTranslationRequest, options?: RequestOptions) {
         return audioApi.createTranslation(config, request, options) as Promise<TranslationResponse>;

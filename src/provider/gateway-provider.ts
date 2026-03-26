@@ -44,10 +44,7 @@ export const GATEWAY_PROVIDERS = {
 
 export type GatewayProvider = (typeof GATEWAY_PROVIDERS)[keyof typeof GATEWAY_PROVIDERS];
 
-export type GatewayProviderWithDefaultPrefix = Exclude<
-  GatewayProvider,
-  typeof GATEWAY_PROVIDERS.OPENAI_COMPATIBLE
->;
+export type GatewayProviderWithDefaultPrefix = Exclude<GatewayProvider, typeof GATEWAY_PROVIDERS.OPENAI_COMPATIBLE>;
 
 export interface GatewayProviderOptionsMap {
   [GATEWAY_PROVIDERS.OPENAI_COMPATIBLE]: GatewayOpenAICompatibleOptions;
@@ -75,10 +72,7 @@ function prefixModelId(prefix: string, modelId: string): string {
   return modelId.includes('/') ? modelId : `${prefix}/${modelId}`;
 }
 
-function createPrefixedGatewayProvider(
-  defaultPrefix: string,
-  options: GatewayProviderBaseOptions,
-): OpenAIProvider {
+function createPrefixedGatewayProvider(defaultPrefix: string, options: GatewayProviderBaseOptions): OpenAIProvider {
   const { modelPrefix, ...providerOptions } = options;
   const prefix = modelPrefix ?? defaultPrefix;
   const provider = createAIGatewayProvider(providerOptions);

@@ -138,10 +138,7 @@ function claimConsumer<T>(state: StreamState<T>, kind: StreamConsumerKind): void
   state.consumerKind = kind;
 }
 
-function createSingleConsumerIterator<T, R>(
-  state: StreamState<T>,
-  mapValue: (item: T) => R,
-): AsyncIterableIterator<R> {
+function createSingleConsumerIterator<T, R>(state: StreamState<T>, mapValue: (item: T) => R): AsyncIterableIterator<R> {
   async function next(): Promise<IteratorResult<R>> {
     if (state.consumerClosed) {
       return { value: undefined as unknown as R, done: true };

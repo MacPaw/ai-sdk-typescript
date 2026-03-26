@@ -55,28 +55,28 @@ For breaking import-path changes in this major, see [`MIGRATION.md`](./MIGRATION
 
 Use this table first. It avoids almost all integration mistakes.
 
-| If your app needs...                                                                                | Import from                                                                  | Why                                                                                                        |
-| --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Existing `generateText`, `streamText`, tools, agents, UI streams, or other Vercel AI SDK core flows | Upstream `ai` + `@macpaw/ai-sdk/provider`                                    | Keep core Vercel primitives upstream; add MacPaw provider helpers only where needed                        |
-| Explicit provider-oriented app architecture                                                         | `@macpaw/ai-sdk/provider`                                                    | Makes the Vercel/Gateway layer obvious in code review                                                      |
-| Multipart APIs such as image edits or audio uploads                                                 | `@macpaw/ai-sdk/client`                                                      | These are implemented on the low-level HTTP client path                                                    |
-| Retry, transport, validation, SSE, and request-pipeline primitives                                  | `@macpaw/ai-sdk/runtime`                                                     | Advanced internal/runtime layer                                                                            |
-| React hooks under one MacPaw package scope                                                          | `@macpaw/ai-sdk/react`                                                       | Re-exports `@ai-sdk/react`                                                                                 |
-| Direct provider-specific packages from the upstream AI SDK                                          | `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/xai`, …                      | Keep provider-specific imports on the upstream package; use `createGatewayProvider` from `@macpaw/ai-sdk/provider` for Gateway routing |
+| If your app needs...                                                                                | Import from                                             | Why                                                                                                                                    |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Existing `generateText`, `streamText`, tools, agents, UI streams, or other Vercel AI SDK core flows | Upstream `ai` + `@macpaw/ai-sdk/provider`               | Keep core Vercel primitives upstream; add MacPaw provider helpers only where needed                                                    |
+| Explicit provider-oriented app architecture                                                         | `@macpaw/ai-sdk/provider`                               | Makes the Vercel/Gateway layer obvious in code review                                                                                  |
+| Multipart APIs such as image edits or audio uploads                                                 | `@macpaw/ai-sdk/client`                                 | These are implemented on the low-level HTTP client path                                                                                |
+| Retry, transport, validation, SSE, and request-pipeline primitives                                  | `@macpaw/ai-sdk/runtime`                                | Advanced internal/runtime layer                                                                                                        |
+| React hooks under one MacPaw package scope                                                          | `@macpaw/ai-sdk/react`                                  | Re-exports `@ai-sdk/react`                                                                                                             |
+| Direct provider-specific packages from the upstream AI SDK                                          | `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/xai`, … | Keep provider-specific imports on the upstream package; use `createGatewayProvider` from `@macpaw/ai-sdk/provider` for Gateway routing |
 
 ### Common import swaps
 
 For most migrations, use these direct substitutions:
 
-| Before                                                | After                                                       |
-| ----------------------------------------------------- | ----------------------------------------------------------- |
-| `from 'ai'`                                           | keep `from 'ai'`                                           |
-| `from 'ai/internal'`                                  | keep `from 'ai/internal'`                                  |
-| `from 'ai/test'`                                      | keep `from 'ai/test'`                                      |
-| `from '@ai-sdk/openai'`                               | keep `from '@ai-sdk/openai'`                               |
-| `from '@ai-sdk/react'`                                | `from '@macpaw/ai-sdk/react'`                               |
-| `from '@macpaw/ai-sdk'` for low-level client creation | `from '@macpaw/ai-sdk/client'`                              |
-| `from '@macpaw/ai-sdk/client'` for runtime primitives | `from '@macpaw/ai-sdk/runtime'`                             |
+| Before                                                | After                           |
+| ----------------------------------------------------- | ------------------------------- |
+| `from 'ai'`                                           | keep `from 'ai'`                |
+| `from 'ai/internal'`                                  | keep `from 'ai/internal'`       |
+| `from 'ai/test'`                                      | keep `from 'ai/test'`           |
+| `from '@ai-sdk/openai'`                               | keep `from '@ai-sdk/openai'`    |
+| `from '@ai-sdk/react'`                                | `from '@macpaw/ai-sdk/react'`   |
+| `from '@macpaw/ai-sdk'` for low-level client creation | `from '@macpaw/ai-sdk/client'`  |
+| `from '@macpaw/ai-sdk/client'` for runtime primitives | `from '@macpaw/ai-sdk/runtime'` |
 
 ## Release Signals
 
@@ -387,9 +387,10 @@ const completion2 = await client.chat.completions.create(
 Use the explicit `*WithResponse()` methods to get the raw `Response` alongside the parsed body:
 
 ```ts
-const { data, response } = await client.chat.completions.createWithResponse(
-  { model: 'openai/gpt-4.1-nano', messages: [{ role: 'user', content: 'Hi' }] },
-);
+const { data, response } = await client.chat.completions.createWithResponse({
+  model: 'openai/gpt-4.1-nano',
+  messages: [{ role: 'user', content: 'Hi' }],
+});
 
 console.log(response.headers.get('x-request-id'));
 console.log(data.choices[0].message.content);
@@ -561,27 +562,24 @@ Use this table when you already have an app on Vercel AI SDK (or any stack that 
 
 Use `createGatewayProvider()` from `@macpaw/ai-sdk/provider` when you want a Gateway-backed provider with automatic model ID prefixing. Provider-specific packages come directly from the upstream AI SDK, while gateway provider creation stays centralized in one typed API.
 
-| Provider constant                        | Default Gateway prefix | Notes                                        |
-| ---------------------------------------- | ---------------------- | -------------------------------------------- |
-| `GATEWAY_PROVIDERS.ANTHROPIC`            | `anthropic`            |                                              |
-| `GATEWAY_PROVIDERS.GOOGLE`               | `google`               |                                              |
-| `GATEWAY_PROVIDERS.XAI`                  | `xai`                  |                                              |
-| `GATEWAY_PROVIDERS.GROQ`                 | `groq`                 |                                              |
-| `GATEWAY_PROVIDERS.MISTRAL`              | `mistral`              |                                              |
-| `GATEWAY_PROVIDERS.AMAZON_BEDROCK`       | `bedrock`              | Subpath name stays `amazon-bedrock`          |
-| `GATEWAY_PROVIDERS.AZURE`                | `azure`                |                                              |
-| `GATEWAY_PROVIDERS.COHERE`               | `cohere`               |                                              |
-| `GATEWAY_PROVIDERS.PERPLEXITY`           | `perplexity`           |                                              |
-| `GATEWAY_PROVIDERS.DEEPSEEK`             | `deepseek`             |                                              |
-| `GATEWAY_PROVIDERS.TOGETHERAI`           | `togetherai`           |                                              |
-| `GATEWAY_PROVIDERS.OPENAI_COMPATIBLE`    | n/a                    | Requires explicit `modelPrefix` in options   |
+| Provider constant                     | Default Gateway prefix | Notes                                      |
+| ------------------------------------- | ---------------------- | ------------------------------------------ |
+| `GATEWAY_PROVIDERS.ANTHROPIC`         | `anthropic`            |                                            |
+| `GATEWAY_PROVIDERS.GOOGLE`            | `google`               |                                            |
+| `GATEWAY_PROVIDERS.XAI`               | `xai`                  |                                            |
+| `GATEWAY_PROVIDERS.GROQ`              | `groq`                 |                                            |
+| `GATEWAY_PROVIDERS.MISTRAL`           | `mistral`              |                                            |
+| `GATEWAY_PROVIDERS.AMAZON_BEDROCK`    | `bedrock`              | Subpath name stays `amazon-bedrock`        |
+| `GATEWAY_PROVIDERS.AZURE`             | `azure`                |                                            |
+| `GATEWAY_PROVIDERS.COHERE`            | `cohere`               |                                            |
+| `GATEWAY_PROVIDERS.PERPLEXITY`        | `perplexity`           |                                            |
+| `GATEWAY_PROVIDERS.DEEPSEEK`          | `deepseek`             |                                            |
+| `GATEWAY_PROVIDERS.TOGETHERAI`        | `togetherai`           |                                            |
+| `GATEWAY_PROVIDERS.OPENAI_COMPATIBLE` | n/a                    | Requires explicit `modelPrefix` in options |
 
 ```ts
 import { generateText } from 'ai';
-import {
-  createGatewayProvider,
-  GATEWAY_PROVIDERS,
-} from '@macpaw/ai-sdk/provider';
+import { createGatewayProvider, GATEWAY_PROVIDERS } from '@macpaw/ai-sdk/provider';
 
 const anthropic = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, {
   env: 'production',
@@ -627,11 +625,11 @@ Direct-use imports like `createAnthropic` continue to come from the upstream `@a
 
 ### When to use the HTTP client vs the provider
 
-| Need                                                                                                                                 | Use                                                                                                                      |
-| ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| Chat, responses, tools, embeddings, and existing `ai-sdk` flows                                                                      | Upstream `ai` + `@macpaw/ai-sdk/provider` for `createAIGatewayProvider`, `createAIGatewayCustomProvider`, or `createAIGatewayDualProvider` |
-| Multipart endpoints (image **edits**, audio upload), or you want the raw typed Gateway HTTP surface                                | `@macpaw/ai-sdk/client` — `createAIGatewayClient`                                                                        |
-| Both in one app                                                                                                                      | Use the **provider** for Vercel AI SDK flows and the **client** only where the OpenAI-compat provider is not enough      |
+| Need                                                                                                | Use                                                                                                                                        |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Chat, responses, tools, embeddings, and existing `ai-sdk` flows                                     | Upstream `ai` + `@macpaw/ai-sdk/provider` for `createAIGatewayProvider`, `createAIGatewayCustomProvider`, or `createAIGatewayDualProvider` |
+| Multipart endpoints (image **edits**, audio upload), or you want the raw typed Gateway HTTP surface | `@macpaw/ai-sdk/client` — `createAIGatewayClient`                                                                                          |
+| Both in one app                                                                                     | Use the **provider** for Vercel AI SDK flows and the **client** only where the OpenAI-compat provider is not enough                        |
 
 Image **generation** (JSON body) may work through the OpenAI-shaped provider when the gateway exposes it like OpenAI; image **edits** and **audio** use `FormData` and are implemented on the HTTP client today.
 
@@ -1162,16 +1160,16 @@ expect(client.chat.completions.create.wasCalledWith({ model: 'gpt-4.1-nano', mes
 
 All endpoints are covered:
 
-| Namespace              | Mock methods                       |
-| ---------------------- | ---------------------------------- |
-| `chat.completions`     | `create`, `createWithResponse`, `stream` |
-| `responses`            | `create`, `createWithResponse`, `createStream`, `stream` |
-| `embeddings`           | `create`, `createWithResponse`     |
-| `models`               | `getInfo`, `getInfoWithResponse`   |
+| Namespace              | Mock methods                                                   |
+| ---------------------- | -------------------------------------------------------------- |
+| `chat.completions`     | `create`, `createWithResponse`, `stream`                       |
+| `responses`            | `create`, `createWithResponse`, `createStream`, `stream`       |
+| `embeddings`           | `create`, `createWithResponse`                                 |
+| `models`               | `getInfo`, `getInfoWithResponse`                               |
 | `images`               | `generate`, `generateWithResponse`, `edit`, `editWithResponse` |
-| `audio.transcriptions` | `create`, `createWithResponse`     |
-| `audio.translations`   | `create`, `createWithResponse`     |
-| (root)                 | `use`                              |
+| `audio.transcriptions` | `create`, `createWithResponse`                                 |
+| `audio.translations`   | `create`, `createWithResponse`                                 |
+| (root)                 | `use`                                                          |
 
 ### Response fixture helpers
 

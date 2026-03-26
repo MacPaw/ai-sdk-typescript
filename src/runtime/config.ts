@@ -184,7 +184,11 @@ export const DEFAULT_BASE_URLS: Record<Environment, string> = {
   production: 'https://api.macpaw.com/ai',
 };
 
-export function resolveGatewayBaseURL(baseURL: string | undefined, env: Environment | undefined, consumerName: string): string {
+export function resolveGatewayBaseURL(
+  baseURL: string | undefined,
+  env: Environment | undefined,
+  consumerName: string,
+): string {
   const resolved = baseURL ?? (env ? DEFAULT_BASE_URLS[env] : undefined);
   if (!resolved) {
     throw new Error(

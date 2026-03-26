@@ -13,13 +13,13 @@ This release reframes `@macpaw/ai-sdk` as an extension layer for Vercel AI SDK:
 
 Choose the target import path before changing any code:
 
-| If you are migrating...                                                       | Use                                                    |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------ |
-| Existing Vercel AI SDK app and you want the clearest gateway-provider imports | `@macpaw/ai-sdk/provider`                              |
-| Shared MacPaw helpers, errors, and stream utilities                           | `@macpaw/ai-sdk`                                       |
-| Direct Gateway HTTP calls or multipart APIs                                   | `@macpaw/ai-sdk/client`                                |
-| Runtime internals such as transport, validation, retry, SSE helpers           | `@macpaw/ai-sdk/runtime`                               |
-| React hooks under the MacPaw scope                                            | `@macpaw/ai-sdk/react`                                 |
+| If you are migrating...                                                       | Use                       |
+| ----------------------------------------------------------------------------- | ------------------------- |
+| Existing Vercel AI SDK app and you want the clearest gateway-provider imports | `@macpaw/ai-sdk/provider` |
+| Shared MacPaw helpers, errors, and stream utilities                           | `@macpaw/ai-sdk`          |
+| Direct Gateway HTTP calls or multipart APIs                                   | `@macpaw/ai-sdk/client`   |
+| Runtime internals such as transport, validation, retry, SSE helpers           | `@macpaw/ai-sdk/runtime`  |
+| React hooks under the MacPaw scope                                            | `@macpaw/ai-sdk/react`    |
 
 If your app already uses `generateText`, `streamText`, tools, agents, or UI streams, keep those flows on upstream `ai` and add `@macpaw/ai-sdk/provider` only for gateway-aware provider construction. Do not move those flows to `client` unless you intentionally need raw HTTP APIs.
 
@@ -29,15 +29,15 @@ If your app already uses `generateText`, `streamText`, tools, agents, or UI stre
 
 Use these substitutions first. They cover the majority of migrations.
 
-| Before                                                | After                                                       |
-| ----------------------------------------------------- | ----------------------------------------------------------- |
-| `from 'ai'`                                           | keep `from 'ai'`                                            |
-| `from 'ai/internal'`                                  | keep `from 'ai/internal'`                                   |
-| `from 'ai/test'`                                      | keep `from 'ai/test'`                                       |
-| `from '@ai-sdk/openai'`                               | keep `from '@ai-sdk/openai'`                                |
-| `from '@ai-sdk/react'`                                | `from '@macpaw/ai-sdk/react'`                               |
-| `from '@macpaw/ai-sdk'` for low-level client creation | `from '@macpaw/ai-sdk/client'`                              |
-| `from '@macpaw/ai-sdk/client'` for runtime primitives | `from '@macpaw/ai-sdk/runtime'`                             |
+| Before                                                | After                           |
+| ----------------------------------------------------- | ------------------------------- |
+| `from 'ai'`                                           | keep `from 'ai'`                |
+| `from 'ai/internal'`                                  | keep `from 'ai/internal'`       |
+| `from 'ai/test'`                                      | keep `from 'ai/test'`           |
+| `from '@ai-sdk/openai'`                               | keep `from '@ai-sdk/openai'`    |
+| `from '@ai-sdk/react'`                                | `from '@macpaw/ai-sdk/react'`   |
+| `from '@macpaw/ai-sdk'` for low-level client creation | `from '@macpaw/ai-sdk/client'`  |
+| `from '@macpaw/ai-sdk/client'` for runtime primitives | `from '@macpaw/ai-sdk/runtime'` |
 
 ### Low-level HTTP client
 
