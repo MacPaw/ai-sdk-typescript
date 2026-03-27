@@ -315,9 +315,9 @@ After migration, remove `openai`, `@ai-sdk/openai` from `package.json` unless th
 - Use `getAuthToken: async () => tokenOrNull` for auth.
 - `env` supports only `'production'`; use `baseURL` for staging/custom hosts.
 - Do not hardcode secrets or tokens.
-- Prefer imports from `@macpaw/ai-sdk`, `@macpaw/ai-sdk/client`, `@macpaw/ai-sdk/provider`, `@macpaw/ai-sdk/react`, `@macpaw/ai-sdk/nestjs`, and `@macpaw/ai-sdk/testing` for MacPaw-owned surfaces. Keep Vercel AI SDK primitives on upstream `ai` / `@ai-sdk/*`.
+- Prefer imports from `@macpaw/ai-sdk`, `@macpaw/ai-sdk/client`, `@macpaw/ai-sdk/provider`, `@macpaw/ai-sdk/nestjs`, and `@macpaw/ai-sdk/testing` for MacPaw-owned surfaces. React hooks (`useChat`, etc.) live on `@ai-sdk/react` or `ai/react` alongside those packages. Keep other Vercel AI SDK primitives on upstream `ai` / `@ai-sdk/*`.
 - For retries, use `maxAttempts` (not `maxRetries`).
-- Keep `generateText` / `streamText` imports on upstream `ai`; replace only the provider/model construction with `createAIGatewayProvider`, `createGatewayProvider`, or `createAIGatewayDualProvider`.
+- Keep `generateText` / `streamText` imports on upstream `ai`; replace only the provider/model construction with `createAIGatewayProvider` or `createGatewayProvider`.
 
 ## Common mistakes to auto-fix
 

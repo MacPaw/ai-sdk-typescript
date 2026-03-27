@@ -7,6 +7,8 @@ export default tseslint.config(
   {
     ignores: [
       'dist/',
+      'tmp/',
+      '.claude/',
       'node_modules/',
       'scripts/',
       'vendor/',
