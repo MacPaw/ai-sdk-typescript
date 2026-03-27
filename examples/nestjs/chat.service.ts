@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectAIGateway } from '@macpaw/ai-sdk/nestjs';
-import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
-import type { AIGatewayModuleOptions } from '@macpaw/ai-sdk/nestjs';
+import { createAIGatewayProvider } from '@macpaw/ai-sdk';
+import type { GatewayProviderSettings } from '@macpaw/ai-sdk';
 import { generateText } from 'ai';
 
 @Injectable()
 export class ChatService {
-  constructor(@InjectAIGateway() private readonly config: AIGatewayModuleOptions) {}
+  constructor(@InjectAIGateway() private readonly config: GatewayProviderSettings) {}
 
   async complete(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>) {
     const provider = createAIGatewayProvider(this.config);

@@ -4,35 +4,21 @@
 [![npm version](https://img.shields.io/npm/v/%40macpaw%2Fai-sdk)](https://www.npmjs.com/package/@macpaw/ai-sdk)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-Vercel AI SDK extension layer for AI Gateway with MacPaw and Setapp auth flows, plus an advanced low-level Gateway client when you need direct HTTP control.
+Thin **Vercel AI SDK** extension for **MacPaw AI Gateway**: OpenAI-compatible providers (`createAIGatewayProvider`, `createGatewayProvider`), a **`createGatewayFetch`** bridge for any HTTP client, shared **auth / retry / middleware / errors**, and optional **NestJS** wiring.
 
-`@macpaw/ai-sdk/provider` is the primary product surface for apps already built on Vercel AI SDK. It exposes AI Gateway wiring, MacPaw error types, and gateway-aware provider helpers while keeping Vercel AI SDK core primitives on their original upstream packages. Import `generateText`, `streamText`, `customProvider`, and other core helpers from `ai`; import direct OpenAI-compatible providers from `@ai-sdk/openai`; import `@macpaw/ai-sdk/provider` only for AI Gateway-specific helpers. `@macpaw/ai-sdk/client` is the focused advanced path for multipart APIs and direct Gateway control. `@macpaw/ai-sdk/runtime` exposes advanced transport, validation, and request-pipeline primitives when you intentionally need the internals.
+Core generation APIs stay on upstream **`ai`** and **`@ai-sdk/*`**. This package only adds Gateway-specific construction and the fetch pipeline.
 
-The root package `@macpaw/ai-sdk` exposes the same MacPaw-owned gateway/provider surface as `@macpaw/ai-sdk/provider`, plus shared errors, enums, and stream helpers. In practice:
+## Package entry points
 
-- Use `@macpaw/ai-sdk/provider` when you want the most explicit entry point for provider-based app code
-- Keep `ai` / `@ai-sdk/*` imports on the upstream packages for Vercel AI SDK primitives
-- Use `@macpaw/ai-sdk/client` only for direct Gateway HTTP APIs, multipart endpoints, or request-pipeline control
-- Use `@macpaw/ai-sdk/runtime` only for advanced transport/config internals
+| Import | Use for |
+| ------ | ------- |
+| `@macpaw/ai-sdk` | **Canonical** — providers, `createGatewayFetch`, errors, config types |
+| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets) |
+| `@macpaw/ai-sdk/nestjs` | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter` |
 
-## Features
+Upstream **`ai`**, **`@ai-sdk/openai`**, **`@ai-sdk/react`** (or **`ai/react`**) remain the home for Vercel primitives and React hooks.
 
-- **Vercel-first** — Built as an extension layer on top of Vercel AI SDK
-- **Streaming** — SSE parsing for chat, responses, and audio transcription APIs
-- **Rich stream results** — `.stream()` returns `textStream`, `text` promise, and `abort()` (AI SDK-inspired)
-- **Full API coverage** — Chat, Responses, Embeddings, Images, Audio, Models
-- **Retry** — Exponential backoff for 429 and 5xx (never retries 402/401)
-- **Middleware** — Request interceptors for logging, metrics, custom headers
-- **Lifecycle hooks** — `onRequest`, `onResponse`, `onError`, `onRetry`
-- **Error normalization** — AI Gateway HTTP API and OpenAI-format errors mapped to stable `ErrorCode` enum
-- **Auth** — Pluggable `getAuthToken()` for Setapp Bearer token
-- **Request ID tracking** — Automatic `X-Request-ID` generation
-- **AbortController** — Per-request signal and configurable timeout
-- **Typed** — Full TypeScript types, const-object enums for all codes/roles
-- **Tree-shakeable** — ESM + CJS with minimal runtime dependencies
-- **Advanced client path** — Explicit `@macpaw/ai-sdk/client` for multipart and low-level Gateway usage
-- **Explicit runtime layer** — `@macpaw/ai-sdk/runtime` for advanced transport/config/request primitives without overloading the client entry
-- **Gateway provider factory** — `@macpaw/ai-sdk/provider` exports `createGatewayProvider()` plus `GATEWAY_PROVIDERS` for creating AI Gateway-backed providers with automatic model ID prefixing
+There is **no** published `@macpaw/ai-sdk/client`, `@macpaw/ai-sdk/runtime`, `@macpaw/ai-sdk/types`, or `@macpaw/ai-sdk/testing` in this version — use `createGatewayFetch` + `fetch` (or the OpenAI SDK with custom `fetch`) for raw HTTP and multipart. See [MIGRATION.md](./MIGRATION.md).
 
 ## Install
 
@@ -42,65 +28,13 @@ pnpm add @macpaw/ai-sdk
 npm install @macpaw/ai-sdk
 ```
 
-If your app also imports upstream packages directly, install those explicitly in the app too:
+Also install upstream packages you call directly, for example `ai`, `@ai-sdk/openai`, `@ai-sdk/react`.
 
-- `@ai-sdk/react` for React hooks (import directly from `@ai-sdk/react`)
-- any provider-specific upstream packages you use directly, such as `@ai-sdk/anthropic` or `@ai-sdk/google`
-- `ai` or `@ai-sdk/openai` if you intentionally import from them alongside `@macpaw/ai-sdk/provider`
-
-For import paths and how subpackages fit together, see [`MIGRATION.md`](./MIGRATION.md).
-
-## Choose the right entry point
-
-Use this table first. It avoids almost all integration mistakes.
-
-| If your app needs...                                                                                | Import from                                             | Why                                                                                                                                    |
-| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Existing `generateText`, `streamText`, tools, agents, UI streams, or other Vercel AI SDK core flows | Upstream `ai` + `@macpaw/ai-sdk/provider`               | Keep core Vercel primitives upstream; add MacPaw provider helpers only where needed                                                    |
-| Explicit provider-oriented app architecture                                                         | `@macpaw/ai-sdk/provider`                               | Makes the Vercel/Gateway layer obvious in code review                                                                                  |
-| Multipart APIs such as image edits or audio uploads                                                 | `@macpaw/ai-sdk/client`                                 | These are implemented on the low-level HTTP client path                                                                                |
-| Retry, transport, validation, SSE, and request-pipeline primitives                                  | `@macpaw/ai-sdk/runtime`                                | Advanced internal/runtime layer                                                                                                        |
-| Direct provider-specific packages from the upstream AI SDK                                          | `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/xai`, … | Keep provider-specific imports on the upstream package; use `createGatewayProvider` from `@macpaw/ai-sdk/provider` for Gateway routing |
-
-### Common import swaps
-
-For most migrations, use these direct substitutions:
-
-| Before                                                | After                           |
-| ----------------------------------------------------- | ------------------------------- |
-| `from 'ai'`                                           | keep `from 'ai'`                |
-| `from 'ai/internal'`                                  | keep `from 'ai/internal'`       |
-| `from 'ai/test'`                                      | keep `from 'ai/test'`           |
-| `from '@ai-sdk/openai'`                               | keep `from '@ai-sdk/openai'`    |
-| `from '@macpaw/ai-sdk'` for low-level client creation | `from '@macpaw/ai-sdk/client'`  |
-| `from '@macpaw/ai-sdk/client'` for runtime primitives | `from '@macpaw/ai-sdk/runtime'` |
-
-## Release Signals
-
-- CI validates `typecheck`, `lint`, `test`, coverage, and `build` on Node `18`, `20`, and `22`
-- Releases are automated with `semantic-release`
-- PRs run a publish dry run and report package size / unpacked size
-- Run `pnpm size:pack` locally to inspect what would be published to npm
-- Run `pnpm verify:release` before publishing to execute the full local release gate: typecheck, lint, test, build, and npm pack dry-run
-
-## Compatibility guarantees
-
-- `@macpaw/ai-sdk/provider` exports MacPaw-owned AI Gateway helpers only; upstream Vercel AI SDK primitives stay on `ai` / `@ai-sdk/*`
-- `@macpaw/ai-sdk/client`, `@macpaw/ai-sdk/runtime`, and `@macpaw/ai-sdk/testing` stay intentionally explicit so low-level runtime APIs, app-facing APIs, and test helpers do not leak into each other
-
-### TypeScript types
-
-For request/response shapes (chat, embeddings, images, audio, and shared helpers), import from `@macpaw/ai-sdk/types`.
-
-```ts
-import type { CreateChatCompletionRequest, ChatCompletion } from '@macpaw/ai-sdk/types';
-```
-
-## Quick start
+## Quick start (Vercel AI SDK)
 
 ```ts
 import { generateText, streamText } from 'ai';
-import { createAIGatewayProvider, ErrorCode } from '@macpaw/ai-sdk/provider';
+import { createAIGatewayProvider, ErrorCode } from '@macpaw/ai-sdk';
 
 const gateway = createAIGatewayProvider({
   env: 'production',
@@ -111,7 +45,6 @@ const { text } = await generateText({
   model: gateway('openai/gpt-4.1-nano'),
   prompt: 'Hello from AI Gateway',
 });
-console.log(text);
 
 const result = streamText({
   model: gateway('openai/gpt-4.1-nano'),
@@ -120,1295 +53,212 @@ const result = streamText({
 for await (const delta of result.textStream) {
   process.stdout.write(delta);
 }
-const fullText = await result.text;
 ```
 
-### Advanced HTTP client
+## Features
 
-If you need multipart endpoints such as image edits or audio uploads, or you want the Gateway request pipeline directly, use `@macpaw/ai-sdk/client`.
+- **Vercel-first** — `OpenAIProvider` from `@ai-sdk/openai` + custom `fetch`
+- **Auth** — `getAuthToken(forceRefresh?)`; one automatic retry on **401** with `forceRefresh === true`
+- **Retry** — exponential backoff for **429** and **5xx** (and some network errors); not for 401/402
+- **Middleware** — `(config, next) => Promise<Response>` chain before `fetch`
+- **Errors** — Gateway JSON and OpenAI-shaped bodies → `AIGatewayError` subclasses + `ErrorCode`
+- **Request ID** — `X-Request-ID` on Gateway requests when missing
+- **Timeout** — per attempt, combined with caller `AbortSignal`
+- **Tree-shakeable** — ESM + CJS
 
-```ts
-import { createAIGatewayClient } from '@macpaw/ai-sdk/client';
-import { ErrorCode } from '@macpaw/ai-sdk';
+## Configuration (`GatewayProviderSettings`)
 
-const client = createAIGatewayClient({
-  env: 'production',
-  getAuthToken: async () => (await getSetappSession()).accessToken,
-});
+Used by `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, and Nest `AIGatewayModule`.
 
-const completion = await client.chat.completions.create({
-  model: 'openai/gpt-4.1-nano',
-  messages: [{ role: 'user', content: 'Hello' }],
-});
+| Field | Purpose |
+| ----- | ------- |
+| `getAuthToken` | Required — `Promise<string \| null>`; `true` = refresh after 401 |
+| `env` | `'production'` → default base URL `https://api.macpaw.com/ai` |
+| `baseURL` | Override gateway root (staging, etc.) |
+| `headers` | Extra headers (do not set `Authorization` here) |
+| `retry` | `RetryConfig` or `false` |
+| `timeout` | ms per attempt (default `60000`) |
+| `middleware` | Interceptor stack |
+| `fetch` | Custom `fetch` implementation |
 
-console.log(completion.choices[0]?.message?.content, ErrorCode.AuthRequired);
-```
+Internal resolution: `resolveConfig()` in `gateway-config.ts`.
 
-## Advanced client configuration
+## `createGatewayFetch` — raw HTTP / multipart
 
-```ts
-import { createAIGatewayClient } from '@macpaw/ai-sdk/client';
-
-const client = createAIGatewayClient({
-  // Required: auth token provider
-  getAuthToken: async () => myToken,
-
-  // Environment (selects default production base URL)
-  env: 'production',
-
-  // Or explicit base URL (use this for staging/testing environments)
-  // baseURL: 'https://your-staging-url.example.com/ai',
-
-  // Retry policy (default: 3 attempts, exponential backoff)
-  retry: { maxAttempts: 3, initialDelayMs: 1000, maxDelayMs: 30000 },
-  // retry: false,  // disable retry
-
-  // Request timeout in ms (default: 60000)
-  timeout: 30000,
-
-  // Extra headers for every request
-  headers: { 'X-App-Version': '1.0.0' },
-
-  // Middleware interceptors
-  middleware: [loggingMiddleware],
-
-  // Custom HTTP transport
-  transport: myCustomTransport,
-
-  // Logger (no-op by default)
-  logger: console,
-
-  // Lifecycle hooks for observability
-  hooks: {
-    onRequest: (config) => console.log('Request:', config.url),
-    onResponse: (config, response) => console.log('Response:', response.status),
-    onError: (error, config) => Sentry.captureException(error),
-    onRetry: (attempt, error, config) => console.log(`Retry #${attempt}`),
-  },
-
-  // Auto-generate X-Request-ID header (default: true)
-  generateRequestId: true,
-
-  // API version prefix (default: 'v1' → /api/v1/...)
-  // apiVersion: 'v2',
-});
-```
-
-If you need lower-level request-pipeline primitives such as `API_PATHS`, `createFetchTransport`, or `SDKValidationError`, import them from `@macpaw/ai-sdk/runtime` instead of the client entry.
-
-## Examples
-
-Runnable examples live in [`examples/`](./examples/README.md):
-
-- `pnpm example:mock` — local demo with `createMockTransport`
-- `pnpm example:client` — direct Gateway HTTP client flow
-- `pnpm example:provider` — Vercel AI SDK-style provider flow
-- `examples/nestjs/` — copy-ready NestJS module/controller/service skeleton
-
-## API Reference
-
-### Chat Completions
+Same auth, retry, middleware, and error normalization as the provider path. Use **relative** URLs under the gateway root (e.g. `'/api/v1/images/edits'`) or absolute URLs that stay under the same gateway origin.
 
 ```ts
-// Non-streaming
-const completion = await client.chat.completions.create({
-  model: 'openai/gpt-4.1-nano',
-  messages: [{ role: 'user', content: 'Explain quantum computing' }],
-  temperature: 0.7,
-  max_tokens: 500,
-});
+import { createGatewayFetch } from '@macpaw/ai-sdk';
 
-// Streaming (classic for-await)
-for await (const chunk of client.chat.completions.create({
-  model: 'openai/gpt-4.1-nano',
-  messages: [{ role: 'user', content: 'Write a poem' }],
-  stream: true,
-})) {
-  process.stdout.write(chunk.choices[0]?.delta?.content ?? '');
-}
-
-// Rich streaming with .stream() — returns textStream, text promise, abort()
-const result = client.chat.completions.stream({
-  model: 'openai/gpt-4.1-nano',
-  messages: [{ role: 'user', content: 'Write a poem' }],
-});
-
-for await (const delta of result.textStream) {
-  process.stdout.write(delta);
-}
-
-// Or just get the full text
-const fullText = await result.text;
-
-// Abort at any time
-result.abort();
-```
-
-### Responses API
-
-```ts
-// Non-streaming (OpenAI Responses format)
-const response = await client.responses.create({
-  model: 'openai/gpt-4.1-nano',
-  input: 'What is the meaning of life?',
-});
-console.log(response.output[0].content[0].text);
-
-// Streaming (classic for-await)
-for await (const event of client.responses.createStream({
-  model: 'openai/gpt-4.1-nano',
-  input: 'Tell me a story',
-})) {
-  if (event.type === 'response.output_text.delta') {
-    process.stdout.write(event.delta ?? '');
-  }
-}
-
-// Rich streaming with .stream()
-const result = client.responses.stream({
-  model: 'openai/gpt-4.1-nano',
-  input: 'Tell me a story',
-});
-for await (const delta of result.textStream) {
-  process.stdout.write(delta);
-}
-const fullText = await result.text;
-```
-
-### Embeddings
-
-```ts
-const result = await client.embeddings.create({
-  model: 'openai/text-embedding-3-small',
-  input: 'Hello world',
-});
-console.log(result.data[0].embedding);
-```
-
-### Images
-
-```ts
-import { ImageSize } from '@macpaw/ai-sdk';
-
-// Generate
-const image = await client.images.generate({
-  prompt: 'A white cat sitting on a laptop',
-  model: 'openai/dall-e-3',
-  size: ImageSize.S1024,
-});
-console.log(image.data[0].url);
-
-// Edit (multipart/form-data)
-const edited = await client.images.edit({
-  image: imageFile,
-  prompt: 'Add a hat to the cat',
-  model: 'openai/dall-e-2',
-});
-```
-
-### Audio
-
-```ts
-import { AudioFormat } from '@macpaw/ai-sdk';
-
-// Transcription
-const transcription = await client.audio.transcriptions.create({
-  file: audioFile,
-  model: 'openai/gpt-4o-transcribe',
-  language: 'en',
-  response_format: AudioFormat.VerboseJson,
-});
-console.log(transcription.text);
-
-// Streaming transcription
-for await (const event of client.audio.transcriptions.create({
-  file: audioFile,
-  model: 'openai/gpt-4o-transcribe',
-  stream: true,
-})) {
-  if (event.type === 'transcript.text.delta') {
-    process.stdout.write(event.delta ?? '');
-  }
-}
-
-// Translation
-const translation = await client.audio.translations.create({
-  file: audioFile,
-  model: 'openai/whisper-1',
-});
-```
-
-### Models
-
-```ts
-const models = await client.models.getInfo();
-console.log(models.data.map((m) => m.model_name));
-
-// Single model info
-const model = await client.models.getInfo({ litellm_model_id: 'openai/gpt-4.1-nano' });
-```
-
-### Per-request options
-
-Every API method accepts an optional `RequestOptions` parameter:
-
-```ts
-const controller = new AbortController();
-
-const completion = await client.chat.completions.create(
-  { model: 'openai/gpt-4.1-nano', messages: [{ role: 'user', content: 'Hi' }] },
-  {
-    signal: controller.signal,
-    timeout: 10000,
-    headers: { 'X-Trace-Id': 'abc-123' },
-  },
-);
-
-import { anySignal } from '@macpaw/ai-sdk/runtime';
-
-// Combine multiple abort signals (e.g. user cancel + timeout)
-const completion2 = await client.chat.completions.create(
-  { model: 'openai/gpt-4.1-nano', messages: [] },
-  { signal: anySignal([controller.signal, AbortSignal.timeout(30_000)]) },
-);
-```
-
-> **Tip — streaming timeout:** The default timeout (60 s) applies **per retry attempt**,
-> not to the total stream duration. For long-running streams (chat, responses), consider
-> passing a larger `timeout` or using an `AbortSignal.timeout()` via the `signal` option
-> to control the overall lifetime independently.
-
-#### Accessing response headers
-
-Use client **middleware** or **`hooks.onResponse`** (see `@macpaw/ai-sdk/runtime` config types) to observe the raw [`Response`](https://developer.mozilla.org/en-US/docs/Web/API/Response) (for example `x-request-id`):
-
-```ts
-const client = createAIGatewayClient({
-  env: 'production',
-  getAuthToken,
-  middleware: [
-    async (config, next) => {
-      const response = await next(config);
-      console.log(response.headers.get('x-request-id'));
-      return response;
-    },
-  ],
-});
-
-const data = await client.chat.completions.create({
-  model: 'openai/gpt-4.1-nano',
-  messages: [{ role: 'user', content: 'Hi' }],
-});
-console.log(data.choices[0].message.content);
-```
-
-## Middleware
-
-Add request interceptors for logging, metrics, auth refresh, etc.
-
-```ts
-// At creation time
-const client = createAIGatewayClient({
-  // ...
-  middleware: [loggingMiddleware, metricsMiddleware],
-});
-
-// Or dynamically
-client.use(async (config, next) => {
-  const start = performance.now();
-  const response = await next(config);
-  console.log(`${config.method} ${config.url} — ${performance.now() - start}ms`);
-  return response;
-});
-```
-
-## Error handling
-
-The SDK normalizes errors from both the gateway HTTP API and OpenAI proxy formats into `AIGatewayError` with stable codes accessible via the `ErrorCode` const-object enum:
-
-| Code                            | HTTP Status | Meaning                  |
-| ------------------------------- | ----------- | ------------------------ |
-| `ErrorCode.AuthRequired`        | 401         | Missing or expired token |
-| `ErrorCode.InsufficientCredits` | 402         | Not enough credits       |
-| `ErrorCode.SubscriptionExpired` | 402         | Subscription expired     |
-| `ErrorCode.ModelNotAllowed`     | 403         | Model access denied      |
-| `ErrorCode.RateLimited`         | 429         | Too many requests        |
-| `ErrorCode.BadRequest`          | 400         | Invalid request          |
-| `ErrorCode.Validation`          | 422         | Field validation error   |
-| `ErrorCode.InternalServerError` | 500         | Server error             |
-
-```ts
-import { AIGatewayError, ErrorCode } from '@macpaw/ai-sdk';
-
-try {
-  await client.chat.completions.create({ model: '...', messages: [...] });
-} catch (e) {
-  if (e instanceof AIGatewayError) {
-    switch (e.code) {
-      case ErrorCode.InsufficientCredits:
-        // Redirect to payment — e.paymentUrl is available
-        window.location.href = e.paymentUrl ?? '/upgrade';
-        break;
-      case ErrorCode.AuthRequired:
-        await refreshToken();
-        break;
-      case ErrorCode.RateLimited:
-        // e.retryAfter contains seconds to wait
-        await sleep((e.retryAfter ?? 60) * 1000);
-        break;
-      case ErrorCode.ModelNotAllowed:
-        showError('This model is not available for your plan.');
-        break;
-    }
-    // e.requestId — for support tickets
-    // e.metadata — full error details
-  }
-}
-```
-
-## Const-object enums
-
-All code and status types use the const-object pattern for optimal DX — autocomplete, `switch` exhaustiveness, and runtime access:
-
-```ts
-import { ErrorCode, MessageRole, ImageSize, AudioFormat } from '@macpaw/ai-sdk';
-
-// Use as values
-ErrorCode.AuthRequired; // 'AUTH_REQUIRED'
-MessageRole.User; // 'user'
-ImageSize.S1024; // '1024x1024'
-AudioFormat.VerboseJson; // 'verbose_json'
-
-// Use as types
-function handleError(code: ErrorCode) {
-  switch (code) {
-    case ErrorCode.AuthRequired: // ...
-    case ErrorCode.RateLimited: // ...
-  }
-}
-```
-
-## Custom transport
-
-Replace the default fetch-based transport:
-
-```ts
-import { createAIGatewayClient } from '@macpaw/ai-sdk/client';
-
-const client = createAIGatewayClient({
-  env: 'production',
+const baseURL = 'https://api.macpaw.com/ai'; // or resolve via env: 'production'
+const gatewayFetch = createGatewayFetch({
+  baseURL,
   getAuthToken: async () => token,
-  transport: {
-    async request(config) {
-      // Use axios, undici, or any HTTP client
-      return fetch(config.url, {
-        method: config.method,
-        headers: config.headers,
-        body: config.body,
-        signal: config.signal,
-      });
-    },
-  },
 });
+
+const form = new FormData();
+form.append('image', imageBlob, 'photo.png');
+form.append('prompt', 'Add a hat');
+form.append('model', 'openai/dall-e-2');
+
+const res = await gatewayFetch('/api/v1/images/edits', { method: 'POST', body: form });
 ```
 
-## Non-production environments
+Non-gateway absolute URLs are passed through without injecting Bearer auth (placeholder key is stripped). See `gateway-fetch.ts`.
 
-For staging, sandbox, or testing environments, pass the URL explicitly via `baseURL`:
+## `createGatewayProvider` — prefixed model IDs
 
-```ts
-const client = createAIGatewayClient({
-  baseURL: 'https://your-staging-gateway.example.com/ai',
-  getAuthToken: async () => testToken,
-});
-```
+Bare model IDs get a default Gateway prefix per provider constant; IDs that already contain `/` are unchanged.
 
-## Vercel AI SDK integration
-
-For apps already built on Vercel AI SDK (`generateText`, `streamText`, tool calling, and React hooks such as `useChat` / `useCompletion`), `@macpaw/ai-sdk/provider` is the primary integration path.
-
-Today this layer targets the OpenAI-compatible Vercel provider path via `@ai-sdk/openai` for model handles: keep your existing call sites and swap how models are constructed and routed through AI Gateway.
-
-The provider entry includes:
-
-- AI Gateway-specific helpers: `createAIGatewayProvider`, `createGatewayProvider`, `createAIGatewayFetch`, and `GATEWAY_PROVIDERS`
-- Gateway-focused errors and parsers (`AIGatewayError`, `ErrorCode`, `parseErrorResponse`, …) alongside upstream `AISDKError` types from `ai`
-- The same shared request pipeline semantics as the low-level client for retries, middleware, hooks, timeout, and transport configuration
-
-That means an app can keep its existing `ai-sdk` flow and change only provider construction and model routing. Keep upstream `ai`, `@ai-sdk/openai`, and `@macpaw/ai-sdk` on **compatible major versions** (see peer dependency ranges on the package).
-
-### Minimal migration checklist
-
-If you are integrating from an existing Vercel AI SDK app, do these steps in order:
-
-1. Keep `generateText`, `streamText`, tools, agents, and stream-consumption code on upstream `ai`.
-2. Keep direct OpenAI-compatible providers on upstream `@ai-sdk/openai` when you need them.
-3. Create a Gateway provider with `createAIGatewayProvider(...)` or `createGatewayProvider(...)`.
-4. Change only model construction, for example `openai('gpt-4.1-mini')` to `gateway('openai/gpt-4.1-mini')`.
-5. Add `@macpaw/ai-sdk/client` only for multipart or raw HTTP Gateway flows.
-6. Use `@macpaw/ai-sdk/runtime` only when you intentionally need advanced request-pipeline internals.
-
-If you follow those six steps, you usually do not need to rewrite prompts, tool definitions, or streaming loops.
-
-### Choosing a provider pattern
-
-Use this table when you already have an app on Vercel AI SDK (or any stack that passes `LanguageModel` / `model` into `generateText`, `streamText`, agents, and so on) and only want to change how requests reach a backend:
-
-| Situation                                                                                                                                | Use                                                                                                                                                                                                                           |
-| ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Single backend: always AI Gateway                                                                                                        | `createAIGatewayProvider` or `createGatewayProvider`                                                                                                                                                                        |
-| One codebase, two shippings: marketplace / Setapp-style build uses Gateway, standalone build uses your own OpenAI-compatible key or host | Pick at startup: build a `LanguageModel` from `createAIGatewayProvider` when `useGateway` is true, otherwise from upstream `createOpenAI` (or another upstream factory). See **Scenario 2** below.                              |
-| Short aliases (`fast`, `smart`) on top of the same Gateway backend                                                                       | Upstream [`customProvider`](https://sdk.vercel.ai/docs/reference/ai-sdk-core/custom-provider) from `ai`, with `fallbackProvider` / language models wired to `createAIGatewayProvider(...)` — see **Option A2** below.           |
-
-**Vendors (Electron, Tauri, existing JS apps):** keep `ai` and `@ai-sdk/openai` for direct OpenAI-compatible flows, add `@macpaw/ai-sdk/provider` for Gateway builds, and select the active provider (gateway vs direct) in application code at startup. You do not rewrite tool definitions or streaming loops, only how the model handle is constructed.
-
-### Gateway provider factory
-
-Use `createGatewayProvider()` from `@macpaw/ai-sdk/provider` when you want a Gateway-backed provider with automatic model ID prefixing. Provider-specific packages come directly from the upstream AI SDK, while gateway provider creation stays centralized in one typed API.
-
-| Provider constant                     | Default Gateway prefix | Notes                                      |
-| ------------------------------------- | ---------------------- | ------------------------------------------ |
-| `GATEWAY_PROVIDERS.ANTHROPIC`         | `anthropic`            |                                            |
-| `GATEWAY_PROVIDERS.GOOGLE`            | `google`               |                                            |
-| `GATEWAY_PROVIDERS.XAI`               | `xai`                  |                                            |
-| `GATEWAY_PROVIDERS.GROQ`              | `groq`                 |                                            |
-| `GATEWAY_PROVIDERS.MISTRAL`           | `mistral`              |                                            |
-| `GATEWAY_PROVIDERS.AMAZON_BEDROCK`    | `bedrock`              | Subpath name stays `amazon-bedrock`        |
-| `GATEWAY_PROVIDERS.AZURE`             | `azure`                |                                            |
-| `GATEWAY_PROVIDERS.COHERE`            | `cohere`               |                                            |
-| `GATEWAY_PROVIDERS.PERPLEXITY`        | `perplexity`           |                                            |
-| `GATEWAY_PROVIDERS.DEEPSEEK`          | `deepseek`             |                                            |
-| `GATEWAY_PROVIDERS.TOGETHERAI`        | `togetherai`           |                                            |
-| `GATEWAY_PROVIDERS.OPENAI_COMPATIBLE` | n/a                    | Requires explicit `modelPrefix` in options |
+| Constant | Default prefix |
+| -------- | ---------------- |
+| `GATEWAY_PROVIDERS.ANTHROPIC` | `anthropic` |
+| `GATEWAY_PROVIDERS.GOOGLE` | `google` |
+| `GATEWAY_PROVIDERS.XAI` | `xai` |
+| `GATEWAY_PROVIDERS.GROQ` | `groq` |
+| `GATEWAY_PROVIDERS.MISTRAL` | `mistral` |
+| `GATEWAY_PROVIDERS.AMAZON_BEDROCK` | `bedrock` |
+| `GATEWAY_PROVIDERS.AZURE` | `azure` |
+| `GATEWAY_PROVIDERS.COHERE` | `cohere` |
+| `GATEWAY_PROVIDERS.PERPLEXITY` | `perplexity` |
+| `GATEWAY_PROVIDERS.DEEPSEEK` | `deepseek` |
+| `GATEWAY_PROVIDERS.TOGETHERAI` | `togetherai` |
+| `GATEWAY_PROVIDERS.OPENAI_COMPATIBLE` | **requires** `modelPrefix` in options |
 
 ```ts
 import { generateText } from 'ai';
-import { createGatewayProvider, GATEWAY_PROVIDERS } from '@macpaw/ai-sdk/provider';
+import { createGatewayProvider, GATEWAY_PROVIDERS } from '@macpaw/ai-sdk';
 
 const anthropic = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, {
   env: 'production',
-  getAuthToken: async () => (await getSetappSession()).accessToken,
-});
-
-// Model ID is automatically prefixed: 'anthropic/claude-sonnet-4-20250514'
-const { text } = await generateText({
-  model: anthropic('claude-sonnet-4-20250514'),
-  prompt: 'Explain quantum computing',
-});
-
-// IDs with '/' are sent as-is (no double-prefixing)
-const { text: text2 } = await generateText({
-  model: anthropic('anthropic/claude-sonnet-4-20250514'),
-  prompt: 'Already prefixed',
-});
-```
-
-Override the default prefix with `modelPrefix` when needed:
-
-```ts
-const bedrock = createGatewayProvider(GATEWAY_PROVIDERS.AMAZON_BEDROCK, {
-  env: 'production',
   getAuthToken: async () => token,
-  modelPrefix: 'amazon-bedrock',
-});
-```
-
-For openai-compatible backends, `modelPrefix` is required:
-
-```ts
-const fireworks = createGatewayProvider(GATEWAY_PROVIDERS.OPENAI_COMPATIBLE, {
-  env: 'production',
-  getAuthToken: async () => token,
-  modelPrefix: 'fireworks_ai',
-});
-```
-
-Direct-use imports like `createAnthropic` continue to come from the upstream `@ai-sdk/<name>` packages, while gateway-backed providers are created centrally from `@macpaw/ai-sdk/provider`.
-
-**Shared request pipeline:** Bearer acquisition and refresh still belong in `getAuthToken`, but both the provider fetch and the low-level client now run through the same request pipeline primitives (`middleware`, `retry`, `hooks`, `timeout`, `transport`). Reach for `createAIGatewayClient` when you want the raw typed HTTP surface or endpoints that do not naturally fit the OpenAI-compatible provider shape.
-
-### When to use the HTTP client vs the provider
-
-| Need                                                                                                | Use                                                                                                                                        |
-| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Chat, responses, tools, embeddings, and existing `ai-sdk` flows                                     | Upstream `ai` + `@macpaw/ai-sdk/provider` for `createAIGatewayProvider` / `createGatewayProvider` (and upstream `customProvider` when you need aliases) |
-| Multipart endpoints (image **edits**, audio upload), or you want the raw typed Gateway HTTP surface | `@macpaw/ai-sdk/client` — `createAIGatewayClient`                                                                                          |
-| Both in one app                                                                                     | Use the **provider** for Vercel AI SDK flows and the **client** only where the OpenAI-compat provider is not enough                        |
-
-Image **generation** (JSON body) may work through the OpenAI-shaped provider when the gateway exposes it like OpenAI; image **edits** and **audio** use `FormData` and are implemented on the HTTP client today.
-
-### Optional: switch gateway vs direct OpenAI with an env flag
-
-Keep one call shape (e.g. `generateText({ model, prompt })`) and choose the model handle at startup. Tokens stay out of your prompts: use `getAuthToken` for the gateway branch.
-
-```ts
-import { generateText } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
-import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
-
-const useGateway = process.env.IS_SETAPP_BUILD === '1';
-
-const gateway = useGateway
-  ? createAIGatewayProvider({
-      env: 'production',
-      getAuthToken: async () => (await getSetappSession()).accessToken,
-    })
-  : null;
-
-const direct = !useGateway ? createOpenAI({ apiKey: process.env.OPENAI_API_KEY! }) : null;
-
-const { text } = await generateText({
-  model: useGateway ? gateway!('openai/gpt-4.1-nano') : direct!('gpt-4.1-nano'),
-  prompt: 'Hello!',
-});
-```
-
-Initialize only the branch you need (lazy factories) if one side depends on env that should not load in the other build.
-
-For alias registries (e.g. `fast`, `smart`) with gateway fallback, use upstream `customProvider` from `ai` (see **Option A2** below).
-
-### Vendor-oriented scenarios
-
-These are the most common integration shapes for vendors shipping the same app in more than one environment.
-
-#### Scenario 1: Existing Next.js or Node app already using Vercel AI SDK
-
-Goal: keep the current `generateText` / `streamText` code and switch only model routing.
-
-```ts
-import { generateText, streamText } from 'ai';
-import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
-
-const gateway = createAIGatewayProvider({
-  env: 'production',
-  getAuthToken: async () => (await getSetappSession()).accessToken,
 });
 
 await generateText({
-  model: gateway('openai/gpt-4.1-mini'),
-  prompt: 'Summarize this page',
-});
-
-const result = streamText({
-  model: gateway('openai/gpt-4.1-mini'),
-  prompt: 'Write a release note',
-});
-```
-
-What changes:
-
-- Add `@macpaw/ai-sdk/provider` for gateway provider construction
-- Model handles come from `createAIGatewayProvider`
-
-What stays the same:
-
-- `generateText`, `streamText`, tools, agents, and stream handling
-
-#### Scenario 2: One vendor codebase, two builds
-
-Goal: use AI Gateway for marketplace / Setapp-style builds, but keep direct OpenAI for another distribution without forking the app logic.
-
-```ts
-import { generateText } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
-import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
-
-const useGateway = process.env.IS_VENDOR_BUILD === '1';
-
-const gateway = useGateway
-  ? createAIGatewayProvider({
-      env: 'production',
-      getAuthToken: async () => (await getVendorSession()).accessToken,
-    })
-  : null;
-
-const direct = !useGateway ? createOpenAI({ apiKey: process.env.OPENAI_API_KEY! }) : null;
-
-const { text } = await generateText({
-  model: useGateway ? gateway!('openai/gpt-4.1-nano') : direct!('gpt-4.1-nano'),
+  model: anthropic('claude-sonnet-4-20250514'),
   prompt: 'Hello',
 });
 ```
 
-What changes:
+## Provider options (`AIGatewayProviderOptions`)
 
-- Provider selection moves to startup/config time (app chooses gateway vs direct OpenAI).
+Extends `GatewayProviderSettings` plus OpenAI provider settings (without `apiKey` / `baseURL` / `fetch`, which are wired by the SDK):
 
-What stays the same:
+- `normalizeErrors` — default `true`; non-OK Gateway responses throw typed errors
+- `createOpenAI` — optional override of `createOpenAI` from `@ai-sdk/openai` (tests/advanced)
 
-- The app still calls `generateText({ model, prompt })` in exactly one way
-
-#### Scenario 3: Provider for app flows, client for multipart
-
-Goal: keep Vercel-style text generation, but use the low-level client where the OpenAI-shaped provider is not enough.
+## Middleware
 
 ```ts
-import { generateText } from 'ai';
-import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
-import { createAIGatewayClient } from '@macpaw/ai-sdk/client';
+import type { Middleware } from '@macpaw/ai-sdk';
 
-const auth = async () => (await getSetappSession()).accessToken;
-
-const gateway = createAIGatewayProvider({
-  env: 'production',
-  getAuthToken: auth,
-});
-
-const client = createAIGatewayClient({
-  env: 'production',
-  getAuthToken: auth,
-});
-
-await generateText({
-  model: gateway('openai/gpt-4.1-mini'),
-  prompt: 'Draft a caption',
-});
-
-await client.images.edit({
-  model: 'openai/dall-e-2',
-  image: imageFile,
-  prompt: 'Add a blue background',
-});
+const loggingMiddleware: Middleware = async (config, next) => {
+  const response = await next(config);
+  console.log(config.method, config.url, response.status);
+  return response;
+};
 ```
 
-What changes:
+## Error handling
 
-- Text/chat/tool flows stay on the provider
-- Multipart and raw API flows use the client
-
-What stays the same:
-
-- One auth source can be reused across both layers
-
-### Where authentication runs
-
-- **Gateway path:** `getAuthToken` passed to `createAIGatewayProvider` / `createAIGatewayClient` runs whenever the SDK issues a request; it can read cookies, session stores, or env. No need to put the Bearer string in application code paths if you centralize it here.
-- **Gateway provider fetch:** `createAIGatewayProvider` and `createAIGatewayFetch` support token refresh-aware `getAuthToken(forceRefresh?)`, token caching, request IDs, gateway error normalization, plus the shared SDK request pipeline options (`retry`, `middleware`, `hooks`, `timeout`, `transport`).
-- **Next.js App Router:** resolve the token in a **server** route or server action (same place you call `streamText`), or in middleware that attaches session info your `getAuthToken` reads — avoid exposing long-lived tokens to the browser.
-- **Express / Fastify:** read the session in your route handler and pass a closure: `getAuthToken: async () => req.session?.aiToken ?? null`.
-
-### Option A: High-level provider (recommended)
+| `ErrorCode` | Typical HTTP | Meaning |
+| ----------- | ------------ | ------- |
+| `AuthRequired` | 401 | Token missing / expired |
+| `InsufficientCredits` / `SubscriptionExpired` | 402 | Billing / subscription |
+| `ModelNotAllowed` | 403 | Model denied |
+| `RateLimited` | 429 | Rate limit (`retryAfter` when present) |
+| `Validation` | 422 | Validation body |
+| … | … | See `gateway-errors.ts` |
 
 ```ts
-import { generateText, streamText } from 'ai';
-import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
+import { AIGatewayError, ErrorCode, isAIGatewayError } from '@macpaw/ai-sdk';
 
-const gateway = createAIGatewayProvider({
-  getAuthToken: async () => (await getSetappSession()).accessToken,
-  env: 'production',
-});
-
-// generateText
-const { text } = await generateText({
-  model: gateway('openai/gpt-4.1-nano'),
-  prompt: 'Hello!',
-});
-
-// streamText
-const result = streamText({
-  model: gateway('openai/gpt-4.1-nano'),
-  prompt: 'Write a haiku',
-});
-
-for await (const chunk of result.textStream) {
-  process.stdout.write(chunk);
+try {
+  // ...
+} catch (e) {
+  if (isAIGatewayError(e) && e.code === ErrorCode.InsufficientCredits) {
+    // e.metadata.paymentUrl, e.requestId, etc.
+  }
 }
 ```
 
-### Option A2: `customProvider` (aliases + fallback)
-
-Use the Vercel AI SDK [`customProvider`](https://sdk.vercel.ai/docs/reference/ai-sdk-core/custom-provider) from `ai` and wire language models to `createAIGatewayProvider`:
-
-```ts
-import { generateText, customProvider } from 'ai';
-import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
-
-const gateway = createAIGatewayProvider({
-  getAuthToken: async () => myToken,
-  env: 'production',
-});
-
-const registry = customProvider({
-  languageModels: {
-    fast: gateway('openai/gpt-4.1-nano'),
-  },
-});
-
-await generateText({ model: registry.languageModel('fast'), prompt: 'Hi' });
-
-// Models you do not register as aliases still use the same gateway handle:
-await generateText({
-  model: gateway('openai/gpt-4.1-mini'),
-  prompt: 'Still AI Gateway',
-});
-```
-
-Register only the aliases you need; see the upstream `customProvider` docs if you also want a typed fallback for unknown model ids.
-
-### Option B: Low-level custom fetch
-
-```ts
-import { createOpenAI } from '@ai-sdk/openai';
-import { createAIGatewayFetch } from '@macpaw/ai-sdk/provider';
-
-const customFetch = createAIGatewayFetch({
-  baseURL: 'https://api.macpaw.com/ai',
-  getAuthToken: async () => myToken,
-  autoRefreshToken: true,
-  retry: { maxAttempts: 2, initialDelayMs: 250 },
-  normalizeErrors: true,
-});
-
-const openai = createOpenAI({
-  baseURL: 'https://api.macpaw.com/ai/api/v1',
-  fetch: customFetch,
-  apiKey: 'unused',
-});
-```
-
-If you want fetch-like status inspection instead of thrown `AIGatewayError` instances for non-OK Gateway responses, set `normalizeErrors: false`.
-
-> **Version alignment:** `@macpaw/ai-sdk/provider` relies on upstream `ai` and `@ai-sdk/openai` as peers. Keep their versions aligned with this SDK to avoid duplicate-install edge cases.
-> React hooks still come from `@ai-sdk/react`.
-
-### React hooks
-
-```tsx
-import { useChat } from '@ai-sdk/react';
-
-function Chat() {
-  const { messages, input, handleInputChange, handleSubmit } = useChat({
-    api: '/api/chat', // your Next.js API route
-  });
-
-  return (
-    <div>
-      {messages.map((m) => (
-        <div key={m.id}>
-          <strong>{m.role}:</strong> {m.content}
-        </div>
-      ))}
-      <form onSubmit={handleSubmit}>
-        <input value={input} onChange={handleInputChange} />
-        <button type="submit">Send</button>
-      </form>
-    </div>
-  );
-}
-```
-
-## Framework examples
-
-### Browser (vanilla)
-
-```ts
-import { createAIGatewayClient } from '@macpaw/ai-sdk/client';
-import { AIGatewayError, ErrorCode } from '@macpaw/ai-sdk';
-
-const client = createAIGatewayClient({
-  env: 'production',
-  getAuthToken: async () => localStorage.getItem('setapp_token'),
-});
-
-document.querySelector('#ask-btn')!.addEventListener('click', async () => {
-  const output = document.querySelector('#output')!;
-  output.textContent = '';
-
-  try {
-    const result = client.chat.completions.stream({
-      model: 'openai/gpt-4.1-nano',
-      messages: [{ role: 'user', content: 'Tell me a joke' }],
-    });
-    for await (const delta of result.textStream) {
-      output.textContent += delta;
-    }
-  } catch (e) {
-    if (e instanceof AIGatewayError && e.code === ErrorCode.InsufficientCredits) {
-      window.location.href = e.paymentUrl ?? '/upgrade';
-    }
-  }
-});
-```
-
-### Node.js / Express
-
-```ts
-import express from 'express';
-import { createAIGatewayClient } from '@macpaw/ai-sdk/client';
-import { AIGatewayError } from '@macpaw/ai-sdk';
-
-const client = createAIGatewayClient({
-  env: 'production',
-  getAuthToken: async () => process.env.SETAPP_TOKEN!,
-});
-
-const app = express();
-app.use(express.json());
-
-app.post('/api/chat', async (req, res) => {
-  try {
-    const completion = await client.chat.completions.create({
-      model: 'openai/gpt-4.1-nano',
-      messages: req.body.messages,
-    });
-    res.json(completion);
-  } catch (e) {
-    if (e instanceof AIGatewayError) {
-      res.status(e.statusCode).json({ error: e.code, message: e.message });
-    } else {
-      res.status(500).json({ error: 'UNKNOWN' });
-    }
-  }
-});
-
-app.listen(3000);
-```
-
-### NestJS (Module)
-
-The SDK provides a first-class NestJS integration with `DynamicModule`, injectable client, custom decorator, and exception filter.
+## NestJS
 
 ```bash
 pnpm add @macpaw/ai-sdk @nestjs/common rxjs
 ```
 
-#### 1. Register the module
-
-**Static configuration** (`forRoot`):
+Register once (global by default):
 
 ```ts
-import { Module } from '@nestjs/common';
 import { AIGatewayModule } from '@macpaw/ai-sdk/nestjs';
 
-@Module({
-  imports: [
-    AIGatewayModule.forRoot({
-      env: 'production',
-      getAuthToken: async () => process.env.SETAPP_TOKEN!,
-    }),
-  ],
-})
-export class AppModule {}
+AIGatewayModule.forRoot({
+  env: 'production',
+  getAuthToken: async () => process.env.SETAPP_TOKEN!,
+});
 ```
 
-**Async configuration** (`forRootAsync`) — ideal with `ConfigService`:
-
-```ts
-import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AIGatewayModule } from '@macpaw/ai-sdk/nestjs';
-
-@Module({
-  imports: [
-    ConfigModule.forRoot(),
-    AIGatewayModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (config: ConfigService) => ({
-        env: config.get('AI_GATEWAY_ENV', 'production'),
-        getAuthToken: async () => config.get('SETAPP_TOKEN')!,
-        hooks: {
-          onError: (error) => console.error('[AI Gateway]', error),
-        },
-      }),
-      inject: [ConfigService],
-    }),
-  ],
-})
-export class AppModule {}
-```
-
-The module is **global** by default — no need to re-import in every module. Set `isGlobal: false` if you prefer explicit imports.
-
-#### 2. Inject the client
-
-Use the `@InjectAIGateway()` decorator to inject the configured `AIGatewayClient`:
+Inject **`GatewayProviderSettings`** (not an HTTP client) and build providers in the service:
 
 ```ts
 import { Injectable } from '@nestjs/common';
 import { InjectAIGateway } from '@macpaw/ai-sdk/nestjs';
-import type { AIGatewayClient } from '@macpaw/ai-sdk/client';
+import type { GatewayProviderSettings } from '@macpaw/ai-sdk';
+import { createAIGatewayProvider } from '@macpaw/ai-sdk';
+import { generateText } from 'ai';
 
 @Injectable()
 export class ChatService {
-  constructor(@InjectAIGateway() private readonly ai: AIGatewayClient) {}
+  constructor(@InjectAIGateway() private readonly config: GatewayProviderSettings) {}
 
-  async complete(messages: Array<{ role: string; content: string }>) {
-    return this.ai.chat.completions.create({
-      model: 'openai/gpt-4.1-nano',
-      messages: messages as any,
+  async complete(prompt: string) {
+    const gateway = createAIGatewayProvider(this.config);
+    const { text } = await generateText({
+      model: gateway('openai/gpt-4.1-nano'),
+      prompt,
     });
-  }
-
-  streamChat(messages: Array<{ role: string; content: string }>) {
-    return this.ai.chat.completions.stream({
-      model: 'openai/gpt-4.1-nano',
-      messages: messages as any,
-    });
+    return text;
   }
 }
 ```
 
-#### 3. Exception filter
+`AIGatewayExceptionFilter` maps `AIGatewayError` to JSON HTTP responses. See `examples/nestjs/` for a copy-paste skeleton.
 
-The `AIGatewayExceptionFilter` automatically maps `AIGatewayError` to structured HTTP responses:
+## Examples
 
-```ts
-import { Controller, Post, Body, UseFilters } from '@nestjs/common';
-import { AIGatewayExceptionFilter } from '@macpaw/ai-sdk/nestjs';
-import { ChatService } from './chat.service';
+From the repo root:
 
-@Controller('chat')
-@UseFilters(AIGatewayExceptionFilter)
-export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
-
-  @Post()
-  async chat(@Body() body: { messages: Array<{ role: string; content: string }> }) {
-    return this.chatService.complete(body.messages);
-  }
-}
+```bash
+pnpm build
+pnpm example:provider
 ```
 
-Or apply it globally:
+Set `AI_GATEWAY_TOKEN` or `SETAPP_TOKEN`. Optional: `AI_GATEWAY_BASE_URL`, `AI_GATEWAY_MODEL`.
 
-```ts
-import { NestFactory } from '@nestjs/core';
-import { AIGatewayExceptionFilter } from '@macpaw/ai-sdk/nestjs';
-import { AppModule } from './app.module';
+See [`examples/README.md`](./examples/README.md).
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.useGlobalFilters(new AIGatewayExceptionFilter());
-  await app.listen(3000);
-}
-bootstrap();
-```
+## Release & quality
 
-The filter returns JSON like:
+- CI: `typecheck`, `lint`, `test`, coverage, `build` on Node 18 / 20 / 22
+- `pnpm verify:release` — full local gate before publish
+- `pnpm size:pack` — dry-run npm pack
 
-```json
-{
-  "statusCode": 402,
-  "error": "INSUFFICIENT_CREDITS",
-  "message": "Not enough credits to complete request",
-  "requestId": "abc-123",
-  "paymentUrl": "https://pay.example.com/upgrade"
-}
-```
+## AI assistant setup
 
-Optional fields (`requestId`, `paymentUrl`, `retryAfter`) are included only when present.
-For 429 responses, the filter also sets the `Retry-After` HTTP header.
-
-#### 4. Custom options factory (useClass)
-
-For complex configuration scenarios, implement `AIGatewayOptionsFactory`:
-
-```ts
-import { Injectable } from '@nestjs/common';
-import { AIGatewayOptionsFactory, AIGatewayModuleOptions } from '@macpaw/ai-sdk/nestjs';
-
-@Injectable()
-export class AIGatewayConfigService implements AIGatewayOptionsFactory {
-  constructor(
-    private readonly config: ConfigService,
-    private readonly authService: AuthService,
-  ) {}
-
-  createAIGatewayOptions(): AIGatewayModuleOptions {
-    return {
-      env: this.config.get('AI_GATEWAY_ENV'),
-      getAuthToken: (forceRefresh) => this.authService.getToken(forceRefresh),
-      logger: this.logger,
-    };
-  }
-}
-```
-
-```ts
-AIGatewayModule.forRootAsync({
-  imports: [ConfigModule, AuthModule],
-  useClass: AIGatewayConfigService,
-});
-```
-
-## Testing
-
-The SDK ships a dedicated `@macpaw/ai-sdk/testing` entry point with a fully-mocked client, framework-agnostic mock functions, and streaming helpers.
-
-```ts
-import {
-  createMockAIGatewayClient,
-  createMockChatCompletion,
-  createMockStreamTextResult,
-  createMockStreamResponseResult,
-} from '@macpaw/ai-sdk/testing';
-```
-
-### Mock client
-
-`createMockAIGatewayClient()` returns a `MockAIGatewayClient` where every API method is a `MockFn` — no test framework dependency required.
-
-```ts
-const client = createMockAIGatewayClient();
-
-// Use fixture helpers — no boilerplate
-client.chat.completions.create.mockResolvedValue(createMockChatCompletion({ content: 'Hi!' }));
-
-// Use in code under test
-const result = await client.chat.completions.create({ model: 'gpt-4.1-nano', messages: [] });
-
-// Assert
-expect(client.chat.completions.create.callCount).toBe(1);
-expect(client.chat.completions.create.wasCalled).toBe(true);
-expect(client.chat.completions.create.wasCalledWith({ model: 'gpt-4.1-nano', messages: [] })).toBe(true);
-```
-
-All endpoints are covered:
-
-| Namespace              | Mock methods                                             |
-| ---------------------- | -------------------------------------------------------- |
-| `chat.completions`     | `create`, `stream`                                       |
-| `responses`            | `create`, `createStream`, `stream`                       |
-| `embeddings`           | `create`                                                 |
-| `models`               | `getInfo`                                                |
-| `images`               | `generate`, `edit`                                       |
-| `audio.transcriptions` | `create`, `stream`                                       |
-| `audio.translations`   | `create`                                                 |
-| (root)                 | `use`                                                    |
-
-### Response fixture helpers
-
-Pre-built factories that eliminate boilerplate — just pass the fields you care about:
-
-```ts
-import {
-  createMockChatCompletion,
-  createMockResponseObject,
-  createMockEmbeddingResponse,
-  createMockImageResponse,
-  createMockTranscriptionResponse,
-  createMockTranslationResponse,
-  createMockModelInfoResponse,
-} from '@macpaw/ai-sdk/testing';
-
-client.chat.completions.create.mockResolvedValue(createMockChatCompletion({ content: 'Hello' }));
-client.responses.create.mockResolvedValue(createMockResponseObject({ content: 'World' }));
-client.embeddings.create.mockResolvedValue(createMockEmbeddingResponse({ embeddings: [[0.1, 0.2]] }));
-client.images.generate.mockResolvedValue(createMockImageResponse({ urls: ['https://example.com/cat.png'] }));
-client.audio.transcriptions.create.mockResolvedValue(createMockTranscriptionResponse({ text: 'Hello world' }));
-client.audio.translations.create.mockResolvedValue(createMockTranslationResponse({ text: 'Translated' }));
-client.models.getInfo.mockResolvedValue(createMockModelInfoResponse({ models: [{ name: 'gpt-4.1-nano' }] }));
-```
-
-All fixtures return fully-typed objects with sensible defaults — call with no arguments for a valid default.
-
-### MockFn API
-
-Each mock method exposes:
-
-| Property / Method             | Description                                       |
-| ----------------------------- | ------------------------------------------------- |
-| `.calls`                      | Array of all calls (each entry = arguments array) |
-| `.callCount`                  | Number of times called                            |
-| `.lastCall`                   | Arguments of the last call                        |
-| `.wasCalled`                  | `true` if called at least once                    |
-| `.wasCalledWith(...args)`     | `true` if any call matched the given arguments    |
-| `.mockReturnValue(v)`         | Set a fixed synchronous return value              |
-| `.mockReturnValueOnce(v)`     | Set return value for the _next_ call only         |
-| `.mockResolvedValue(v)`       | Set a fixed promised return value                 |
-| `.mockResolvedValueOnce(v)`   | Set resolved value for the _next_ call only       |
-| `.mockRejectedValue(e)`       | Set a fixed rejected promise                      |
-| `.mockRejectedValueOnce(e)`   | Set rejected value for the _next_ call only       |
-| `.mockImplementation(fn)`     | Custom implementation                             |
-| `.mockImplementationOnce(fn)` | Custom implementation for the _next_ call only    |
-| `.mockClear()`                | Clear call history, keep implementation           |
-| `.mockReset()`                | Clear history, once-queue, and implementation     |
-
-#### Sequential return values
-
-```ts
-client.chat.completions.create
-  .mockResolvedValueOnce(createMockChatCompletion({ content: 'first' }))
-  .mockResolvedValueOnce(createMockChatCompletion({ content: 'second' }))
-  .mockResolvedValue(createMockChatCompletion({ content: 'default' }));
-
-// 1st call → 'first', 2nd → 'second', 3rd+ → 'default'
-```
-
-#### Error testing
-
-```ts
-import { AuthError } from '@macpaw/ai-sdk';
-
-client.chat.completions.create.mockRejectedValue(new AuthError('Token expired', 401));
-
-await expect(service.complete(messages)).rejects.toThrow('Token expired');
-```
-
-### Stream mocks
-
-For testing streaming code paths, use the stream helpers:
-
-```ts
-// Chat streaming
-client.chat.completions.stream.mockReturnValue(
-  createMockStreamTextResult({
-    text: ['Hello', ' world'],
-    usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 },
-  }),
-);
-
-const result = client.chat.completions.stream({ model: 'm', messages: [] });
-for await (const delta of result.textStream) {
-  console.log(delta); // 'Hello', ' world'
-}
-const fullText = await result.text; // 'Hello world'
-
-// Response streaming
-client.responses.stream.mockReturnValue(createMockStreamResponseResult('Streamed response'));
-```
-
-Both helpers accept a simple string for quick tests or an options object for custom chunking and usage stats.
-
-The returned object extends the standard result with an `aborted` flag for cancellation assertions:
-
-```ts
-const streamResult = createMockStreamTextResult('test');
-streamResult.abort();
-expect(streamResult.aborted).toBe(true);
-```
-
-### Reset and clear
-
-```ts
-client.mockResetAll(); // clears calls, once-queues, and implementations for ALL endpoints
-
-// Per-method:
-client.chat.completions.create.mockClear(); // clears calls only, keeps implementation
-client.chat.completions.create.mockReset(); // clears calls + resets implementation
-```
-
-### Mock transport (integration tests)
-
-For integration tests where you want the **real client pipeline** (auth, middleware, retry) but **no network**, use `createMockTransport()`:
-
-```ts
-import { createAIGatewayClient } from '@macpaw/ai-sdk/client';
-import { createMockTransport } from '@macpaw/ai-sdk/testing';
-
-const transport = createMockTransport();
-const client = createAIGatewayClient({
-  env: 'production',
-  getAuthToken: async () => 'test-token',
-  transport,
-});
-
-// Production code — works without network
-const completion = await client.chat.completions.create({
-  model: 'openai/gpt-4.1-nano',
-  messages: [{ role: 'user', content: 'Hi' }],
-});
-console.log(completion.choices[0]?.message?.content); // 'Mock response'
-
-// Inspect captured requests
-console.log(transport.requestCount); // 1
-console.log(transport.requests[0].body); // { model: '...', messages: [...] }
-```
-
-Every endpoint returns a sensible default fixture automatically. Override specific routes when needed:
-
-```ts
-// Simulate a 503 for chat
-transport.onRoute('/chat/completions', () => new Response(JSON.stringify({ error: 'overloaded' }), { status: 503 }));
-
-// Catch-all fallback for unmatched routes
-transport.onAny((_config, body) => new Response(JSON.stringify({ echo: body }), { status: 200 }));
-
-// Reset handlers and request history
-transport.reset();
-```
-
-### NestJS testing
-
-For NestJS integration tests, use the mock client with the injection token:
-
-```ts
-import { Test } from '@nestjs/testing';
-import { AI_GATEWAY_CLIENT } from '@macpaw/ai-sdk/nestjs';
-import { createMockAIGatewayClient } from '@macpaw/ai-sdk/testing';
-
-const mockClient = createMockAIGatewayClient();
-
-const module = await Test.createTestingModule({
-  providers: [ChatService, { provide: AI_GATEWAY_CLIENT, useValue: mockClient }],
-}).compile();
-
-const service = module.get(ChatService);
-mockClient.chat.completions.create.mockResolvedValue({
-  /* ... */
-});
-const result = await service.complete([{ role: 'user', content: 'Hi' }]);
-```
-
-## AI coding assistant integration
-
-This SDK ships with templates and a setup script for **Cursor**, **Claude Code**, and **OpenAI Codex** so that AI assistants automatically follow the correct integration patterns when you ask them to "add AI Gateway" or "integrate chat with MacPaw AI".
-
-| Tool             | What gets set up                               | How it works                                            |
-| ---------------- | ---------------------------------------------- | ------------------------------------------------------- |
-| **Cursor**       | `.cursor/skills/integrate-ai-gateway/SKILL.md` | Cursor Skill — auto-applied when you mention AI Gateway |
-| **Claude Code**  | `CLAUDE.md`                                    | Read automatically by Claude Code from repo root        |
-| **OpenAI Codex** | `AGENTS.md`                                    | Read automatically by Codex from repo root              |
-
-### Quick setup (recommended)
-
-After `pnpm add @macpaw/ai-sdk` (or `npm install @macpaw/ai-sdk`), run one command to set up all three tools at once:
+Templates for **Cursor** (`.cursor/skills/`), **Claude Code** (`CLAUDE.md`), and **OpenAI Codex** (`AGENTS.md`) ship under `templates/`. After installing the package:
 
 ```bash
 pnpm exec macpaw-ai-setup
 # or: npx macpaw-ai-setup
 ```
 
-This copies the Cursor skill, creates `CLAUDE.md` for Claude Code, and creates `AGENTS.md` for OpenAI Codex. If your project already has its own `CLAUDE.md` or `AGENTS.md`, the AI Gateway instructions are appended (not overwritten).
+Use `macpaw-ai-setup cursor`, `claude`, or `codex` to install only one target. Existing root `CLAUDE.md` / `AGENTS.md` files get Gateway sections appended, not replaced.
 
-To set up a specific tool only:
+## Versioning
 
-```bash
-pnpm exec macpaw-ai-setup cursor   # Cursor skill only
-pnpm exec macpaw-ai-setup claude   # Claude Code only
-pnpm exec macpaw-ai-setup codex    # OpenAI Codex only
-```
-
-Then ask in natural language: _"Add AI Gateway chat to this Next.js app"_ or _"Integrate NestJS with AI Gateway using the official SDK."_
-
-> **Tip:** Copy the Cursor skill to `~/.cursor/skills/integrate-ai-gateway/` to make it available in every project.
-
-## Subpath exports
-
-> **Note:** `@macpaw/ai-sdk/provider` is the recommended app-developer entry point. `@macpaw/ai-sdk/client` is the focused low-level client path. `@macpaw/ai-sdk/runtime` is the explicit advanced runtime surface.
-
-| Import path               | Content                                                                                           |
-| ------------------------- | ------------------------------------------------------------------------------------------------- |
-| `@macpaw/ai-sdk`          | Root convenience entry: Vercel-compatible provider surface plus shared errors, enums, and helpers |
-| `@macpaw/ai-sdk/client`   | Advanced low-level Gateway HTTP client for direct API usage and multipart flows                   |
-| `@macpaw/ai-sdk/types`    | Domain TypeScript types (OpenAI-compatible request/response shapes)                               |
-| `@macpaw/ai-sdk/runtime`  | Advanced runtime primitives: transport, config, validation, request execution, SSE, retry         |
-| `@macpaw/ai-sdk/provider` | AI Gateway provider factory, gateway fetch wiring, and MacPaw error helpers                     |
-| `@macpaw/ai-sdk/nestjs`   | NestJS module, decorator, exception filter                                                        |
-| `@macpaw/ai-sdk/testing`  | Provider and client-oriented mocks, fixtures, stream helpers, mock transport                      |
-
-## Versioning policy
-
-This project follows [Semantic Versioning](https://semver.org/):
-
-| Change type          | Semver  | Examples                                                                             |
-| -------------------- | ------- | ------------------------------------------------------------------------------------ |
-| **Breaking** (major) | `x.0.0` | Removing/renaming exports, changing method signatures, dropping Node version support |
-| **Feature** (minor)  | `0.x.0` | New API endpoint, new config option, new testing helper                              |
-| **Fix** (patch)      | `0.0.x` | Bug fix, docs update, internal refactor with no public API change                    |
-
-Releases are automated via [semantic-release](https://github.com/semantic-release/semantic-release) based on [Conventional Commits](https://www.conventionalcommits.org/). Use `feat:`, `fix:`, `perf:`, and `BREAKING CHANGE:` in commit messages — the CI handles versioning, changelog, npm publish, and GitHub releases.
+[Semantic Versioning](https://semver.org/). Releases via [semantic-release](https://github.com/semantic-release/semantic-release) and Conventional Commits.
 
 ## License
 
-MIT © 2026 [MacPaw Way Ltd](https://macpaw.com). See [LICENSE](LICENSE) for details.
+MIT © 2026 [MacPaw Way Ltd](https://macpaw.com). See [LICENSE](LICENSE).
