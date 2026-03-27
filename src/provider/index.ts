@@ -7,7 +7,7 @@
  */
 
 export { createAIGatewayFetch } from './create-fetch';
-export type { CreateAIGatewayFetchOptions } from './create-fetch';
+export type { AIGatewayFetchFactoryConfig } from './create-fetch';
 
 export { createAIGatewayProvider } from './ai-gateway-provider';
 export type { AIGatewayProviderOptions } from './ai-gateway-provider';
