@@ -1,5 +1,5 @@
 import { Inject } from '@nestjs/common';
-import { AI_GATEWAY_CLIENT } from './constants';
+import { AI_GATEWAY_CONFIG } from './ai-gateway.constants';
 
 /**
  * Injects the configured `GatewayProviderSettings` into a constructor parameter or property.
@@ -12,4 +12,4 @@ import { AI_GATEWAY_CLIENT } from './constants';
  * }
  * ```
  */
-export const InjectAIGateway = (): ParameterDecorator & PropertyDecorator => Inject(AI_GATEWAY_CLIENT);
+export const InjectAIGateway = (): ParameterDecorator & PropertyDecorator => Inject(AI_GATEWAY_CONFIG);

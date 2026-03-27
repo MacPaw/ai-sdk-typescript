@@ -1,8 +1,8 @@
 import type { DynamicModule, Provider, Type } from '@nestjs/common';
 import { Module } from '@nestjs/common';
 import type { GatewayProviderSettings } from '../gateway-config';
-import { AI_GATEWAY_CLIENT, AI_GATEWAY_OPTIONS } from './constants';
-import type { AIGatewayModuleOptions, AIGatewayModuleAsyncOptions, AIGatewayOptionsFactory } from './interfaces';
+import { AI_GATEWAY_CONFIG, AI_GATEWAY_OPTIONS } from './ai-gateway.constants';
+import type { AIGatewayModuleOptions, AIGatewayModuleAsyncOptions, AIGatewayOptionsFactory } from './ai-gateway.types';
 
 @Module({})
 export class AIGatewayModule {
@@ -25,7 +25,7 @@ export class AIGatewayModule {
   static forRoot(options: AIGatewayModuleOptions): DynamicModule {
     const { isGlobal, ...clientConfig } = options;
     const configProvider: Provider<GatewayProviderSettings> = {
-      provide: AI_GATEWAY_CLIENT,
+      provide: AI_GATEWAY_CONFIG,
       useFactory: () => clientConfig,
     };
 
@@ -61,8 +61,9 @@ export class AIGatewayModule {
    */
   static forRootAsync(options: AIGatewayModuleAsyncOptions): DynamicModule {
     const configProvider: Provider<GatewayProviderSettings> = {
-      provide: AI_GATEWAY_CLIENT,
-      useFactory: (moduleOptions: AIGatewayModuleOptions) => moduleOptions as GatewayProviderSettings,
+      provide: AI_GATEWAY_CONFIG,
+      useFactory: ({ isGlobal: _isGlobal, ...clientConfig }: AIGatewayModuleOptions) =>
+        clientConfig as GatewayProviderSettings,
       inject: [AI_GATEWAY_OPTIONS],
     };
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { DynamicModule } from '@nestjs/common';
 import { AIGatewayModule } from '../ai-gateway.module';
-import { AI_GATEWAY_CLIENT, AI_GATEWAY_OPTIONS } from '../constants';
+import { AI_GATEWAY_CONFIG, AI_GATEWAY_OPTIONS } from '../ai-gateway.constants';
 
 interface ProviderLike {
   provide?: unknown;
@@ -34,7 +34,7 @@ describe('AIGatewayModule', () => {
       expect(mod.exports).toBeDefined();
 
       const configProvider = expectProvider(
-        getProviders(mod).find((provider) => provider.provide === AI_GATEWAY_CLIENT),
+        getProviders(mod).find((provider) => provider.provide === AI_GATEWAY_CONFIG),
       );
       expect(configProvider.useFactory).toBeTypeOf('function');
     });
@@ -47,7 +47,7 @@ describe('AIGatewayModule', () => {
     it('useFactory produces the gateway config', () => {
       const mod = AIGatewayModule.forRoot(baseOptions);
       const configProvider = expectProvider(
-        getProviders(mod).find((provider) => provider.provide === AI_GATEWAY_CLIENT),
+        getProviders(mod).find((provider) => provider.provide === AI_GATEWAY_CONFIG),
       );
 
       const config = configProvider.useFactory?.();
@@ -72,7 +72,7 @@ describe('AIGatewayModule', () => {
       expect(optionsProvider.useFactory).toBeTypeOf('function');
 
       const configProvider = expectProvider(
-        getProviders(mod).find((provider) => provider.provide === AI_GATEWAY_CLIENT),
+        getProviders(mod).find((provider) => provider.provide === AI_GATEWAY_CONFIG),
       );
       expect(configProvider.inject).toContain(AI_GATEWAY_OPTIONS);
     });
