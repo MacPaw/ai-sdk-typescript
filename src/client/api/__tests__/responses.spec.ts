@@ -45,11 +45,10 @@ describe('createResponse', () => {
     });
     const config = createMockConfig(response);
 
-    const raw = await createResponse(config, {
+    const result = await createResponse(config, {
       model: 'openai/gpt-4.1-nano',
       input: 'Hi',
     });
-    const result = ('response' in raw ? raw.data : raw) as ResponseObject;
 
     expect(result.id).toBe('resp_123');
     expect(result.status).toBe('completed');

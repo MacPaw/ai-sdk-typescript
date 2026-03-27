@@ -7,42 +7,35 @@ import { createMockFn, type MockFn } from './mock-fn';
 
 export interface MockChatCompletionsAPI {
   create: MockFn;
-  createWithResponse: MockFn;
   stream: MockFn<MockStreamTextResult>;
 }
 
 export interface MockResponsesAPI {
   create: MockFn;
-  createWithResponse: MockFn;
   createStream: MockFn;
   stream: MockFn<MockStreamResponseResult>;
 }
 
 export interface MockEmbeddingsAPI {
   create: MockFn;
-  createWithResponse: MockFn;
 }
 
 export interface MockModelsAPI {
   getInfo: MockFn;
-  getInfoWithResponse: MockFn;
 }
 
 export interface MockImagesAPI {
   generate: MockFn;
-  generateWithResponse: MockFn;
   edit: MockFn;
-  editWithResponse: MockFn;
 }
 
 export interface MockAudioTranscriptionsAPI {
   create: MockFn;
-  createWithResponse: MockFn;
+  stream: MockFn<AsyncGenerator<unknown, void, undefined>>;
 }
 
 export interface MockAudioTranslationsAPI {
   create: MockFn;
-  createWithResponse: MockFn;
 }
 
 export interface MockAudioAPI {
@@ -104,74 +97,54 @@ export interface MockAIGatewayClient {
  */
 export function createMockAIGatewayClient(): MockAIGatewayClient {
   const chatCreate = createMockFn();
-  const chatCreateWithResponse = createMockFn();
   const chatStream = createMockFn<MockStreamTextResult>();
 
   const responsesCreate = createMockFn();
-  const responsesCreateWithResponse = createMockFn();
   const responsesCreateStream = createMockFn();
   const responsesStream = createMockFn<MockStreamResponseResult>();
 
   const embeddingsCreate = createMockFn();
-  const embeddingsCreateWithResponse = createMockFn();
   const modelsGetInfo = createMockFn();
-  const modelsGetInfoWithResponse = createMockFn();
   const imagesGenerate = createMockFn();
-  const imagesGenerateWithResponse = createMockFn();
   const imagesEdit = createMockFn();
-  const imagesEditWithResponse = createMockFn();
 
   const audioTranscriptionsCreate = createMockFn();
-  const audioTranscriptionsCreateWithResponse = createMockFn();
+  const audioTranscriptionsStream = createMockFn<AsyncGenerator<unknown, void, undefined>>();
   const audioTranslationsCreate = createMockFn();
-  const audioTranslationsCreateWithResponse = createMockFn();
 
   const use = createMockFn<void>();
 
   const allMocks = [
     chatCreate,
-    chatCreateWithResponse,
     chatStream,
     responsesCreate,
-    responsesCreateWithResponse,
     responsesCreateStream,
     responsesStream,
     embeddingsCreate,
-    embeddingsCreateWithResponse,
     modelsGetInfo,
-    modelsGetInfoWithResponse,
     imagesGenerate,
-    imagesGenerateWithResponse,
     imagesEdit,
-    imagesEditWithResponse,
     audioTranscriptionsCreate,
-    audioTranscriptionsCreateWithResponse,
+    audioTranscriptionsStream,
     audioTranslationsCreate,
-    audioTranslationsCreateWithResponse,
     use,
   ];
 
   const mock: MockAIGatewayClient = {
     chat: {
-      completions: { create: chatCreate, createWithResponse: chatCreateWithResponse, stream: chatStream },
+      completions: { create: chatCreate, stream: chatStream },
     },
     responses: {
       create: responsesCreate,
-      createWithResponse: responsesCreateWithResponse,
       createStream: responsesCreateStream,
       stream: responsesStream,
     },
-    embeddings: { create: embeddingsCreate, createWithResponse: embeddingsCreateWithResponse },
-    models: { getInfo: modelsGetInfo, getInfoWithResponse: modelsGetInfoWithResponse },
-    images: {
-      generate: imagesGenerate,
-      generateWithResponse: imagesGenerateWithResponse,
-      edit: imagesEdit,
-      editWithResponse: imagesEditWithResponse,
-    },
+    embeddings: { create: embeddingsCreate },
+    models: { getInfo: modelsGetInfo },
+    images: { generate: imagesGenerate, edit: imagesEdit },
     audio: {
-      transcriptions: { create: audioTranscriptionsCreate, createWithResponse: audioTranscriptionsCreateWithResponse },
-      translations: { create: audioTranslationsCreate, createWithResponse: audioTranslationsCreateWithResponse },
+      transcriptions: { create: audioTranscriptionsCreate, stream: audioTranscriptionsStream },
+      translations: { create: audioTranslationsCreate },
     },
     use,
     mockResetAll() {

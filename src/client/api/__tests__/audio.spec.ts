@@ -68,21 +68,6 @@ describe('createTranscription', () => {
     expect(fd.getAll('timestamp_granularities[]')).toEqual(['word', 'segment']);
   });
 
-  it('returns { data, response } when internal withResponse flag is set', async () => {
-    const transcription = { text: 'Hello' };
-    const response = new Response(JSON.stringify(transcription), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const config = createMockConfig(response);
-    const file = new Blob(['audio data'], { type: 'audio/mp3' });
-
-    const result = await createTranscription(config, { file, model: 'whisper-1' }, { withResponse: true });
-
-    expect(result).toHaveProperty('data');
-    expect(result).toHaveProperty('response');
-    expect((result as { data: { text: string } }).data.text).toBe('Hello');
-  });
 });
 
 describe('createTranscriptionStream', () => {

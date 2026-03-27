@@ -32,8 +32,7 @@ describe('createImage', () => {
     });
     const config = createMockConfig(response);
 
-    const raw = await createImage(config, { prompt: 'A cat' });
-    const result = 'response' in raw ? raw.data : raw;
+    const result = await createImage(config, { prompt: 'A cat' });
 
     expect(result.data).toHaveLength(1);
     expect(result.data[0].url).toBe('https://example.com/image.png');
@@ -58,8 +57,7 @@ describe('createImageEdit', () => {
     const config = createMockConfig(response);
     const image = new Blob(['image data'], { type: 'image/png' });
 
-    const raw = await createImageEdit(config, { image, prompt: 'Add sunglasses' });
-    const result = 'response' in raw ? raw.data : raw;
+    const result = await createImageEdit(config, { image, prompt: 'Add sunglasses' });
 
     expect(result.data).toHaveLength(1);
     expect(result.data[0].url).toBe('https://example.com/edited.png');

@@ -16,8 +16,6 @@ import type {
   RequestOptions,
 } from '../../types';
 
-type InternalRequestOptions = RequestOptions & { withResponse?: boolean };
-
 function buildTranscriptionFormData(request: CreateTranscriptionRequest): FormData {
   const formData = new FormData();
   formData.append('file', request.file);
@@ -38,8 +36,8 @@ function buildTranscriptionFormData(request: CreateTranscriptionRequest): FormDa
 export async function createTranscription(
   config: ResolvedConfig,
   request: CreateTranscriptionRequest,
-  options?: InternalRequestOptions,
-): Promise<TranscriptionResponse | { data: TranscriptionResponse; response: Response }> {
+  options?: RequestOptions,
+): Promise<TranscriptionResponse> {
   validateTranscriptionRequest(request);
   const formData = buildTranscriptionFormData(request);
   const response = await runRequest(
@@ -48,15 +46,13 @@ export async function createTranscription(
     { method: 'POST', body: formData },
     options,
   );
-  const data = (await response.json()) as TranscriptionResponse;
-  if (options?.withResponse) return { data, response };
-  return data;
+  return (await response.json()) as TranscriptionResponse;
 }
 
 export async function* createTranscriptionStream(
   config: ResolvedConfig,
   request: CreateTranscriptionRequest,
-  options?: InternalRequestOptions,
+  options?: RequestOptions,
 ): AsyncGenerator<TranscriptionStreamEvent, void, undefined> {
   validateTranscriptionRequest(request);
   const streamRequest = { ...request, stream: true as const };
@@ -74,8 +70,8 @@ export async function* createTranscriptionStream(
 export async function createTranslation(
   config: ResolvedConfig,
   request: CreateTranslationRequest,
-  options?: InternalRequestOptions,
-): Promise<TranslationResponse | { data: TranslationResponse; response: Response }> {
+  options?: RequestOptions,
+): Promise<TranslationResponse> {
   validateTranslationRequest(request);
   const formData = new FormData();
   formData.append('file', request.file);
@@ -90,7 +86,5 @@ export async function createTranslation(
     { method: 'POST', body: formData },
     options,
   );
-  const data = (await response.json()) as TranslationResponse;
-  if (options?.withResponse) return { data, response };
-  return data;
+  return (await response.json()) as TranslationResponse;
 }

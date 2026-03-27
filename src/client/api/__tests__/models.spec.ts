@@ -42,8 +42,7 @@ describe('getModelInfo', () => {
     });
     const config = createMockConfig(response);
 
-    const raw = await getModelInfo(config);
-    const result = 'response' in raw ? raw.data : raw;
+    const result = await getModelInfo(config);
 
     expect(result.data).toHaveLength(1);
     expect(result.data[0].model_name).toBe('openai/gpt-4.1-nano');
