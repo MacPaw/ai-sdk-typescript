@@ -6,5 +6,3 @@
  */
 
 export * from './provider';
-
-export { GatewayApiCode } from './types';

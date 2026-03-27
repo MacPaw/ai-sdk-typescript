@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createAIGatewayFetch } from '../create-fetch';
-import { AIGatewayError } from '../../runtime/errors';
+import { AIGatewayError } from '../../gateway-errors';
 
 describe('createAIGatewayFetch', () => {
   const originalFetch = globalThis.fetch;
@@ -201,7 +201,6 @@ describe('createAIGatewayFetch', () => {
     const customFetch = createAIGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'token',
-      autoRefreshToken: false,
     });
 
     await expect(customFetch('https://api.macpaw.com/ai/api/v1/chat/completions')).rejects.toBeInstanceOf(
@@ -220,7 +219,6 @@ describe('createAIGatewayFetch', () => {
     const customFetch = createAIGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'token',
-      autoRefreshToken: false,
       normalizeErrors: false,
     });
 
@@ -233,15 +231,14 @@ describe('createAIGatewayFetch', () => {
     });
   });
 
-  it('does not cache null tokens for the full TTL', async () => {
+  it('calls getAuthToken on every request (no caching)', async () => {
     const getAuthToken = vi
       .fn<() => Promise<string | null>>()
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce('fresh-token');
+      .mockResolvedValueOnce('token-1')
+      .mockResolvedValueOnce('token-2');
     const customFetch = createAIGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken,
-      tokenCacheTTL: 60_000,
     });
 
     await customFetch('https://api.macpaw.com/ai/test');
@@ -250,7 +247,7 @@ describe('createAIGatewayFetch', () => {
     expect(getAuthToken).toHaveBeenCalledTimes(2);
     const secondCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[1];
     const headers = new Headers(secondCall[1].headers);
-    expect(headers.get('Authorization')).toBe('Bearer fresh-token');
+    expect(headers.get('Authorization')).toBe('Bearer token-2');
   });
 
   it('runs provider fetch middleware through the shared request pipeline', async () => {
@@ -297,21 +294,6 @@ describe('createAIGatewayFetch', () => {
     expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(2);
   });
 
-  it('fires lifecycle hooks through the shared request pipeline', async () => {
-    const onRequest = vi.fn();
-    const onResponse = vi.fn();
-    const customFetch = createAIGatewayFetch({
-      baseURL: 'https://api.macpaw.com/ai',
-      getAuthToken: async () => 'token',
-      hooks: { onRequest, onResponse },
-    });
-
-    await customFetch('https://api.macpaw.com/ai/test', { method: 'GET' });
-
-    expect(onRequest).toHaveBeenCalledTimes(1);
-    expect(onResponse).toHaveBeenCalledTimes(1);
-  });
-
   it('applies timeout through the shared request pipeline', async () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation(
       (_url: string, init?: RequestInit) =>
@@ -335,20 +317,18 @@ describe('createAIGatewayFetch', () => {
     await expect(customFetch('https://api.macpaw.com/ai/test', { method: 'GET' })).rejects.toThrow(/timed out/i);
   });
 
-  it('uses a custom transport from the shared request pipeline', async () => {
-    const transport = {
-      request: vi.fn().mockResolvedValue(new Response('ok', { status: 200 })),
-    };
+  it('uses a custom fetch implementation', async () => {
+    const customFetchImpl = vi.fn().mockResolvedValue(new Response('ok', { status: 200 }));
     const customFetch = createAIGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'token',
-      transport,
+      fetch: customFetchImpl,
     });
 
     const response = await customFetch('https://api.macpaw.com/ai/test', { method: 'GET' });
 
     expect(response.status).toBe(200);
-    expect(transport.request).toHaveBeenCalledTimes(1);
+    expect(customFetchImpl).toHaveBeenCalledTimes(1);
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 });

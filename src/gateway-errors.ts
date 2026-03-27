@@ -1,66 +1,84 @@
 /**
- * Error normalization layer: Gateway HTTP API and OpenAI proxy formats -> typed SDK errors.
+ * Error types for the AI Gateway SDK.
  *
- * IMPORTANT: parseErrorResponse throws the SPECIFIC subclass (AuthError, CreditsError, etc.)
+ * Combines error classes, API codes, and response shapes in one place.
+ * parseErrorResponse throws the SPECIFIC subclass (AuthError, CreditsError, etc.)
  * so that `instanceof` checks work correctly in consumer code.
  */
 
-import type { GatewayApiErrorResponse, OpenAIErrorResponse, GatewayApiErrorItem } from '../types';
-import { ErrorCode, GatewayApiCode } from '../types';
-import type { ErrorCode as ErrorCodeType } from '../types';
+// ─── API Codes ────────────────────────────────────────────────────────────────
 
-function mapGatewayApiCodeToNormalized(code: string, statusCode: number): ErrorCodeType {
-  switch (code) {
-    case GatewayApiCode.Unauthorized:
-      return ErrorCode.AuthRequired;
-    case GatewayApiCode.InsufficientCredits:
-      return statusCode === 402 ? ErrorCode.InsufficientCredits : ErrorCode.SubscriptionExpired;
-    case GatewayApiCode.Forbidden:
-      return ErrorCode.ModelNotAllowed;
-    case GatewayApiCode.RateLimitExceeded:
-      return ErrorCode.RateLimited;
-    case GatewayApiCode.BadRequest:
-      return ErrorCode.BadRequest;
-    case GatewayApiCode.Validation:
-      return ErrorCode.Validation;
-    case GatewayApiCode.InternalServerError:
-      return ErrorCode.InternalServerError;
-    case GatewayApiCode.ServiceUnavailable:
-      return ErrorCode.ServiceUnavailable;
-    case GatewayApiCode.Timeout:
-      return ErrorCode.Timeout;
-    case GatewayApiCode.NotFound:
-      return ErrorCode.NotFound;
-    case GatewayApiCode.Conflict:
-      return ErrorCode.Conflict;
-    default:
-      return statusCode >= 500 ? ErrorCode.InternalServerError : ErrorCode.BadRequest;
-  }
+type ObjectValues<T> = T[keyof T];
+
+/** Raw error codes returned by the AI Gateway HTTP API. */
+export const GatewayApiCode = {
+  BadRequest: 'BAD_REQUEST',
+  Unauthorized: 'UNAUTHORIZED',
+  InsufficientCredits: 'INSUFFICIENT_CREDITS',
+  Forbidden: 'FORBIDDEN',
+  Validation: 'VALIDATION',
+  RateLimitExceeded: 'RATE_LIMIT_EXCEEDED',
+  InternalServerError: 'INTERNAL_SERVER_ERROR',
+  ServiceUnavailable: 'SERVICE_UNAVAILABLE',
+  Timeout: 'TIMEOUT',
+  NotFound: 'NOT_FOUND',
+  Conflict: 'CONFLICT',
+} as const;
+export type GatewayApiCode = ObjectValues<typeof GatewayApiCode>;
+
+/** Normalized error codes for app handling. */
+export const ErrorCode = {
+  AuthRequired: 'AUTH_REQUIRED',
+  InsufficientCredits: 'INSUFFICIENT_CREDITS',
+  SubscriptionExpired: 'SUBSCRIPTION_EXPIRED',
+  ModelNotAllowed: 'MODEL_NOT_ALLOWED',
+  RateLimited: 'RATE_LIMITED',
+  BadRequest: 'BAD_REQUEST',
+  Validation: 'VALIDATION',
+  Forbidden: 'FORBIDDEN',
+  InternalServerError: 'INTERNAL_SERVER_ERROR',
+  ServiceUnavailable: 'SERVICE_UNAVAILABLE',
+  Timeout: 'TIMEOUT',
+  NotFound: 'NOT_FOUND',
+  Conflict: 'CONFLICT',
+} as const;
+export type ErrorCode = ObjectValues<typeof ErrorCode>;
+
+// ─── Error Shapes ─────────────────────────────────────────────────────────────
+
+export interface GatewayApiErrorItem {
+  target?: string;
+  property?: string;
+  constraints?: string[];
+  message?: string;
+  metadata?: Record<string, unknown>;
 }
 
-function mapOpenAIErrorToNormalized(type?: string | null, code?: string | null): ErrorCodeType {
-  if (type === 'authentication_error') return ErrorCode.AuthRequired;
-  if (type === 'rate_limit_error') return ErrorCode.RateLimited;
-  if (type === 'team_model_access_denied' || code === '403') return ErrorCode.ModelNotAllowed;
-  if (type === 'api_error') return ErrorCode.InternalServerError;
-  if (type === 'invalid_request_error') return ErrorCode.BadRequest;
-  return ErrorCode.InternalServerError;
+export interface GatewayApiErrorResponse {
+  statusCode: number;
+  message: string;
+  timestamp: string;
+  code: GatewayApiCode;
+  path?: string;
+  errors?: GatewayApiErrorItem[];
+  request_id?: string;
 }
 
-function parseRetryAfterHeader(value: string): number | undefined {
-  const seconds = Number(value);
-  if (!Number.isNaN(seconds) && seconds >= 0) return seconds;
-  const date = Date.parse(value);
-  if (!Number.isNaN(date)) {
-    const delta = Math.ceil((date - Date.now()) / 1000);
-    return delta > 0 ? delta : 0;
-  }
-  return undefined;
+export interface OpenAIErrorResponse {
+  error: {
+    message: string;
+    type?: string | null;
+    code?: string | null;
+    param?: string | null;
+  };
+  request_id?: string;
 }
+
+// ─── Error Classes ────────────────────────────────────────────────────────────
 
 export interface NormalizedErrorMetadata {
   paymentUrl?: string;
-  /** Suggested delay before retrying, **in seconds** (from the server's `Retry-After`). */
+  /** Suggested delay before retrying, in seconds (from server's `Retry-After`). */
   retryAfter?: number;
   requestId?: string;
   path?: string;
@@ -69,13 +87,13 @@ export interface NormalizedErrorMetadata {
 }
 
 export class AIGatewayError extends Error {
-  readonly code: ErrorCodeType;
+  readonly code: ErrorCode;
   readonly statusCode: number;
   readonly metadata: NormalizedErrorMetadata;
 
   constructor(
     message: string,
-    code: ErrorCodeType,
+    code: ErrorCode,
     statusCode: number,
     metadata: NormalizedErrorMetadata = {},
     options?: { cause?: unknown },
@@ -95,7 +113,7 @@ export class AIGatewayError extends Error {
     return this.metadata.paymentUrl;
   }
 
-  /** Suggested delay before retrying, **in seconds**. `undefined` if not provided by the server. */
+  /** Suggested delay before retrying, in seconds. `undefined` if not provided by the server. */
   get retryAfter(): number | undefined {
     return this.metadata.retryAfter;
   }
@@ -161,13 +179,60 @@ export function isAIGatewayError(value: unknown): value is AIGatewayError {
   return value instanceof AIGatewayError;
 }
 
-/**
- * Create the appropriate error subclass based on the normalized error code.
- * This ensures `instanceof AuthError`, `instanceof CreditsError`, etc. work.
- */
+// ─── Internal error factories ─────────────────────────────────────────────────
+
+function mapGatewayApiCodeToNormalized(code: string, statusCode: number): ErrorCode {
+  switch (code) {
+    case GatewayApiCode.Unauthorized:
+      return ErrorCode.AuthRequired;
+    case GatewayApiCode.InsufficientCredits:
+      return statusCode === 402 ? ErrorCode.InsufficientCredits : ErrorCode.SubscriptionExpired;
+    case GatewayApiCode.Forbidden:
+      return ErrorCode.ModelNotAllowed;
+    case GatewayApiCode.RateLimitExceeded:
+      return ErrorCode.RateLimited;
+    case GatewayApiCode.BadRequest:
+      return ErrorCode.BadRequest;
+    case GatewayApiCode.Validation:
+      return ErrorCode.Validation;
+    case GatewayApiCode.InternalServerError:
+      return ErrorCode.InternalServerError;
+    case GatewayApiCode.ServiceUnavailable:
+      return ErrorCode.ServiceUnavailable;
+    case GatewayApiCode.Timeout:
+      return ErrorCode.Timeout;
+    case GatewayApiCode.NotFound:
+      return ErrorCode.NotFound;
+    case GatewayApiCode.Conflict:
+      return ErrorCode.Conflict;
+    default:
+      return statusCode >= 500 ? ErrorCode.InternalServerError : ErrorCode.BadRequest;
+  }
+}
+
+function mapOpenAIErrorToNormalized(type?: string | null, code?: string | null): ErrorCode {
+  if (type === 'authentication_error') return ErrorCode.AuthRequired;
+  if (type === 'rate_limit_error') return ErrorCode.RateLimited;
+  if (type === 'team_model_access_denied' || code === '403') return ErrorCode.ModelNotAllowed;
+  if (type === 'api_error') return ErrorCode.InternalServerError;
+  if (type === 'invalid_request_error') return ErrorCode.BadRequest;
+  return ErrorCode.InternalServerError;
+}
+
+function parseRetryAfterHeader(value: string): number | undefined {
+  const seconds = Number(value);
+  if (!Number.isNaN(seconds) && seconds >= 0) return seconds;
+  const date = Date.parse(value);
+  if (!Number.isNaN(date)) {
+    const delta = Math.ceil((date - Date.now()) / 1000);
+    return delta > 0 ? delta : 0;
+  }
+  return undefined;
+}
+
 function createTypedError(
   message: string,
-  code: ErrorCodeType,
+  code: ErrorCode,
   statusCode: number,
   meta: NormalizedErrorMetadata,
   options?: { cause?: unknown },
@@ -188,6 +253,8 @@ function createTypedError(
       return new AIGatewayError(message, code, statusCode, meta, options);
   }
 }
+
+// ─── Parse functions ──────────────────────────────────────────────────────────
 
 export async function parseErrorResponseFromResponse(response: Response): Promise<never> {
   const contentType = response.headers.get('Content-Type') ?? '';
@@ -227,9 +294,6 @@ export async function parseErrorResponseFromResponse(response: Response): Promis
 
 /**
  * Normalize an SSE `event: error` payload into a typed AIGatewayError subclass.
- * Uses the same code-mapping and subclass logic as `parseErrorResponse` so that
- * `instanceof AuthError`, `instanceof RateLimitError` etc. work consistently
- * in both streaming and non-streaming paths.
  */
 export function parseStreamErrorPayload(payload: {
   message?: string;
@@ -293,7 +357,7 @@ export function parseErrorResponse(statusCode: number, body: unknown): never {
       ? (body as { message: string }).message
       : `Request failed with status ${statusCode}`;
 
-  let fallbackCode: ErrorCodeType;
+  let fallbackCode: ErrorCode;
   if (statusCode === 401) fallbackCode = ErrorCode.AuthRequired;
   else if (statusCode === 429) fallbackCode = ErrorCode.RateLimited;
   else if (statusCode >= 500) fallbackCode = ErrorCode.InternalServerError;

@@ -1,34 +1,29 @@
 /**
  * Custom fetch factory for use with Vercel AI SDK and other OpenAI-compatible clients.
- * Use this with createOpenAI({ baseURL, fetch: createAIGatewayFetch(...) }) or similar.
+ * Use this with createOpenAI({ baseURL, fetch: createGatewayFetch(...) }) or similar.
  *
  * AI Gateway HTTP paths are under /api/v1 (e.g. /api/v1/chat/completions).
  * So baseURL should be the gateway root, e.g. https://api.macpaw.com/ai
  *
- * Internally this delegates to the same shared request pipeline used by the
- * low-level client, while still guarding against leaking gateway auth/headers
- * to non-gateway hosts.
+ * Internally delegates to the shared request pipeline while guarding against
+ * leaking gateway auth/headers to non-gateway hosts.
  */
 
-import type { GatewaySharedConfig } from '../runtime/config';
-import { resolveConfig } from '../runtime/config';
-import { executeRequestPipeline } from '../runtime/request-executor';
-
-const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
+import type { GatewayProviderSettings } from '../gateway-config';
+import { resolveConfig } from '../gateway-config';
+import { executeRequestPipeline } from '../gateway-request';
 
 /**
- * Internal config for `createAIGatewayFetch`.
- * Extends {@link GatewaySharedConfig} with `baseURL` required (already resolved)
- * and `normalizeErrors` (provider-specific behavior).
- *
- * Config is resolved once at factory creation, not per-request.
+ * Config for `createAIGatewayFetch`.
+ * Extends GatewayProviderSettings with baseURL required (already resolved)
+ * and normalizeErrors (provider-specific behavior).
  */
-export interface AIGatewayFetchFactoryConfig extends GatewaySharedConfig {
+export interface AIGatewayFetchFactoryConfig extends GatewayProviderSettings {
   /** Resolved Gateway base URL (required — use resolveGatewayBaseURL first). */
   baseURL: string;
   /**
    * Normalize gateway error responses into `AIGatewayError`. Default: true.
-   * When enabled, non-OK gateway responses throw instead of returning a failed `Response`.
+   * When enabled, non-OK gateway responses throw instead of returning a failed Response.
    */
   normalizeErrors?: boolean;
 }
@@ -45,9 +40,9 @@ function cloneHeaders(headers?: RequestInit['headers']): Headers {
   return new Headers(headers);
 }
 
-function stripPlaceholderAuthorization(headers: Headers): void {
+function stripPlaceholderAuthorization(headers: Headers, placeholder: string): void {
   const auth = headers.get('authorization');
-  if (auth === `Bearer ${GATEWAY_PLACEHOLDER_API_KEY}`) {
+  if (auth === `Bearer ${placeholder}`) {
     headers.delete('authorization');
   }
 }
@@ -60,16 +55,6 @@ function headersToRecord(headers: Headers): Record<string, string> {
   return record;
 }
 
-function extractTransportOptions(init?: RequestInit): Omit<RequestInit, 'method' | 'headers' | 'body' | 'signal'> {
-  if (!init) return {};
-  const transportOptions = { ...init };
-  delete transportOptions.method;
-  delete transportOptions.headers;
-  delete transportOptions.body;
-  delete transportOptions.signal;
-  return transportOptions;
-}
-
 function joinBaseUrl(baseURL: string, path: string): string {
   return `${baseURL}${path.startsWith('/') ? '' : '/'}${path}`;
 }
@@ -77,46 +62,27 @@ function joinBaseUrl(baseURL: string, path: string): string {
 function isGatewayUrl(url: URL, gatewayBaseUrl: URL): boolean {
   const gatewayPath = gatewayBaseUrl.pathname.replace(/\/$/, '');
   const requestPath = url.pathname.replace(/\/$/, '');
-
   return (
     url.origin === gatewayBaseUrl.origin && (requestPath === gatewayPath || requestPath.startsWith(`${gatewayPath}/`))
   );
 }
 
+export const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
+
 export function createAIGatewayFetch(
   options: AIGatewayFetchFactoryConfig,
 ): (input: FetchInput, init?: RequestInit) => Promise<Response> {
-  const {
-    baseURL,
-    getAuthToken,
-    headers: extraHeaders = {},
-    autoRefreshToken = true,
-    tokenCacheTTL = 0,
-    retry,
-    middleware,
-    timeout,
-    logger,
-    hooks,
-    transport,
-    generateRequestId: shouldGenerateRequestId = true,
-    normalizeErrors = true,
-  } = options;
-
+  const { baseURL, normalizeErrors = true } = options;
   const base = baseURL.replace(/\/$/, '');
   const gatewayBaseUrl = new URL(base);
   const resolvedConfig = resolveConfig({
     baseURL: base,
-    getAuthToken,
-    headers: extraHeaders,
-    autoRefreshToken,
-    tokenCacheTTL,
-    retry,
-    middleware,
-    timeout,
-    logger,
-    hooks,
-    transport,
-    generateRequestId: shouldGenerateRequestId,
+    getAuthToken: options.getAuthToken,
+    headers: options.headers,
+    retry: options.retry,
+    middleware: options.middleware,
+    timeout: options.timeout,
+    fetch: options.fetch,
   });
 
   return async function aiGatewayFetch(input: FetchInput, init?: RequestInit): Promise<Response> {
@@ -136,7 +102,7 @@ export function createAIGatewayFetch(
     }
 
     if (!isGatewayRequest) {
-      stripPlaceholderAuthorization(headers);
+      stripPlaceholderAuthorization(headers, GATEWAY_PLACEHOLDER_API_KEY);
     }
 
     return executeRequestPipeline(
@@ -147,14 +113,13 @@ export function createAIGatewayFetch(
         headers: headersToRecord(headers),
         body: init?.body ?? requestClone?.body,
         signal: init?.signal ?? requestClone?.signal,
-        transportOptions: extractTransportOptions(init),
       },
       {
         includeConfigHeaders: isGatewayRequest,
         includeAuth: isGatewayRequest,
         includeRequestId: isGatewayRequest,
         normalizeErrors: isGatewayRequest && normalizeErrors,
-        allowAuthRetry: isGatewayRequest && autoRefreshToken,
+        allowAuthRetry: isGatewayRequest,
         requestIdPrefix: 'provider',
       },
     );

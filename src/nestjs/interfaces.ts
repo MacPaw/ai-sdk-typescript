@@ -1,11 +1,11 @@
 import type { InjectionToken, ModuleMetadata, OptionalFactoryDependency, Type } from '@nestjs/common';
-import type { GatewaySharedConfig } from '../runtime/config';
+import type { GatewayProviderSettings } from '../gateway-config';
 
 /**
  * Synchronous module configuration.
  * Used with `AIGatewayModule.forRoot(options)`.
  */
-export interface AIGatewayModuleOptions extends GatewaySharedConfig {
+export interface AIGatewayModuleOptions extends GatewayProviderSettings {
   /** Whether the module is global (available without importing in every module). Default: true. */
   isGlobal?: boolean;
 }

@@ -32,6 +32,12 @@ export {
   RateLimitError,
   isAIGatewayError,
   parseErrorResponse,
-} from '../runtime/errors';
-export type { NormalizedErrorMetadata } from '../runtime/errors';
-export { ErrorCode, GatewayApiCode } from '../types';
+  ErrorCode,
+  GatewayApiCode,
+} from '../gateway-errors';
+export type {
+  NormalizedErrorMetadata,
+  GatewayApiErrorItem,
+  GatewayApiErrorResponse,
+  OpenAIErrorResponse,
+} from '../gateway-errors';
