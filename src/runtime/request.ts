@@ -5,8 +5,13 @@
  */
 
 import type { ResolvedConfig } from './config';
-import type { RequestOptions } from '../types';
 import { executeRequestPipeline } from './request-executor';
+
+interface RequestOptions {
+  timeout?: number;
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+}
 
 export async function runRequest(
   config: ResolvedConfig,

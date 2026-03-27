@@ -11,7 +11,8 @@ import type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
 import { createAIGatewayFetch } from './create-fetch';
 import type { Environment, GatewaySharedConfig } from '../runtime/config';
 import { resolveGatewayBaseURL as resolveRuntimeGatewayBaseURL } from '../runtime/config';
-import { DEFAULT_API_VERSION } from '../runtime/paths';
+
+const DEFAULT_API_VERSION = 'v1';
 
 const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
 
@@ -64,7 +65,7 @@ export function createAIGatewayProvider(options: AIGatewayProviderOptions): Open
     name: options.name,
     organization: options.organization,
     project: options.project,
-    baseURL: `${baseURL.replace(/\/$/, '')}/api/${options.apiVersion ?? DEFAULT_API_VERSION}`,
+    baseURL: `${baseURL.replace(/\/$/, '')}/api/${DEFAULT_API_VERSION}`,
     fetch: customFetch,
     apiKey: GATEWAY_PLACEHOLDER_API_KEY,
   });

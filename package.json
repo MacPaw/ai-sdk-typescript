@@ -18,36 +18,6 @@
         "default": "./dist/index.cjs"
       }
     },
-    "./client": {
-      "import": {
-        "types": "./dist/client/index.d.ts",
-        "default": "./dist/client/index.js"
-      },
-      "require": {
-        "types": "./dist/client/index.d.cts",
-        "default": "./dist/client/index.cjs"
-      }
-    },
-    "./runtime": {
-      "import": {
-        "types": "./dist/runtime/index.d.ts",
-        "default": "./dist/runtime/index.js"
-      },
-      "require": {
-        "types": "./dist/runtime/index.d.cts",
-        "default": "./dist/runtime/index.cjs"
-      }
-    },
-    "./types": {
-      "import": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/types/index.js"
-      },
-      "require": {
-        "types": "./dist/types/index.d.cts",
-        "default": "./dist/types/index.cjs"
-      }
-    },
     "./provider": {
       "import": {
         "types": "./dist/provider/index.d.ts",
@@ -66,16 +36,6 @@
       "require": {
         "types": "./dist/nestjs/index.d.cts",
         "default": "./dist/nestjs/index.cjs"
-      }
-    },
-    "./testing": {
-      "import": {
-        "types": "./dist/testing/index.d.ts",
-        "default": "./dist/testing/index.js"
-      },
-      "require": {
-        "types": "./dist/testing/index.d.cts",
-        "default": "./dist/testing/index.cjs"
       }
     }
   },
@@ -110,8 +70,6 @@
     "docs:watch": "typedoc --watch",
     "size:pack": "npm pack --dry-run",
     "verify:release": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm size:pack",
-    "example:mock": "pnpm build && node examples/mock-transport.mjs",
-    "example:client": "pnpm build && node examples/node-client.mjs",
     "example:provider": "pnpm build && node examples/vercel-provider.mjs",
     "prepublishOnly": "pnpm build"
   },
@@ -163,8 +121,7 @@
     "@ai-sdk/openai": "^3.0.0",
     "@ai-sdk/provider": "^3.0.0",
     "@nestjs/common": ">=10.0.0",
-    "ai": "^6.0.0",
-    "rxjs": ">=7.0.0"
+    "ai": "^6.0.0"
   },
   "peerDependenciesMeta": {
     "ai": {
@@ -177,9 +134,6 @@
       "optional": true
     },
     "@nestjs/common": {
-      "optional": true
-    },
-    "rxjs": {
       "optional": true
     }
   }

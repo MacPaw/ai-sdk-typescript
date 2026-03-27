@@ -1,4 +1,4 @@
-import type { ObjectValues } from './util';
+type ObjectValues<T> = T[keyof T];
 
 /** Raw error codes returned by the AI Gateway HTTP API. */
 export const GatewayApiCode = {

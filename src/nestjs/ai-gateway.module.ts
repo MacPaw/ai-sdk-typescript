@@ -1,7 +1,6 @@
 import type { DynamicModule, Provider, Type } from '@nestjs/common';
 import { Module } from '@nestjs/common';
-import { createAIGatewayClient } from '../client';
-import type { AIGatewayClient } from '../client';
+import type { GatewaySharedConfig } from '../runtime/config';
 import { AI_GATEWAY_CLIENT, AI_GATEWAY_OPTIONS } from './constants';
 import type { AIGatewayModuleOptions, AIGatewayModuleAsyncOptions, AIGatewayOptionsFactory } from './interfaces';
 
@@ -25,16 +24,16 @@ export class AIGatewayModule {
    */
   static forRoot(options: AIGatewayModuleOptions): DynamicModule {
     const { isGlobal, ...clientConfig } = options;
-    const clientProvider: Provider<AIGatewayClient> = {
+    const configProvider: Provider<GatewaySharedConfig> = {
       provide: AI_GATEWAY_CLIENT,
-      useFactory: () => createAIGatewayClient(clientConfig),
+      useFactory: () => clientConfig,
     };
 
     return {
       module: AIGatewayModule,
       global: isGlobal ?? true,
-      providers: [clientProvider],
-      exports: [clientProvider],
+      providers: [configProvider],
+      exports: [configProvider],
     };
   }
 
@@ -61,9 +60,9 @@ export class AIGatewayModule {
    * ```
    */
   static forRootAsync(options: AIGatewayModuleAsyncOptions): DynamicModule {
-    const clientProvider: Provider<AIGatewayClient> = {
+    const configProvider: Provider<GatewaySharedConfig> = {
       provide: AI_GATEWAY_CLIENT,
-      useFactory: (moduleOptions: AIGatewayModuleOptions) => createAIGatewayClient(moduleOptions),
+      useFactory: (moduleOptions: AIGatewayModuleOptions) => moduleOptions as GatewaySharedConfig,
       inject: [AI_GATEWAY_OPTIONS],
     };
 
@@ -73,8 +72,8 @@ export class AIGatewayModule {
       module: AIGatewayModule,
       global: options.isGlobal ?? true,
       imports: options.imports ?? [],
-      providers: [...asyncProviders, clientProvider],
-      exports: [clientProvider],
+      providers: [...asyncProviders, configProvider],
+      exports: [configProvider],
     };
   }
 

@@ -1,15 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { InjectAIGateway } from '@macpaw/ai-sdk/nestjs';
-import type { AIGatewayClient } from '@macpaw/ai-sdk/client';
+import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
+import type { AIGatewayModuleOptions } from '@macpaw/ai-sdk/nestjs';
+import { generateText } from 'ai';
 
 @Injectable()
 export class ChatService {
-  constructor(@InjectAIGateway() private readonly ai: AIGatewayClient) {}
+  constructor(@InjectAIGateway() private readonly config: AIGatewayModuleOptions) {}
 
   async complete(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>) {
-    return this.ai.chat.completions.create({
-      model: process.env.AI_GATEWAY_MODEL ?? 'openai/gpt-4.1-nano',
+    const provider = createAIGatewayProvider(this.config);
+    const { text } = await generateText({
+      model: provider(process.env.AI_GATEWAY_MODEL ?? 'openai/gpt-4.1-nano'),
       messages,
     });
+    return text;
   }
 }

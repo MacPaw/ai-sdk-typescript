@@ -2,10 +2,14 @@ import { describe, it, expect } from 'vitest';
 import * as runtimeEntry from '../runtime';
 
 describe('runtime entry', () => {
-  it('exports the advanced runtime surface explicitly', () => {
+  it('exports core runtime primitives', () => {
     expect(runtimeEntry.DEFAULT_BASE_URLS).toBeDefined();
-    expect(runtimeEntry.API_PATHS).toBeDefined();
     expect(runtimeEntry.createFetchTransport).toBeDefined();
-    expect(runtimeEntry.SDKValidationError).toBeDefined();
+    expect(runtimeEntry.AIGatewayError).toBeDefined();
+  });
+
+  it('does not export removed primitives', () => {
+    expect('SDKValidationError' in runtimeEntry).toBe(false);
+    expect('API_PATHS' in runtimeEntry).toBe(false);
   });
 });

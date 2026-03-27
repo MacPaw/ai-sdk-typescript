@@ -2,10 +2,7 @@
  * Runtime configuration shared by the HTTP client and provider integrations.
  */
 
-import type { RequestOptions } from '../types';
-import type { ApiVersion, ApiPaths } from './paths';
 import { createAuthTokenCache } from './auth-token-cache';
-import { buildApiPaths } from './paths';
 
 export type Environment = 'production';
 
@@ -64,11 +61,7 @@ export interface LifecycleHooks {
 }
 
 /**
- * Shared configuration base for AI Gateway clients and providers.
- *
- * Both `AIGatewayClientConfig` (HTTP client) and `AIGatewayProviderOptions`
- * (Vercel AI SDK provider) extend this type, ensuring a consistent
- * configuration surface across both integration paths.
+ * Shared configuration for AI Gateway providers and NestJS module.
  */
 export interface GatewaySharedConfig {
   /** Base URL of the AI Gateway. Required if env is not set. */
@@ -108,17 +101,9 @@ export interface GatewaySharedConfig {
   hooks?: LifecycleHooks;
   /** Generate X-Request-ID header for each request. Default: true. */
   generateRequestId?: boolean;
-  /** API version prefix (e.g. `'v1'`, `'v2'`). Default: `'v1'`. */
-  apiVersion?: ApiVersion;
   /** Optional custom transport. Default: fetch-based. */
   transport?: Transport;
 }
-
-/**
- * Configuration for `createAIGatewayClient`.
- * Alias of {@link GatewaySharedConfig} for a stable, named entry in docs and API surface.
- */
-export type AIGatewayClientConfig = GatewaySharedConfig;
 
 export interface RequestConfig {
   url: string;
@@ -154,7 +139,6 @@ export interface ResolvedConfig {
   logger: Logger;
   hooks: LifecycleHooks;
   generateRequestId: boolean;
-  apiPaths: ApiPaths;
 }
 
 export function resolveConfig(config: GatewaySharedConfig & { baseURL: string }): ResolvedConfig {
@@ -172,8 +156,6 @@ export function resolveConfig(config: GatewaySharedConfig & { baseURL: string })
   });
   const getAuthToken: AuthTokenProvider = (forceRefresh?: boolean) => authTokenCache.get(forceRefresh);
 
-  const apiPaths = buildApiPaths(config.apiVersion);
-
   return {
     baseURL: config.baseURL,
     getAuthToken,
@@ -188,7 +170,6 @@ export function resolveConfig(config: GatewaySharedConfig & { baseURL: string })
     logger,
     hooks,
     generateRequestId,
-    apiPaths,
   };
 }
 
@@ -211,5 +192,3 @@ export function resolveGatewayBaseURL(
   return resolved;
 }
 
-/** Re-export RequestOptions from types for convenience */
-export type { RequestOptions };
