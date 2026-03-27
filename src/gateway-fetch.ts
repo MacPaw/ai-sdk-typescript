@@ -9,16 +9,16 @@
  * leaking gateway auth/headers to non-gateway hosts.
  */
 
-import type { GatewayProviderSettings } from '../gateway-config';
-import { resolveConfig } from '../gateway-config';
-import { executeRequestPipeline } from '../gateway-request';
+import type { GatewayProviderSettings } from './gateway-config';
+import { resolveConfig } from './gateway-config';
+import { executeRequestPipeline } from './gateway-request';
 
 /**
- * Config for `createAIGatewayFetch`.
+ * Config for `createGatewayFetch`.
  * Extends GatewayProviderSettings with baseURL required (already resolved)
  * and normalizeErrors (provider-specific behavior).
  */
-export interface AIGatewayFetchFactoryConfig extends GatewayProviderSettings {
+export interface GatewayFetchConfig extends GatewayProviderSettings {
   /** Resolved Gateway base URL (required — use resolveGatewayBaseURL first). */
   baseURL: string;
   /**
@@ -34,10 +34,6 @@ function resolveRequestUrl(input: FetchInput): string {
   if (typeof input === 'string') return input;
   if (input instanceof URL) return input.href;
   return input.url;
-}
-
-function cloneHeaders(headers?: RequestInit['headers']): Headers {
-  return new Headers(headers);
 }
 
 function stripPlaceholderAuthorization(headers: Headers, placeholder: string): void {
@@ -67,25 +63,18 @@ function isGatewayUrl(url: URL, gatewayBaseUrl: URL): boolean {
   );
 }
 
+/** Placeholder passed to `createOpenAI`; gateway auth is handled by the custom fetch. */
 export const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
 
-export function createAIGatewayFetch(
-  options: AIGatewayFetchFactoryConfig,
+export function createGatewayFetch(
+  options: GatewayFetchConfig,
 ): (input: FetchInput, init?: RequestInit) => Promise<Response> {
   const { baseURL, normalizeErrors = true } = options;
   const base = baseURL.replace(/\/$/, '');
   const gatewayBaseUrl = new URL(base);
-  const resolvedConfig = resolveConfig({
-    baseURL: base,
-    getAuthToken: options.getAuthToken,
-    headers: options.headers,
-    retry: options.retry,
-    middleware: options.middleware,
-    timeout: options.timeout,
-    fetch: options.fetch,
-  });
+  const resolvedConfig = resolveConfig({ ...options, baseURL: base });
 
-  return async function aiGatewayFetch(input: FetchInput, init?: RequestInit): Promise<Response> {
+  return async function gatewayFetch(input: FetchInput, init?: RequestInit): Promise<Response> {
     const rawUrl = resolveRequestUrl(input);
     const isAbsolute = rawUrl.startsWith('http://') || rawUrl.startsWith('https://');
     const resolvedUrl = new URL(isAbsolute ? rawUrl : joinBaseUrl(base, rawUrl));
@@ -93,7 +82,7 @@ export function createAIGatewayFetch(
 
     const request = typeof Request !== 'undefined' && input instanceof Request ? input : undefined;
     const requestClone = request?.clone();
-    const headers = cloneHeaders(requestClone?.headers);
+    const headers = new Headers(requestClone?.headers);
 
     if (init?.headers) {
       for (const [key, value] of new Headers(init.headers).entries()) {
