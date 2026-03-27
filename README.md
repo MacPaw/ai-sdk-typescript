@@ -32,7 +32,6 @@ The root package `@macpaw/ai-sdk` exposes the same MacPaw-owned gateway/provider
 - **Tree-shakeable** — ESM + CJS with minimal runtime dependencies
 - **Advanced client path** — Explicit `@macpaw/ai-sdk/client` for multipart and low-level Gateway usage
 - **Explicit runtime layer** — `@macpaw/ai-sdk/runtime` for advanced transport/config/request primitives without overloading the client entry
-- **Scoped Vercel companions** — `@macpaw/ai-sdk/react` re-exports `@ai-sdk/react`, while gateway-aware provider creation stays centralized in `@macpaw/ai-sdk/provider`
 - **Gateway provider factory** — `@macpaw/ai-sdk/provider` exports `createGatewayProvider()` plus `GATEWAY_PROVIDERS` for creating AI Gateway-backed providers with automatic model ID prefixing
 
 ## Install
@@ -45,7 +44,7 @@ npm install @macpaw/ai-sdk
 
 If your app also imports upstream packages directly, install those explicitly in the app too:
 
-- `react` and `@ai-sdk/react` when using `@macpaw/ai-sdk/react` (or import hooks from `@ai-sdk/react` directly)
+- `@ai-sdk/react` for React hooks (import directly from `@ai-sdk/react`)
 - any provider-specific upstream packages you use directly, such as `@ai-sdk/anthropic` or `@ai-sdk/google`
 - `ai` or `@ai-sdk/openai` if you intentionally import from them alongside `@macpaw/ai-sdk/provider`
 
@@ -61,7 +60,6 @@ Use this table first. It avoids almost all integration mistakes.
 | Explicit provider-oriented app architecture                                                         | `@macpaw/ai-sdk/provider`                               | Makes the Vercel/Gateway layer obvious in code review                                                                                  |
 | Multipart APIs such as image edits or audio uploads                                                 | `@macpaw/ai-sdk/client`                                 | These are implemented on the low-level HTTP client path                                                                                |
 | Retry, transport, validation, SSE, and request-pipeline primitives                                  | `@macpaw/ai-sdk/runtime`                                | Advanced internal/runtime layer                                                                                                        |
-| React hooks under one MacPaw package scope                                                          | `@macpaw/ai-sdk/react`                                  | Re-exports `@ai-sdk/react`                                                                                                             |
 | Direct provider-specific packages from the upstream AI SDK                                          | `@ai-sdk/anthropic`, `@ai-sdk/google`, `@ai-sdk/xai`, … | Keep provider-specific imports on the upstream package; use `createGatewayProvider` from `@macpaw/ai-sdk/provider` for Gateway routing |
 
 ### Common import swaps
@@ -74,7 +72,6 @@ For most migrations, use these direct substitutions:
 | `from 'ai/internal'`                                  | keep `from 'ai/internal'`       |
 | `from 'ai/test'`                                      | keep `from 'ai/test'`           |
 | `from '@ai-sdk/openai'`                               | keep `from '@ai-sdk/openai'`    |
-| `from '@ai-sdk/react'`                                | `from '@macpaw/ai-sdk/react'`   |
 | `from '@macpaw/ai-sdk'` for low-level client creation | `from '@macpaw/ai-sdk/client'`  |
 | `from '@macpaw/ai-sdk/client'` for runtime primitives | `from '@macpaw/ai-sdk/runtime'` |
 

@@ -1,5 +1,22 @@
 # Migration Guide
 
+## Breaking Changes in v2
+
+### Removed Public APIs
+
+| Symbol | Replacement |
+|--------|-------------|
+| `createAIGatewayDualProvider` | None — choose either gateway or direct provider at startup |
+| `createAIGatewayCustomProvider` | Use `customProvider` from `ai` directly |
+| `AIGatewayCustomProviderRegistry` | Removed |
+| `AIGatewayDualProviderOptions` | Removed |
+| `AIGatewayProviderSource` | Removed |
+| `OpenAIProviderSource` | Removed |
+| `Resolvable` | Removed |
+| `@macpaw/ai-sdk/react` entry point | Import directly from `@ai-sdk/react` |
+
+---
+
 ## Vercel-First major
 
 This release reframes `@macpaw/ai-sdk` as an extension layer for Vercel AI SDK:
@@ -84,8 +101,6 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
 ```
 
-For dual-backend apps, `createAIGatewayDualProvider()` accepts eager providers or lazy factories, so Setapp / vendor builds can avoid initializing the unused branch.
-
 Then change only model construction:
 
 Before:
@@ -149,34 +164,10 @@ Those remain on `@macpaw/ai-sdk/client` and `@macpaw/ai-sdk/runtime`.
 4. Move any low-level client imports to `@macpaw/ai-sdk/client`.
 5. Move advanced transport/config/runtime imports to `@macpaw/ai-sdk/runtime`.
 6. Move domain request/response type imports to `@macpaw/ai-sdk/types`.
-7. React hooks: `@macpaw/ai-sdk/react` (re-export) or `@ai-sdk/react`.
+7. React hooks: Import directly from `@ai-sdk/react`.
 8. If you use provider-specific upstream packages such as `@ai-sdk/anthropic` or `@ai-sdk/google`, install them directly in the app and use `createGatewayProvider(...)` from `@macpaw/ai-sdk/provider` for Gateway-backed model handles.
 
 ## Vendor-oriented migration patterns
-
-### One codebase, two distributions
-
-If one build should use AI Gateway and another should keep direct OpenAI, do not fork your app logic. Select the provider at startup:
-
-```ts
-import { generateText } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
-import { createAIGatewayDualProvider } from '@macpaw/ai-sdk/provider';
-
-const provider = createAIGatewayDualProvider({
-  useGateway: process.env.IS_VENDOR_BUILD === '1',
-  gateway: {
-    env: 'production',
-    getAuthToken: async () => (await getVendorSession()).accessToken,
-  },
-  direct: () => createOpenAI({ apiKey: process.env.OPENAI_API_KEY! }),
-});
-
-await generateText({
-  model: provider('openai/gpt-4.1-mini'),
-  prompt: 'Hello',
-});
-```
 
 ### Vercel-style app plus multipart APIs
 

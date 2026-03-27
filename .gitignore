@@ -43,3 +43,14 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 .env
+
+# Claude Code Toolkit
+.claude/
+plans/
+.mcp.json
+.claude/.env
+tmp/
+!**/templates/plans/**
+AGENTS.md
+CLAUDE.md
+# /Claude Code Toolkit

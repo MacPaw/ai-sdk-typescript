@@ -12,11 +12,6 @@ export type { CreateAIGatewayFetchOptions } from './create-fetch';
 export { createAIGatewayProvider } from './ai-gateway-provider';
 export type { AIGatewayProviderOptions } from './ai-gateway-provider';
 
-export { createAIGatewayCustomProvider } from './custom-registry';
-export type { AIGatewayCustomProviderRegistry } from './custom-registry';
-export { createAIGatewayDualProvider } from './dual-provider';
-export type { AIGatewayDualProviderOptions } from './dual-provider';
-export type { AIGatewayProviderSource, OpenAIProviderSource, Resolvable } from './provider-source';
 
 export { createGatewayProvider, GATEWAY_PROVIDERS } from './gateway-provider';
 export type {
