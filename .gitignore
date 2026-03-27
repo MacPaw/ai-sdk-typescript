@@ -50,6 +50,7 @@ plans/
 .mcp.json
 .claude/.env
 tmp/
+repomix-output.xml
 !**/templates/plans/**
 AGENTS.md
 CLAUDE.md
