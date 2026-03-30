@@ -113,8 +113,8 @@
     "url": "https://github.com/macpaw/ai-sdk-typescript/issues"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.47",
-    "ai": "^6.0.137"
+    "@ai-sdk/openai": "^3.0.48",
+    "ai": "^6.0.141"
   },
   "devDependencies": {
     "@nestjs/common": "^11.1.17",
