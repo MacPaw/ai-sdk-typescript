@@ -8,10 +8,8 @@
 
 import { createOpenAI as builtinCreateOpenAI } from '@ai-sdk/openai';
 import type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
-import { createAIGatewayFetch } from './create-fetch';
+import { createAIGatewayFetch, GATEWAY_PLACEHOLDER_API_KEY } from './create-fetch';
 import type { Environment, LifecycleHooks, Logger, Middleware, RetryConfig, Transport } from '../runtime/config';
-
-const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
 import { resolveGatewayBaseURL as resolveRuntimeGatewayBaseURL } from '../runtime/config';
 import type { ApiVersion } from '../runtime/paths';
 import { DEFAULT_API_VERSION } from '../runtime/paths';

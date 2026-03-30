@@ -14,7 +14,7 @@ import type { LifecycleHooks, Logger, Middleware, RetryConfig, Transport } from 
 import { resolveConfig } from '../runtime/config';
 import { executeRequestPipeline } from '../runtime/request-executor';
 
-const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
+export const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
 
 export interface CreateAIGatewayFetchOptions {
   baseURL: string;
