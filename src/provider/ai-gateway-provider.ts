@@ -13,8 +13,6 @@ import type { Environment, GatewaySharedConfig } from '../runtime/config';
 import { resolveGatewayBaseURL as resolveRuntimeGatewayBaseURL } from '../runtime/config';
 import { DEFAULT_API_VERSION } from '../runtime/paths';
 
-const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
-
 export interface AIGatewayProviderOptions
   extends Omit<OpenAIProviderSettings, 'apiKey' | 'baseURL' | 'fetch'>,
     GatewaySharedConfig {
