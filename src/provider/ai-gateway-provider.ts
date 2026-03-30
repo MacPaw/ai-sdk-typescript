@@ -8,7 +8,7 @@
 
 import { createOpenAI as builtinCreateOpenAI } from '@ai-sdk/openai';
 import type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
-import { createAIGatewayFetch } from './create-fetch';
+import { createAIGatewayFetch, GATEWAY_PLACEHOLDER_API_KEY } from './create-fetch';
 import type { Environment, GatewaySharedConfig } from '../runtime/config';
 import { resolveGatewayBaseURL as resolveRuntimeGatewayBaseURL } from '../runtime/config';
 import { DEFAULT_API_VERSION } from '../runtime/paths';
