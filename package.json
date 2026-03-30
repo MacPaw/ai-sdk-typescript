@@ -148,6 +148,10 @@
   "bugs": {
     "url": "https://github.com/macpaw/ai-sdk-typescript/issues"
   },
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.48",
+    "ai": "^6.0.141"
+  },
   "devDependencies": {
     "@ai-sdk/openai": "3.0.48",
     "@ai-sdk/provider": "3.0.8",
@@ -158,9 +162,7 @@
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/node": "^25.5.0",
-    "@vitest/coverage-v8": "^4.1.0",
-    "ai": "6.0.137",
-    "eslint": "^10.0.3",
+    "eslint": "^10.1.0",
     "prettier": "^3.8.1",
     "react": "^19.2.0",
     "rxjs": "^7.8.2",
@@ -168,8 +170,9 @@
     "tsup": "^8.5.1",
     "typedoc": "^0.28.18",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.0",
-    "vitest": "^4.1.0"
+    "typescript-eslint": "^8.57.2",
+    "@vitest/coverage-v8": "^4.1.2",
+    "vitest": "^4.1.2"
   },
   "peerDependencies": {
     "@ai-sdk/openai": "^3.0.0",
