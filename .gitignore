@@ -53,4 +53,5 @@ tmp/
 !**/templates/plans/**
 AGENTS.md
 CLAUDE.md
+.repomixignore
 # /Claude Code Toolkit
