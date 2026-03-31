@@ -63,7 +63,6 @@ function isGatewayUrl(url: URL, gatewayBaseUrl: URL): boolean {
   );
 }
 
-/** Placeholder passed to `createOpenAI`; gateway auth is handled by the custom fetch. */
 export const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
 
 export function createGatewayFetch(
