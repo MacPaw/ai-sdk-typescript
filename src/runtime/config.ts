@@ -63,9 +63,18 @@ export interface LifecycleHooks {
   onRetry?: (attempt: number, error: unknown, config: RequestConfig) => void | Promise<void>;
 }
 
-export interface AIGatewayClientConfig {
-  /** Base URL of the AI Gateway. If omitted, env is used to select the default production URL. For staging/testing, pass the URL explicitly. */
+/**
+ * Shared configuration base for AI Gateway clients and providers.
+ *
+ * Both `AIGatewayClientConfig` (HTTP client) and `AIGatewayProviderOptions`
+ * (Vercel AI SDK provider) extend this type, ensuring a consistent
+ * configuration surface across both integration paths.
+ */
+export interface GatewaySharedConfig {
+  /** Base URL of the AI Gateway. Required if env is not set. */
   baseURL?: string;
+  /** Environment: 'production' selects the default base URL. For non-production, use baseURL. */
+  env?: Environment;
   /**
    * Async function that returns the Bearer token for auth.
    * Called with `forceRefresh: true` when the SDK receives a 401 and wants a fresh token.
@@ -85,27 +94,31 @@ export interface AIGatewayClientConfig {
    * When the cached token results in 401, it is evicted and getAuthToken(true) is called.
    */
   tokenCacheTTL?: number;
-  /** Optional custom transport. Default: fetch-based. */
-  transport?: Transport;
   /** Retry policy. Set to false to disable. */
   retry?: RetryConfig | false;
   /** Middleware chain (request interceptors). */
   middleware?: Middleware[];
   /** Extra headers sent with every request. Do not set Authorization here; use getAuthToken. */
   headers?: Record<string, string>;
-  /** Request timeout in ms. Default 60000. Applied to the default fetch transport. */
+  /** Request timeout in ms. Default: 60000. */
   timeout?: number;
-  /** Environment: 'production' selects the default base URL. For non-production, use baseURL instead. */
-  env?: Environment;
   /** Optional logger. No-op by default. Do not log Authorization header. */
   logger?: Logger;
   /** Lifecycle hooks for observability. */
   hooks?: LifecycleHooks;
-  /** Generate X-Request-ID header for each request. Default true. */
+  /** Generate X-Request-ID header for each request. Default: true. */
   generateRequestId?: boolean;
   /** API version prefix (e.g. `'v1'`, `'v2'`). Default: `'v1'`. */
   apiVersion?: ApiVersion;
+  /** Optional custom transport. Default: fetch-based. */
+  transport?: Transport;
 }
+
+/**
+ * Configuration for `createAIGatewayClient`.
+ * All fields are defined in {@link GatewaySharedConfig}.
+ */
+export interface AIGatewayClientConfig extends GatewaySharedConfig {}
 
 export interface RequestConfig {
   url: string;
@@ -144,7 +157,7 @@ export interface ResolvedConfig {
   apiPaths: ApiPaths;
 }
 
-export function resolveConfig(config: AIGatewayClientConfig & { baseURL: string }): ResolvedConfig {
+export function resolveConfig(config: GatewaySharedConfig & { baseURL: string }): ResolvedConfig {
   const retry = config.retry === false ? false : normalizeRetryConfig({ ...DEFAULT_RETRY, ...config.retry });
   const logger = config.logger ?? NOOP_LOGGER;
   const hooks = config.hooks ?? {};

@@ -10,35 +10,22 @@
  * to non-gateway hosts.
  */
 
-import type { LifecycleHooks, Logger, Middleware, RetryConfig, Transport } from '../runtime/config';
+import type { GatewaySharedConfig } from '../runtime/config';
 import { resolveConfig } from '../runtime/config';
 import { executeRequestPipeline } from '../runtime/request-executor';
 
 export const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
 
-export interface CreateAIGatewayFetchOptions {
+/**
+ * Internal config for `createAIGatewayFetch`.
+ * Extends {@link GatewaySharedConfig} with `baseURL` required (already resolved)
+ * and `normalizeErrors` (provider-specific behavior).
+ *
+ * Config is resolved once at factory creation, not per-request.
+ */
+export interface AIGatewayFetchFactoryConfig extends GatewaySharedConfig {
+  /** Resolved Gateway base URL (required — use resolveGatewayBaseURL first). */
   baseURL: string;
-  /** Returns the Bearer token for each request. */
-  getAuthToken: (forceRefresh?: boolean) => Promise<string | null>;
-  headers?: Record<string, string>;
-  /** Automatically retry once on 401 after forcing token refresh. Default: true. */
-  autoRefreshToken?: boolean;
-  /** Cache the auth token for this many milliseconds. Default: 0. */
-  tokenCacheTTL?: number;
-  /** Retry policy from the shared request pipeline. Default: the SDK retry policy. */
-  retry?: RetryConfig | false;
-  /** Middleware chain from the shared request pipeline. */
-  middleware?: Middleware[];
-  /** Request timeout in ms. Default: 60000. */
-  timeout?: number;
-  /** Optional logger used by the shared request pipeline. */
-  logger?: Logger;
-  /** Optional lifecycle hooks used by the shared request pipeline. */
-  hooks?: LifecycleHooks;
-  /** Optional custom transport used by the shared request pipeline. */
-  transport?: Transport;
-  /** Generate `X-Request-ID` for requests that do not already have one. Default: true. */
-  generateRequestId?: boolean;
   /**
    * Normalize gateway error responses into `AIGatewayError`. Default: true.
    * When enabled, non-OK gateway responses throw instead of returning a failed `Response`.
@@ -97,7 +84,7 @@ function isGatewayUrl(url: URL, gatewayBaseUrl: URL): boolean {
 }
 
 export function createAIGatewayFetch(
-  options: CreateAIGatewayFetchOptions,
+  options: AIGatewayFetchFactoryConfig,
 ): (input: FetchInput, init?: RequestInit) => Promise<Response> {
   const {
     baseURL,

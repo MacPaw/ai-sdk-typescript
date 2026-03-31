@@ -9,46 +9,22 @@
 import { createOpenAI as builtinCreateOpenAI } from '@ai-sdk/openai';
 import type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
 import { createAIGatewayFetch, GATEWAY_PLACEHOLDER_API_KEY } from './create-fetch';
-import type { Environment, LifecycleHooks, Logger, Middleware, RetryConfig, Transport } from '../runtime/config';
+import type { Environment, GatewaySharedConfig } from '../runtime/config';
 import { resolveGatewayBaseURL as resolveRuntimeGatewayBaseURL } from '../runtime/config';
-import type { ApiVersion } from '../runtime/paths';
 import { DEFAULT_API_VERSION } from '../runtime/paths';
 
-export interface AIGatewayProviderOptions extends Omit<OpenAIProviderSettings, 'apiKey' | 'baseURL' | 'fetch'> {
+export interface AIGatewayProviderOptions
+  extends Omit<OpenAIProviderSettings, 'apiKey' | 'baseURL' | 'fetch'>,
+    GatewaySharedConfig {
   /**
    * Optional override for the OpenAI provider factory.
    * Uses `createOpenAI` from `@ai-sdk/openai` by default.
    */
   createOpenAI?: typeof builtinCreateOpenAI;
-  /** Base URL of the AI Gateway (HTTP API root). Required if env is not set. */
-  baseURL?: string;
-  /** Environment: 'production' selects the default base URL. For non-production, use baseURL instead. */
-  env?: Environment;
-  /** Async function that returns the Bearer token. Supports refresh-aware providers. */
-  getAuthToken: (forceRefresh?: boolean) => Promise<string | null>;
-  /** Extra headers for every request. */
-  headers?: Record<string, string>;
-  /** API version prefix (e.g. `'v1'`, `'v2'`). Default: `'v1'`. */
-  apiVersion?: ApiVersion;
-  /** Automatically retry once on 401 after forcing token refresh. Default: true. */
-  autoRefreshToken?: boolean;
-  /** Cache the auth token for this many milliseconds. Default: 0. */
-  tokenCacheTTL?: number;
-  /** Retry policy shared with the low-level client. Default: the SDK retry policy. */
-  retry?: RetryConfig | false;
-  /** Middleware chain shared with the low-level client. */
-  middleware?: Middleware[];
-  /** Request timeout in ms. Default: 60000. */
-  timeout?: number;
-  /** Optional logger used by the shared request pipeline. */
-  logger?: Logger;
-  /** Optional lifecycle hooks used by the shared request pipeline. */
-  hooks?: LifecycleHooks;
-  /** Optional custom transport shared with the low-level client. */
-  transport?: Transport;
-  /** Generate `X-Request-ID` for provider fetch calls. Default: true. */
-  generateRequestId?: boolean;
-  /** Normalize gateway error responses into `AIGatewayError`. Default: true. */
+  /**
+   * Normalize gateway error responses into `AIGatewayError`. Default: true.
+   * When enabled, non-OK gateway responses throw instead of returning a failed Response.
+   */
   normalizeErrors?: boolean;
 }
 
