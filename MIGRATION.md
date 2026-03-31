@@ -1,99 +1,54 @@
-# Migration Guide
+# Integration guide
 
-## Breaking Changes in v2
+How `@macpaw/ai-sdk` is split across entry points and how to import the pieces you need. The package is built as a **Vercel AI SDK extension** for AI Gateway: core generation APIs stay on upstream `ai` / `@ai-sdk/*`; MacPaw-owned surfaces live under the subpaths below.
 
-### Removed Public APIs
+## Package layout
 
-| Symbol | Replacement |
-|--------|-------------|
-| `createAIGatewayDualProvider` | None — choose either gateway or direct provider at startup |
-| `createAIGatewayCustomProvider` | Use `customProvider` from `ai` directly |
-| `AIGatewayCustomProviderRegistry` | Removed |
-| `AIGatewayDualProviderOptions` | Removed |
-| `AIGatewayProviderSource` | Removed |
-| `OpenAIProviderSource` | Removed |
-| `Resolvable` | Removed |
-| `@macpaw/ai-sdk/react` entry point | Import directly from `@ai-sdk/react` |
+- **`@macpaw/ai-sdk/provider`** — primary app surface: gateway provider factories, gateway fetch helpers, MacPaw error types.
+- **`@macpaw/ai-sdk/client`** — typed HTTP client for Gateway endpoints (including multipart).
+- **`@macpaw/ai-sdk/runtime`** — transport, config resolution, validation, retry, SSE, and request-pipeline primitives.
+- **`@macpaw/ai-sdk/types`** — domain request/response TypeScript types.
+- **`@macpaw/ai-sdk`** — convenience root: same provider-oriented exports as `./provider`, plus shared errors, enums, and stream helpers.
+- **`@macpaw/ai-sdk/nestjs`**, **`@macpaw/ai-sdk/testing`** — NestJS module and test utilities.
 
----
+Upstream **`ai`**, **`@ai-sdk/openai`**, **`@ai-sdk/react`** (or **`ai/react`**) stay the home for Vercel AI SDK primitives and React hooks.
 
-## Vercel-First major
+## Choose an entry point
 
-This release reframes `@macpaw/ai-sdk` as an extension layer for Vercel AI SDK:
+| Goal | Import from |
+| ---- | ----------- |
+| Gateway-backed `LanguageModel` for `generateText` / `streamText` | `@macpaw/ai-sdk/provider` |
+| Shared MacPaw helpers, errors, stream utilities | `@macpaw/ai-sdk` |
+| Direct Gateway HTTP calls or multipart APIs | `@macpaw/ai-sdk/client` |
+| Low-level transport, validation, retry, SSE | `@macpaw/ai-sdk/runtime` |
+| React hooks (`useChat`, …) | `@ai-sdk/react` or `ai/react` |
 
-- `@macpaw/ai-sdk/provider` is now the primary app-developer entry point.
-- `@macpaw/ai-sdk/client` is the explicit advanced path for direct Gateway HTTP usage.
-- `@macpaw/ai-sdk/runtime` is the explicit home for advanced transport/config/request primitives.
-- `@macpaw/ai-sdk` now exposes the same MacPaw-owned provider helpers as `@macpaw/ai-sdk/provider`, while upstream `ai` / `@ai-sdk/*` keep ownership of Vercel AI SDK primitives.
+Keep `generateText`, `streamText`, tools, agents, and UI streams on upstream `ai` where possible; add `@macpaw/ai-sdk/provider` for gateway-aware model construction. Use `client` when you need raw HTTP or multipart, not as a replacement for the Vercel core APIs.
 
-## Start here
+## Common import paths
 
-Choose the target import path before changing any code:
+| You need | Typical import |
+| -------- | -------------- |
+| `generateText`, `streamText`, `customProvider`, … | `from 'ai'` |
+| `createOpenAI`, … | `from '@ai-sdk/openai'` |
+| `createAIGatewayProvider`, `createGatewayProvider`, … | `from '@macpaw/ai-sdk/provider'` |
+| `createAIGatewayClient` | `from '@macpaw/ai-sdk/client'` |
+| `API_PATHS`, `createFetchTransport`, `SDKValidationError`, … | `from '@macpaw/ai-sdk/runtime'` |
+| Chat/embeddings/audio types | `from '@macpaw/ai-sdk/types'` |
 
-| If you are migrating...                                                       | Use                       |
-| ----------------------------------------------------------------------------- | ------------------------- |
-| Existing Vercel AI SDK app and you want the clearest gateway-provider imports | `@macpaw/ai-sdk/provider` |
-| Shared MacPaw helpers, errors, and stream utilities                           | `@macpaw/ai-sdk`          |
-| Direct Gateway HTTP calls or multipart APIs                                   | `@macpaw/ai-sdk/client`   |
-| Runtime internals such as transport, validation, retry, SSE helpers           | `@macpaw/ai-sdk/runtime`  |
-| React hooks under the MacPaw scope                                            | `@macpaw/ai-sdk/react`    |
-
-If your app already uses `generateText`, `streamText`, tools, agents, or UI streams, keep those flows on upstream `ai` and add `@macpaw/ai-sdk/provider` only for gateway-aware provider construction. Do not move those flows to `client` unless you intentionally need raw HTTP APIs.
-
-## Import changes
-
-### Fast path: exact import swaps
-
-Use these substitutions first. They cover the majority of migrations.
-
-| Before                                                | After                           |
-| ----------------------------------------------------- | ------------------------------- |
-| `from 'ai'`                                           | keep `from 'ai'`                |
-| `from 'ai/internal'`                                  | keep `from 'ai/internal'`       |
-| `from 'ai/test'`                                      | keep `from 'ai/test'`           |
-| `from '@ai-sdk/openai'`                               | keep `from '@ai-sdk/openai'`    |
-| `from '@ai-sdk/react'`                                | `from '@macpaw/ai-sdk/react'`   |
-| `from '@macpaw/ai-sdk'` for low-level client creation | `from '@macpaw/ai-sdk/client'`  |
-| `from '@macpaw/ai-sdk/client'` for runtime primitives | `from '@macpaw/ai-sdk/runtime'` |
-
-### Low-level HTTP client
-
-Before:
-
-```ts
-import { createAIGatewayClient } from '@macpaw/ai-sdk';
-```
-
-After:
+## Low-level HTTP client
 
 ```ts
 import { createAIGatewayClient } from '@macpaw/ai-sdk/client';
 ```
 
-### Domain types
-
-Before:
-
-```ts
-import type { ChatCompletion, CreateChatCompletionRequest } from '@macpaw/ai-sdk';
-```
-
-After:
+## Domain types
 
 ```ts
 import type { ChatCompletion, CreateChatCompletionRequest } from '@macpaw/ai-sdk/types';
 ```
 
-### Vercel AI SDK integrations
-
-Before:
-
-```ts
-import { generateText } from 'ai';
-import { createOpenAI } from '@ai-sdk/openai';
-```
-
-After:
+## Vercel AI SDK + Gateway provider
 
 ```ts
 import { generateText } from 'ai';
@@ -101,20 +56,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
 ```
 
-Then change only model construction:
-
-Before:
-
-```ts
-const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-
-await generateText({
-  model: openai('gpt-4.1-mini'),
-  prompt: 'Hello',
-});
-```
-
-After:
+Model construction with Gateway:
 
 ```ts
 const gateway = createAIGatewayProvider({
@@ -128,50 +70,30 @@ await generateText({
 });
 ```
 
-### Advanced runtime utilities
-
-Before:
-
-```ts
-import { API_PATHS, createFetchTransport, SDKValidationError } from '@macpaw/ai-sdk/client';
-```
-
-After:
+## Advanced runtime utilities
 
 ```ts
 import { API_PATHS, createFetchTransport, SDKValidationError } from '@macpaw/ai-sdk/runtime';
 ```
 
-## What stays on the root package
+## Root package `@macpaw/ai-sdk`
 
-`@macpaw/ai-sdk` is now a convenience entry for MacPaw-owned app-facing helpers. It includes:
+The root entry re-exports the same MacPaw provider-oriented surface as `@macpaw/ai-sdk/provider`, plus shared items such as `AIGatewayError`, `ErrorCode`, `SDKValidationError`, and stream helpers.
 
-- the same provider-oriented surface as `@macpaw/ai-sdk/provider`
-- shared exports such as `AIGatewayError`, `ErrorCode`, `SDKValidationError`, and stream helpers
+Use **`@macpaw/ai-sdk/client`** for `createAIGatewayClient` and **`@macpaw/ai-sdk/runtime`** for pipeline internals such as `createFetchTransport`.
 
-It does **not** expose:
+## Integration checklist
 
-- `createAIGatewayClient`
-- runtime internals such as `createFetchTransport`
+1. Keep `generateText`, `streamText`, tools, agents, and stream handling on upstream `ai`.
+2. Keep direct OpenAI-compatible factories on `@ai-sdk/openai` (or other `@ai-sdk/*`) when you need them.
+3. Build gateway model handles with `createAIGatewayProvider(...)` or `createGatewayProvider(...)`.
+4. Import `createAIGatewayClient` from `@macpaw/ai-sdk/client` when you need the HTTP client.
+5. Import runtime primitives from `@macpaw/ai-sdk/runtime` when you extend or debug the pipeline.
+6. Import domain types from `@macpaw/ai-sdk/types`.
+7. Import React hooks from `@ai-sdk/react` or `ai/react`.
+8. For Anthropic, Google, etc., keep upstream `@ai-sdk/*` packages in the app and use `createGatewayProvider(...)` from `@macpaw/ai-sdk/provider` for Gateway-routed models where applicable.
 
-Those remain on `@macpaw/ai-sdk/client` and `@macpaw/ai-sdk/runtime`.
-
-## Recommended migration path
-
-1. Keep `generateText`, `streamText`, tools, agents, and stream-consumption code on upstream `ai`.
-2. Keep `createOpenAI` and other direct provider factories on upstream `@ai-sdk/*`.
-3. Change model construction from direct OpenAI handles to `createAIGatewayProvider(...)` or `createGatewayProvider(...)`.
-4. Move any low-level client imports to `@macpaw/ai-sdk/client`.
-5. Move advanced transport/config/runtime imports to `@macpaw/ai-sdk/runtime`.
-6. Move domain request/response type imports to `@macpaw/ai-sdk/types`.
-7. React hooks: Import directly from `@ai-sdk/react`.
-8. If you use provider-specific upstream packages such as `@ai-sdk/anthropic` or `@ai-sdk/google`, install them directly in the app and use `createGatewayProvider(...)` from `@macpaw/ai-sdk/provider` for Gateway-backed model handles.
-
-## Vendor-oriented migration patterns
-
-### Vercel-style app plus multipart APIs
-
-Keep `generateText` / `streamText` on upstream `ai` with a gateway-backed provider. Add `client` only for multipart or raw Gateway APIs:
+## Example: Vercel-style app plus multipart
 
 ```ts
 import { generateText } from 'ai';

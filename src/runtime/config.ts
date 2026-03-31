@@ -116,9 +116,9 @@ export interface GatewaySharedConfig {
 
 /**
  * Configuration for `createAIGatewayClient`.
- * All fields are defined in {@link GatewaySharedConfig}.
+ * Alias of {@link GatewaySharedConfig} for a stable, named entry in docs and API surface.
  */
-export interface AIGatewayClientConfig extends GatewaySharedConfig {}
+export type AIGatewayClientConfig = GatewaySharedConfig;
 
 export interface RequestConfig {
   url: string;

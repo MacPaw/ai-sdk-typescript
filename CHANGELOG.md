@@ -6,14 +6,12 @@
 
 ### Added
 
-- `@macpaw/ai-sdk/react` subpath re-exports `@ai-sdk/react` so apps can import hooks from the MacPaw package scope alongside the gateway provider helpers.
 - ESLint: `examples/**/*.{js,mjs,cjs}` use Node globals so `pnpm lint` passes on demo scripts.
 - Runnable examples for mock transport, direct client, Vercel-style provider flow, and a copy-ready NestJS skeleton.
 - README badges and release signals documentation; local `pnpm size:pack` script for publish-size inspection.
-- README and COMPATIBILITY: when to use `@macpaw/ai-sdk/provider` vs `createAIGatewayClient`, optional dual-backend (env flag) example, and auth placement notes.
+- README and COMPATIBILITY: when to use `@macpaw/ai-sdk/provider` vs `createAIGatewayClient`, env-based gateway vs direct OpenAI example, and auth placement notes.
 - CONTRIBUTING: package layout, `__tests__` convention, and linting/formatting notes.
 - `@macpaw/ai-sdk/types` subpath for domain types; `GatewayApiCode`, `GatewayApiErrorResponse`, and related symbols.
-- `customProvider` re-export and `createAIGatewayCustomProvider` helper on `@macpaw/ai-sdk/provider`.
 - Shared request pipeline parity between the low-level client and provider fetch path, including retries, middleware, hooks, timeout, and transport support.
 
 ### Changed
@@ -23,12 +21,12 @@
 - Tests live under colocated `src/**/__tests__/` directories.
 - Client entry moved to `src/client/index.ts`; advanced runtime primitives now live under the explicit `@macpaw/ai-sdk/runtime` surface (use the main entry or `@macpaw/ai-sdk/types` for app-facing imports).
 - README and AI-assistant templates describe `@macpaw/ai-sdk/provider` as a full re-export of `ai` plus AI Gateway helpers.
-- `macpaw-ai-setup` now reads the Cursor skill from published templates, so the npm package no longer needs to ship repository-only `.cursor` assets.
+- `macpaw-ai-setup` reads the Cursor skill from published templates bundled in the package.
 - Vitest now fails when no tests are discovered, tightening release-time verification.
 
 ### Deprecated
 
-- Re-exporting domain types from the root `@macpaw/ai-sdk` entry — prefer `@macpaw/ai-sdk/types` (root re-exports may be removed in a future major version).
+- Prefer importing domain types from `@macpaw/ai-sdk/types`; the root entry may duplicate some of these for convenience.
 
 ## 0.1.0
 
