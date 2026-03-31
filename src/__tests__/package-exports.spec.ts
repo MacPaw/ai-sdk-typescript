@@ -14,9 +14,19 @@ const packageJson = JSON.parse(readFileSync(fileURLToPath(new URL('../../package
 
 describe('package exports', () => {
   it('keeps the release-critical entrypoints in the export map', () => {
-    for (const subpath of ['.', './provider', './client', './runtime', './testing']) {
+    for (const subpath of ['.', './nestjs', './provider']) {
       expect(packageJson.exports[subpath]).toBeDefined();
     }
+    const root = packageJson.exports['.'] as { import?: { default?: string } };
+    const providerAlias = packageJson.exports['./provider'] as { import?: { default?: string } };
+    expect(providerAlias.import?.default).toBe(root.import?.default);
+  });
+
+  it('does not expose removed subpaths', () => {
+    expect(packageJson.exports['./client']).toBeUndefined();
+    expect(packageJson.exports['./runtime']).toBeUndefined();
+    expect(packageJson.exports['./types']).toBeUndefined();
+    expect(packageJson.exports['./testing']).toBeUndefined();
   });
 
   it('does not expose deprecated ai compatibility subpaths', () => {

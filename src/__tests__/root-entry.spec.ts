@@ -1,27 +1,24 @@
 import { describe, it, expect } from 'vitest';
 import * as root from '../index';
-import * as provider from '../provider';
 
 describe('root entry', () => {
-  it('re-exports the MacPaw provider surface plus shared helpers', () => {
-    const providerKeys = Object.keys(provider).sort();
-    const rootKeys = Object.keys(root).sort();
-    const missingProviderKeys = providerKeys.filter((key) => !rootKeys.includes(key));
-
-    expect(missingProviderKeys).toEqual([]);
+  it('exports the gateway provider surface', () => {
     expect(root.AIGatewayError).toBeDefined();
-    expect(root.ErrorCode).toBeDefined();
-    expect(root.createAIGatewayProvider).toBe(provider.createAIGatewayProvider);
-    expect(root.collectResponseStream).toBeDefined();
-    expect(root.SDKValidationError).toBeDefined();
+    expect(root.GatewayApiCode).toBeDefined();
+    expect(root.createAIGatewayProvider).toBeDefined();
+    expect(root.createGatewayProvider).toBeDefined();
+    expect(root.GATEWAY_PROVIDERS).toBeDefined();
+    expect(root.createGatewayFetch).toBeDefined();
   });
 
-  it('keeps upstream ai helpers and low-level internals on explicit packages/subpaths', () => {
+  it('does not expose low-level internals or upstream helpers', () => {
     expect('generateText' in root).toBe(false);
     expect('streamText' in root).toBe(false);
     expect('createOpenAI' in root).toBe(false);
     expect('createAIGatewayClient' in root).toBe(false);
     expect('resolveConfig' in root).toBe(false);
     expect('createFetchTransport' in root).toBe(false);
+    expect('collectResponseStream' in root).toBe(false);
+    expect('SDKValidationError' in root).toBe(false);
   });
 });

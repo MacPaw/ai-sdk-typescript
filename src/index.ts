@@ -5,29 +5,41 @@
  * primitives on their original packages (`ai`, `@ai-sdk/openai`, etc.).
  */
 
-export * from './provider';
+// Main factory
+export { createGatewayProvider, createAIGatewayProvider, GATEWAY_PROVIDERS } from './gateway-provider';
+export type {
+  GatewayProvider,
+  GatewayProviderBaseOptions,
+  GatewayOpenAICompatibleOptions,
+  GatewayProviderOptions,
+  GatewayProviderOptionsMap,
+  GatewayProviderWithDefaultPrefix,
+  AIGatewayProviderOptions,
+} from './gateway-provider';
 
+// Custom fetch bridge (for raw OpenAI client usage)
+export { createGatewayFetch } from './gateway-fetch';
+export type { GatewayFetchConfig } from './gateway-fetch';
+
+// Errors
 export {
+  AIGatewayError,
+  AuthError,
+  CreditsError,
+  RateLimitError,
+  ModelNotAllowedError,
+  GatewayValidationError,
+  isAIGatewayError,
+  parseErrorResponse,
   GatewayApiCode,
-  MessageRole,
-  FinishReason,
-  ResponseStatus,
-  EmbeddingFormat,
-  ImageSize,
-  ImageQuality,
-  ImageStyle,
-  ImageResponseFormat,
-  AudioFormat,
-  TranslationFormat,
-} from './types';
+  ErrorCode,
+} from './gateway-errors';
+export type {
+  NormalizedErrorMetadata,
+  GatewayApiErrorItem,
+  GatewayApiErrorResponse,
+  OpenAIErrorResponse,
+} from './gateway-errors';
 
-export { SDKValidationError } from './runtime/validation';
-
-export {
-  extractResponseDelta,
-  collectResponseStream,
-  extractTranscriptionDelta,
-  collectTranscriptionStream,
-} from './helpers';
-
-export type { ObjectValues } from './types';
+// Config types (consumers need these to configure the SDK)
+export type { GatewayProviderSettings, Middleware, RetryConfig } from './gateway-config';

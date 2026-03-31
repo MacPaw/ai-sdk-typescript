@@ -14,7 +14,7 @@ Then copy the files from this folder into your NestJS project.
 ## Files
 
 - `app.module.ts` — registers `AIGatewayModule`
-- `chat.service.ts` — injects the configured AI Gateway client
+- `chat.service.ts` — injects `GatewayProviderSettings` and builds `createAIGatewayProvider` per call
 - `chat.controller.ts` — exposes a simple `/chat` endpoint and applies the exception filter
 - `main.ts` — standard Nest bootstrap
 

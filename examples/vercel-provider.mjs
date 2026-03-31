@@ -1,5 +1,5 @@
 import { generateText, streamText } from 'ai';
-import { createAIGatewayProvider } from '@macpaw/ai-sdk/provider';
+import { createAIGatewayProvider } from '@macpaw/ai-sdk';
 
 const token = process.env.AI_GATEWAY_TOKEN ?? process.env.SETAPP_TOKEN;
 const baseURL = process.env.AI_GATEWAY_BASE_URL;

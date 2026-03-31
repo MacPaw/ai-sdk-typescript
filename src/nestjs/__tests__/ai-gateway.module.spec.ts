@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { DynamicModule } from '@nestjs/common';
 import { AIGatewayModule } from '../ai-gateway.module';
-import { AI_GATEWAY_CLIENT, AI_GATEWAY_OPTIONS } from '../constants';
-import type { AIGatewayClient } from '../../client';
+import { AI_GATEWAY_CONFIG, AI_GATEWAY_OPTIONS } from '../ai-gateway.constants';
 
 interface ProviderLike {
   provide?: unknown;
@@ -26,7 +25,7 @@ describe('AIGatewayModule', () => {
   };
 
   describe('forRoot', () => {
-    it('returns a global DynamicModule with client provider', () => {
+    it('returns a global DynamicModule with config provider', () => {
       const mod = AIGatewayModule.forRoot(baseOptions);
 
       expect(mod.module).toBe(AIGatewayModule);
@@ -34,10 +33,10 @@ describe('AIGatewayModule', () => {
       expect(mod.providers).toBeDefined();
       expect(mod.exports).toBeDefined();
 
-      const clientProvider = expectProvider(
-        getProviders(mod).find((provider) => provider.provide === AI_GATEWAY_CLIENT),
+      const configProvider = expectProvider(
+        getProviders(mod).find((provider) => provider.provide === AI_GATEWAY_CONFIG),
       );
-      expect(clientProvider.useFactory).toBeTypeOf('function');
+      expect(configProvider.useFactory).toBeTypeOf('function');
     });
 
     it('supports isGlobal: false', () => {
@@ -45,20 +44,16 @@ describe('AIGatewayModule', () => {
       expect(mod.global).toBe(false);
     });
 
-    it('useFactory creates a working client', () => {
+    it('useFactory produces the gateway config', () => {
       const mod = AIGatewayModule.forRoot(baseOptions);
-      const clientProvider = expectProvider(
-        getProviders(mod).find((provider) => provider.provide === AI_GATEWAY_CLIENT),
+      const configProvider = expectProvider(
+        getProviders(mod).find((provider) => provider.provide === AI_GATEWAY_CONFIG),
       );
 
-      const client = clientProvider.useFactory?.() as AIGatewayClient;
-      expect(client).toBeDefined();
-      expect(client.chat).toBeDefined();
-      expect(client.responses).toBeDefined();
-      expect(client.embeddings).toBeDefined();
-      expect(client.models).toBeDefined();
-      expect(client.images).toBeDefined();
-      expect(client.audio).toBeDefined();
+      const config = configProvider.useFactory?.();
+      expect(config).toBeDefined();
+      expect((config as typeof baseOptions).getAuthToken).toBe(baseOptions.getAuthToken);
+      expect((config as typeof baseOptions).env).toBe('production');
     });
   });
 
@@ -76,10 +71,10 @@ describe('AIGatewayModule', () => {
       );
       expect(optionsProvider.useFactory).toBeTypeOf('function');
 
-      const clientProvider = expectProvider(
-        getProviders(mod).find((provider) => provider.provide === AI_GATEWAY_CLIENT),
+      const configProvider = expectProvider(
+        getProviders(mod).find((provider) => provider.provide === AI_GATEWAY_CONFIG),
       );
-      expect(clientProvider.inject).toContain(AI_GATEWAY_OPTIONS);
+      expect(configProvider.inject).toContain(AI_GATEWAY_OPTIONS);
     });
 
     it('supports isGlobal: false', () => {
