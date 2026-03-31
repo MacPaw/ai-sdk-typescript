@@ -8,17 +8,15 @@
 
 import { createOpenAI as builtinCreateOpenAI } from '@ai-sdk/openai';
 import type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
-import { createAIGatewayFetch } from './create-fetch';
-import type { Environment, GatewaySharedConfig } from '../runtime/config';
-import { resolveGatewayBaseURL as resolveRuntimeGatewayBaseURL } from '../runtime/config';
+import { createAIGatewayFetch, GATEWAY_PLACEHOLDER_API_KEY } from './create-fetch';
+import type { Environment, GatewayProviderSettings } from '../gateway-config';
+import { resolveGatewayBaseURL as resolveRuntimeGatewayBaseURL } from '../gateway-config';
 
 const DEFAULT_API_VERSION = 'v1';
 
-const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
-
 export interface AIGatewayProviderOptions
   extends Omit<OpenAIProviderSettings, 'apiKey' | 'baseURL' | 'fetch'>,
-    GatewaySharedConfig {
+    GatewayProviderSettings {
   /**
    * Optional override for the OpenAI provider factory.
    * Uses `createOpenAI` from `@ai-sdk/openai` by default.
@@ -47,15 +45,10 @@ export function createAIGatewayProvider(options: AIGatewayProviderOptions): Open
     baseURL,
     getAuthToken: options.getAuthToken,
     headers: options.headers,
-    autoRefreshToken: options.autoRefreshToken,
-    tokenCacheTTL: options.tokenCacheTTL,
     retry: options.retry,
     middleware: options.middleware,
     timeout: options.timeout,
-    logger: options.logger,
-    hooks: options.hooks,
-    transport: options.transport,
-    generateRequestId: options.generateRequestId,
+    fetch: options.fetch,
     normalizeErrors: options.normalizeErrors,
   });
 

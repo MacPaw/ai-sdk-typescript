@@ -1,8 +1,7 @@
 import type { ArgumentsHost } from '@nestjs/common';
 import { describe, it, expect, vi } from 'vitest';
 import { AIGatewayExceptionFilter } from '../ai-gateway.filter';
-import { AIGatewayError, AuthError, RateLimitError, CreditsError } from '../../runtime/errors';
-import { ErrorCode } from '../../types';
+import { AIGatewayError, AuthError, RateLimitError, CreditsError, ErrorCode } from '../../gateway-errors';
 
 function createMockHost(mockResponse: Record<string, ReturnType<typeof vi.fn>>): ArgumentsHost {
   return {

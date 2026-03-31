@@ -6,9 +6,9 @@
  * Respects Retry-After metadata from 429 responses.
  */
 
-import type { RetryConfig } from './config';
-import { DEFAULT_RETRY, normalizeRetryConfig } from './config';
-import type { AIGatewayError } from './errors';
+import type { RetryConfig } from './gateway-config';
+import { DEFAULT_RETRY, normalizeRetryConfig } from './gateway-config';
+import type { AIGatewayError } from './gateway-errors';
 
 function delay(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -44,7 +44,6 @@ export async function withRetry<T>(
     retryConfig: RetryConfig;
     signal?: AbortSignal;
     isNetworkError?: (err: unknown) => boolean;
-    onRetry?: (attempt: number, error: unknown) => void | Promise<void>;
   },
 ): Promise<T> {
   const { maxAttempts, initialDelayMs, maxDelayMs, retryableStatuses } = normalizeRetryConfig({
@@ -72,7 +71,6 @@ export async function withRetry<T>(
         backoff = addJitter(Math.min(initialDelayMs * Math.pow(2, attempt - 1), maxDelayMs));
       }
 
-      await options.onRetry?.(attempt, err);
       await delay(backoff, options.signal);
     }
   }

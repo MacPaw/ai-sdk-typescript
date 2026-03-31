@@ -127,8 +127,6 @@ describe('createGatewayProvider', () => {
     createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, {
       ...baseOptions,
       modelPrefix: 'custom',
-      autoRefreshToken: false,
-      tokenCacheTTL: 5000,
       retry: false,
       timeout: 15_000,
     });
@@ -136,8 +134,6 @@ describe('createGatewayProvider', () => {
     const passedOptions = vi.mocked(createAIGatewayProvider).mock.lastCall?.[0];
     if (!passedOptions) throw new Error('Expected createAIGatewayProvider to be called');
     expect(passedOptions).not.toHaveProperty('modelPrefix');
-    expect(passedOptions.autoRefreshToken).toBe(false);
-    expect(passedOptions.tokenCacheTTL).toBe(5000);
     expect(passedOptions.retry).toBe(false);
     expect(passedOptions.timeout).toBe(15_000);
   });

@@ -97,9 +97,6 @@ describe('createAIGatewayProvider', () => {
       createOpenAI: mockCreateOpenAI as never,
       env: 'production',
       getAuthToken: async () => 'token',
-      autoRefreshToken: false,
-      tokenCacheTTL: 5000,
-      generateRequestId: false,
       normalizeErrors: false,
     });
 
