@@ -210,12 +210,15 @@ function mapGatewayApiCodeToNormalized(code: string, statusCode: number): ErrorC
   }
 }
 
-function mapOpenAIErrorToNormalized(type?: string | null): ErrorCode {
+function mapOpenAIErrorToNormalized(type?: string | null, statusCode?: number): ErrorCode {
   if (type === 'authentication_error') return ErrorCode.AuthRequired;
   if (type === 'rate_limit_error') return ErrorCode.RateLimited;
   if (type === 'team_model_access_denied') return ErrorCode.ModelNotAllowed;
   if (type === 'api_error') return ErrorCode.InternalServerError;
   if (type === 'invalid_request_error') return ErrorCode.BadRequest;
+  if (statusCode === 401) return ErrorCode.AuthRequired;
+  if (statusCode === 429) return ErrorCode.RateLimited;
+  if (statusCode === 403) return ErrorCode.ModelNotAllowed;
   return ErrorCode.InternalServerError;
 }
 
@@ -347,7 +350,7 @@ export function parseErrorResponse(statusCode: number, body: unknown): never {
 
   const oai = body as OpenAIErrorResponse | undefined;
   if (oai?.error?.message) {
-    const code = mapOpenAIErrorToNormalized(oai.error.type);
+    const code = mapOpenAIErrorToNormalized(oai.error.type, statusCode);
     if (oai.request_id) meta.requestId = oai.request_id;
     throw createTypedError(oai.error.message, code, statusCode, meta);
   }
@@ -359,6 +362,7 @@ export function parseErrorResponse(statusCode: number, body: unknown): never {
 
   let fallbackCode: ErrorCode;
   if (statusCode === 401) fallbackCode = ErrorCode.AuthRequired;
+  else if (statusCode === 403) fallbackCode = ErrorCode.Forbidden;
   else if (statusCode === 429) fallbackCode = ErrorCode.RateLimited;
   else if (statusCode >= 500) fallbackCode = ErrorCode.InternalServerError;
   else fallbackCode = ErrorCode.BadRequest;

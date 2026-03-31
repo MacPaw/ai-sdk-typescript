@@ -190,6 +190,36 @@ describe('createGatewayFetch', () => {
     expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(2);
   });
 
+  it('triggers auth retry when OpenAI-format 401 has no error.type', async () => {
+    // Proxy returns OpenAI-compat body without error.type — the type-based mapping
+    // would fall back to InternalServerError without the statusCode fallback fix,
+    // skipping the auth-refresh retry path entirely.
+    const getAuthToken = vi
+      .fn<() => Promise<string | null>>()
+      .mockResolvedValueOnce('stale-token')
+      .mockResolvedValueOnce('fresh-token');
+
+    (globalThis.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: { message: 'Unauthorized' } }), {
+          status: 401,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(new Response('ok', { status: 200 }));
+
+    const customFetch = createGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken,
+    });
+
+    await customFetch('https://api.macpaw.com/ai/api/v1/chat/completions', { method: 'POST' });
+
+    expect(getAuthToken).toHaveBeenNthCalledWith(1, false);
+    expect(getAuthToken).toHaveBeenNthCalledWith(2, true);
+    expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(2);
+  });
+
   it('throws normalized gateway errors by default', async () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
       new Response(JSON.stringify({ statusCode: 402, message: 'No credits', code: 'INSUFFICIENT_CREDITS' }), {
