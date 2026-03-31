@@ -68,25 +68,20 @@ feat!: rename createClient to createAIGatewayClient
 
 ## Tests
 
-Place specs next to the feature they cover using a `__tests__` directory (e.g. `src/runtime/__tests__/errors.spec.ts`). `vitest.config.ts` picks up `src/**/__tests__/**/*.spec.ts` and `src/**/__tests__/**/*.test.ts`.
+Place specs next to the feature they cover using a `__tests__` directory (e.g. `src/__tests__/gateway-fetch.spec.ts`). `vitest.config.ts` picks up `src/**/__tests__/**/*.spec.ts` and `src/**/__tests__/**/*.test.ts`.
 
 ## Project structure
 
 ```
 src/
-├── client-entry.ts   # `@macpaw/ai-sdk/client` advanced entry point
-├── client/
-│   ├── api/       # HTTP facades for gateway endpoints (chat, responses, embeddings, …)
-│   └── index.ts   # createAIGatewayClient and public client interfaces
-├── runtime/       # Canonical internal runtime layer: config, request pipeline, transport, errors
-├── core/          # Backward-compatible facade for advanced/internal runtime exports
-├── types/         # Domain TypeScript types (`@macpaw/ai-sdk/types`)
-├── nestjs/        # NestJS module integration
-├── provider/      # Primary Vercel AI SDK product surface
-├── transport/     # Compatibility wrapper for transport exports
-├── testing/       # Provider/client mocks and test helpers
-├── helpers.ts     # Shared stream helpers
-└── index.ts       # Slim shared root surface (errors, enums, helpers)
+├── gateway-config.ts   # GatewayProviderSettings, resolveConfig, retry defaults
+├── gateway-errors.ts   # AIGatewayError family, ErrorCode, parsers
+├── gateway-fetch.ts    # createGatewayFetch (custom fetch for OpenAI SDK / raw HTTP)
+├── gateway-provider.ts # createAIGatewayProvider, createGatewayProvider, GATEWAY_PROVIDERS
+├── gateway-request.ts  # executeRequestPipeline (internal; not re-exported from root)
+├── gateway-retry.ts    # withRetry
+├── index.ts            # Public API — @macpaw/ai-sdk
+└── nestjs/             # @macpaw/ai-sdk/nestjs
 ```
 
-When adding code, keep **domain types** in `src/types/`, **gateway HTTP calls** in `src/client/api/`, and **shared runtime** (fetch pipeline, SSE, retries) in `src/runtime/`. `src/provider/` is the primary app-facing integration surface, `src/client-entry.ts` is the explicit advanced client entry, and `src/core/` is the compatibility-facing facade; avoid adding new implementation code there.
+Add behavior beside the smallest module that owns it; avoid new public entry points unless `package.json` `exports` and tests are updated together.

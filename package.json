@@ -18,6 +18,16 @@
         "default": "./dist/index.cjs"
       }
     },
+    "./provider": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
     "./nestjs": {
       "import": {
         "types": "./dist/nestjs/index.d.ts",
@@ -109,18 +119,10 @@
   },
   "peerDependencies": {
     "@ai-sdk/openai": "^3.0.0",
-    "@ai-sdk/provider": "^3.0.0",
-    "@nestjs/common": ">=10.0.0",
-    "ai": "^6.0.0"
+    "@nestjs/common": ">=10.0.0"
   },
   "peerDependenciesMeta": {
-    "ai": {
-      "optional": true
-    },
     "@ai-sdk/openai": {
-      "optional": true
-    },
-    "@ai-sdk/provider": {
       "optional": true
     },
     "@nestjs/common": {

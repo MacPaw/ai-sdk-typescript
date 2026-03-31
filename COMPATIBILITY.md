@@ -1,83 +1,53 @@
 # SDK ↔ AI Gateway API — Compatibility Check
 
-This document confirms that `@macpaw/ai-sdk` is aligned with the AI Gateway HTTP API. Examples below use NestJS-flavoured controller references because that is a common gateway implementation, but the SDK contract is framework-agnostic.
+This document relates **AI Gateway HTTP routes** to how **`@macpaw/ai-sdk`** talks to the gateway today. The SDK does not ship a typed HTTP client; it uses an OpenAI-compatible **provider** plus **`createGatewayFetch`** for arbitrary paths.
 
 ## Paths
 
-| API                  | SDK path                       | Example gateway route                              | Status |
-| -------------------- | ------------------------------ | -------------------------------------------------- | ------ |
-| Chat completions     | `/api/v1/chat/completions`     | `@Controller('chat')` + `@Post('completions')`     | ✓      |
-| Responses            | `/api/v1/responses`            | `@Controller('responses')` + `@Post()`             | ✓      |
-| Embeddings           | `/api/v1/embeddings`           | `@Controller('embeddings')` + `@Post()`            | ✓      |
-| Model info           | `/api/v1/model/info`           | `@Controller()` + `@Get('model/info')`             | ✓      |
-| Images generations   | `/api/v1/images/generations`   | `@Controller('images')` + `@Post('generations')`   | ✓      |
-| Images edits         | `/api/v1/images/edits`         | `@Controller('images')` + `@Post('edits')`         | ✓      |
-| Audio transcriptions | `/api/v1/audio/transcriptions` | `@Controller('audio')` + `@Post('transcriptions')` | ✓      |
-| Audio translations   | `/api/v1/audio/translations`   | `@Controller('audio')` + `@Post('translations')`   | ✓      |
+Gateway routes (versioned under `/api/v1/...`) match the docs in `tmp/docs` when you call them with `createGatewayFetch` and the correct path, or when the Vercel/OpenAI stack issues requests under the same prefix.
 
-The gateway uses `setGlobalPrefix('api')` and URI versioning with default version `'1'`, so full paths are `/api/v1/...`. The SDK uses the same paths.
+| API | Typical path |
+| --- | ------------ |
+| Chat completions | `/api/v1/chat/completions` |
+| Responses | `/api/v1/responses` |
+| Embeddings | `/api/v1/embeddings` |
+| Model info | `/api/v1/model/info` |
+| Images generations | `/api/v1/images/generations` |
+| Images edits | `/api/v1/images/edits` |
+| Audio transcriptions | `/api/v1/audio/transcriptions` |
+| Audio translations | `/api/v1/audio/translations` |
 
 ## Base URL
 
-- **SDK** `DEFAULT_BASE_URLS`: `production: https://api.macpaw.com/ai`. Non-production URLs are not built-in; pass via `baseURL`.
-- **Docs** (e.g. `create-chat-completion.yaml`, `ai-gateway-errors.yaml`): `https://api.{domain}/ai` with `macpaw.com`
-
-So the SDK base URL and docs match.
+- **SDK** `DEFAULT_BASE_URLS.production`: `https://api.macpaw.com/ai`
+- Other environments: pass `baseURL` explicitly on `GatewayProviderSettings` / `createGatewayFetch`.
 
 ## Authorization
 
-- **Gateway**: Expects `Authorization: Bearer <token>` (BearerAuth in Swagger, guards).
-- **SDK**: Sends `Authorization: Bearer ${token}` from `getAuthToken()`.
-
-No mismatch.
+Gateway expects `Authorization: Bearer <token>`. The SDK sets it from `getAuthToken()` on gateway-scoped requests. After **401**, it calls `getAuthToken(true)` once and retries.
 
 ## Error formats
 
-- **Gateway** (from `ai-gateway-errors.yaml`): Returns `statusCode`, `message`, `timestamp`, `code`, `path`, optional `errors[]`; `errors[].metadata` can contain `paymentUrl`, `retryAfter`.
-- **SDK** `parseErrorResponse`: Handles this shape and maps `code` to normalized codes; reads `paymentUrl` and `retryAfter` from `errors[0].metadata`.
-- **Gateway API codes** (UNAUTHORIZED, INSUFFICIENT_CREDITS, FORBIDDEN, RATE_LIMIT_EXCEEDED, BAD_REQUEST, VALIDATION, …) are mapped to SDK codes (AUTH_REQUIRED, INSUFFICIENT_CREDITS, MODEL_NOT_ALLOWED, RATE_LIMITED, …). OpenAI proxy format (`error.message`, `error.type`) is also handled.
+`parseErrorResponse` / `parseErrorResponseFromResponse` in `gateway-errors.ts` support:
 
-So error handling is compatible.
+1. Gateway JSON: `statusCode`, `message`, `timestamp`, `code`, `path`, optional `errors[]`
+2. OpenAI proxy shape: `{ error: { message, type, code } }`
 
-## Request/response bodies
+Codes map to `ErrorCode` and typed errors (`AuthError`, `CreditsError`, …).
 
-- **Chat / Responses / Embeddings / Images (generations)**: JSON; SDK sends JSON and parses JSON. The gateway uses OpenAI-compatible DTOs.
-- **Images (edits) / Audio**: `multipart/form-data`. SDK uses `FormData` with fields `image`, `prompt`, `mask`, `model`, etc. (image edit) and `file`, `model`, etc. (audio). The gateway uses `FileFieldsInterceptor` / `FileInterceptor` with the same field names (`image`, `mask`, `file`).
+## Multipart and streaming
 
-No known mismatch.
+- **Multipart** (`multipart/form-data`): build `FormData` in app code and `POST` via `createGatewayFetch`.
+- **SSE**: consumed by upstream **`ai`** / provider streaming, not by a separate SSE helper in this package’s public API.
 
-## Streaming
+## Provider vs custom fetch
 
-- **Chat / Responses**: Gateway returns SSE when `stream: true`; SDK uses `parseSSEAsJSON` and expects `text/event-stream` (or `application/json` for non-streaming).
-- **Audio transcriptions**: Gateway supports streaming; SDK sends `stream: true` in form data and consumes SSE.
-
-Aligned.
-
-## Model info endpoint
-
-- **SDK**: GET `/api/v1/model/info` with optional query `litellm_model_id`.
-- **Gateway**: `ModelsController` `@Get('model/info')` with `@Query('litellm_model_id')`.
-
-Same contract; `@Public()` on the controller means auth is optional, but SDK still sends the token when available.
-
-## Vercel AI SDK provider vs advanced HTTP client
-
-Both talk to the same gateway; they differ by **integration style**, not by wire format. For new app integrations, prefer `@macpaw/ai-sdk/provider`. Reach for `@macpaw/ai-sdk/client` when you need multipart or direct request-pipeline control.
-
-| Capability                                           | `createAIGatewayProvider` (`@macpaw/ai-sdk/provider`)                        | `createAIGatewayClient` (`@macpaw/ai-sdk/client`) |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------- |
-| Chat / completions (JSON, SSE)                       | Yes — via `@ai-sdk/openai`-compatible surface                                | Yes                                               |
-| Responses API (stream)                               | Yes, when exposed like OpenAI                                                | Yes                                               |
-| Embeddings                                           | Yes, when used through Vercel AI SDK `embed` / provider                      | Yes                                               |
-| Tools / `generateText` / `streamText`                | Yes — primary use case                                                       | Use client only if you do not use Vercel AI SDK   |
-| Image generations (JSON)                             | Often yes (OpenAI-shaped)                                                    | Yes                                               |
-| Image **edits** (`multipart/form-data`)              | Not the main path — use client                                               | Yes                                               |
-| Audio transcription / translation (`multipart`, SSE) | Not the main path — use client                                               | Yes                                               |
-| Auth refresh-aware fetch wrapper                     | Yes — `createAIGatewayFetch` can refresh on 401 and normalize gateway errors | Yes                                               |
-| SDK middleware / lifecycle hooks on every call       | Fetch-level interception only (`createAIGatewayFetch`)                       | Yes — full pipeline                               |
-
-Auth for the provider is injected through `getAuthToken` inside `createAIGatewayProvider` / `createAIGatewayFetch`, using the same Bearer contract as the HTTP client. The provider path now also supports token refresh-aware auth and normalized gateway errors, while the HTTP client remains the richer option for multipart endpoints and request-pipeline middleware.
+| Style | Mechanism |
+| ----- | --------- |
+| `generateText`, `streamText`, tools, embeddings via Vercel | `createAIGatewayProvider` / `createGatewayProvider` |
+| Custom HTTP (multipart, bespoke routes) | `createGatewayFetch` + `fetch` API |
+| Same gateway, same auth/retry/middleware | Both use `GatewayProviderSettings` semantics |
 
 ---
 
-**Conclusion**: The SDK is compatible with the current AI Gateway HTTP API. Paths, base URLs, auth, error handling, body formats, and streaming behavior match the implementation and docs.
+**Conclusion:** Wire format, base URL, auth, and error shapes stay aligned with AI Gateway. The SDK surface is intentionally thin: provider + fetch bridge + NestJS helpers.
