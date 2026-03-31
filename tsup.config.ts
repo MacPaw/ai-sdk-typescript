@@ -9,7 +9,6 @@ export default defineConfig({
     'provider/index': 'src/provider/index.ts',
     'nestjs/index': 'src/nestjs/index.ts',
     'testing/index': 'src/testing/index.ts',
-    'react/index': 'src/react/index.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,

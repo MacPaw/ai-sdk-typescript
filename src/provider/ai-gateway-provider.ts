@@ -8,8 +8,7 @@
 
 import { createOpenAI as builtinCreateOpenAI } from '@ai-sdk/openai';
 import type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
-import { createAIGatewayFetch } from './create-fetch';
-import { GATEWAY_PLACEHOLDER_API_KEY } from './openai-placeholder';
+import { createAIGatewayFetch, GATEWAY_PLACEHOLDER_API_KEY } from './create-fetch';
 import type { Environment, LifecycleHooks, Logger, Middleware, RetryConfig, Transport } from '../runtime/config';
 import { resolveGatewayBaseURL as resolveRuntimeGatewayBaseURL } from '../runtime/config';
 import type { ApiVersion } from '../runtime/paths';
@@ -62,9 +61,6 @@ function resolveGatewayBaseURL(baseURL?: string, env?: Environment): string {
  *
  * The returned value is a fully typed `OpenAIProvider`, so existing apps can
  * keep using their `ai-sdk` helpers and model-selection patterns.
- *
- * For a `customProvider` with gateway fallback and model aliases, use `createAIGatewayCustomProvider`.
- * To toggle gateway vs direct OpenAI from a build/env flag (e.g. marketplace build), use `createAIGatewayDualProvider`.
  */
 export function createAIGatewayProvider(options: AIGatewayProviderOptions): OpenAIProvider {
   const baseURL = resolveGatewayBaseURL(options.baseURL, options.env);

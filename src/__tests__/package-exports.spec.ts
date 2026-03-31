@@ -14,7 +14,7 @@ const packageJson = JSON.parse(readFileSync(fileURLToPath(new URL('../../package
 
 describe('package exports', () => {
   it('keeps the release-critical entrypoints in the export map', () => {
-    for (const subpath of ['.', './provider', './client', './runtime', './testing', './react']) {
+    for (const subpath of ['.', './provider', './client', './runtime', './testing']) {
       expect(packageJson.exports[subpath]).toBeDefined();
     }
   });

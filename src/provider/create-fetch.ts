@@ -13,7 +13,8 @@
 import type { LifecycleHooks, Logger, Middleware, RetryConfig, Transport } from '../runtime/config';
 import { resolveConfig } from '../runtime/config';
 import { executeRequestPipeline } from '../runtime/request-executor';
-import { GATEWAY_PLACEHOLDER_API_KEY } from './openai-placeholder';
+
+export const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
 
 export interface CreateAIGatewayFetchOptions {
   baseURL: string;

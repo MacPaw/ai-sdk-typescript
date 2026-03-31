@@ -4,8 +4,6 @@ import * as provider from '../index';
 describe('provider entry', () => {
   it('exports the MacPaw gateway provider helpers only', () => {
     expect(provider.createAIGatewayProvider).toBeDefined();
-    expect(provider.createAIGatewayCustomProvider).toBeDefined();
-    expect(provider.createAIGatewayDualProvider).toBeDefined();
     expect(provider.createGatewayProvider).toBeDefined();
     expect(provider.GATEWAY_PROVIDERS).toBeDefined();
     expect(provider.createAIGatewayFetch).toBeDefined();

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createFetchTransport } from '../fetch';
+import { createFetchTransport } from '../../runtime/transport/fetch';
 
 describe('createFetchTransport', () => {
   const originalFetch = globalThis.fetch;
