@@ -1,13 +1,60 @@
 /**
- * Typed gateway-backed provider factory.
+ * AI Gateway provider factory.
  *
- * `createGatewayProvider()` centralizes the model-prefixing logic used to route
- * bare provider model IDs through AI Gateway's OpenAI-compatible endpoint.
+ * `createGatewayProvider()` routes bare model IDs through the gateway's
+ * OpenAI-compatible endpoint with provider-specific prefixes.
+ * `createAIGatewayProvider()` is the low-level escape hatch for direct
+ * OpenAI-compatible provider construction.
  */
 
-import type { OpenAIProvider } from '@ai-sdk/openai';
-import { createAIGatewayProvider } from './ai-gateway-provider';
-import type { AIGatewayProviderOptions } from './ai-gateway-provider';
+import { createOpenAI as builtinCreateOpenAI } from '@ai-sdk/openai';
+import type { OpenAIProvider, OpenAIProviderSettings } from '@ai-sdk/openai';
+import { createGatewayFetch, GATEWAY_PLACEHOLDER_API_KEY } from './gateway-fetch';
+import type { Environment, GatewayProviderSettings } from './gateway-config';
+import { resolveGatewayBaseURL } from './gateway-config';
+
+// ─── AIGatewayProvider (low-level) ────────────────────────────────────────────
+
+const DEFAULT_API_VERSION = 'v1';
+
+export interface AIGatewayProviderOptions
+  extends Omit<OpenAIProviderSettings, 'apiKey' | 'baseURL' | 'fetch'>,
+    GatewayProviderSettings {
+  /**
+   * Optional override for the OpenAI provider factory.
+   * Uses `createOpenAI` from `@ai-sdk/openai` by default.
+   */
+  createOpenAI?: typeof builtinCreateOpenAI;
+  /**
+   * Normalize gateway error responses into `AIGatewayError`. Default: true.
+   * When enabled, non-OK gateway responses throw instead of returning a failed Response.
+   */
+  normalizeErrors?: boolean;
+}
+
+/**
+ * Creates a Vercel AI SDK-compatible provider backed by AI Gateway.
+ *
+ * The returned value is a fully typed `OpenAIProvider`, so existing apps can
+ * keep using their `ai-sdk` helpers and model-selection patterns.
+ */
+export function createAIGatewayProvider(options: AIGatewayProviderOptions): OpenAIProvider {
+  const baseURL = resolveGatewayBaseURL(options.baseURL, options.env as Environment, 'AIGatewayProvider');
+  const customFetch = createGatewayFetch({ ...options, baseURL, normalizeErrors: options.normalizeErrors });
+
+  const openAI = options.createOpenAI ?? builtinCreateOpenAI;
+
+  return openAI({
+    name: options.name,
+    organization: options.organization,
+    project: options.project,
+    baseURL: `${baseURL.replace(/\/$/, '')}/api/${DEFAULT_API_VERSION}`,
+    fetch: customFetch,
+    apiKey: GATEWAY_PLACEHOLDER_API_KEY,
+  });
+}
+
+// ─── GatewayProvider (prefixed routing) ───────────────────────────────────────
 
 export interface GatewayProviderBaseOptions extends AIGatewayProviderOptions {
   /**

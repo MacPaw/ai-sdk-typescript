@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createAIGatewayFetch } from '../create-fetch';
-import { AIGatewayError } from '../../gateway-errors';
+import { createGatewayFetch } from '../gateway-fetch';
+import { AIGatewayError } from '../gateway-errors';
 
-describe('createAIGatewayFetch', () => {
+describe('createGatewayFetch', () => {
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
@@ -14,7 +14,7 @@ describe('createAIGatewayFetch', () => {
   });
 
   it('injects Bearer token from getAuthToken', async () => {
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'my-jwt',
     });
@@ -29,7 +29,7 @@ describe('createAIGatewayFetch', () => {
   });
 
   it('resolves relative URLs against baseURL', async () => {
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => null,
     });
@@ -41,7 +41,7 @@ describe('createAIGatewayFetch', () => {
   });
 
   it('passes extra headers', async () => {
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => null,
       headers: { 'X-Custom': 'value' },
@@ -55,7 +55,7 @@ describe('createAIGatewayFetch', () => {
   });
 
   it('skips Authorization when token is null', async () => {
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => null,
     });
@@ -68,7 +68,7 @@ describe('createAIGatewayFetch', () => {
   });
 
   it('does not prefix absolute URLs to a different host', async () => {
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'tok',
     });
@@ -80,7 +80,7 @@ describe('createAIGatewayFetch', () => {
   });
 
   it('does not leak Bearer token to external hosts', async () => {
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'secret-token',
       headers: { 'X-Internal': 'yes' },
@@ -95,7 +95,7 @@ describe('createAIGatewayFetch', () => {
   });
 
   it('strips the gateway placeholder Authorization header for external hosts', async () => {
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'secret-token',
     });
@@ -112,7 +112,7 @@ describe('createAIGatewayFetch', () => {
   });
 
   it('does not treat prefix-matching absolute URLs as gateway requests', async () => {
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'secret-token',
       headers: { 'X-Internal': 'yes' },
@@ -127,7 +127,7 @@ describe('createAIGatewayFetch', () => {
   });
 
   it('does not set Content-Type for FormData body', async () => {
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => null,
     });
@@ -146,7 +146,7 @@ describe('createAIGatewayFetch', () => {
   });
 
   it('does not set Content-Type for Blob body', async () => {
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => null,
     });
@@ -178,7 +178,7 @@ describe('createAIGatewayFetch', () => {
       )
       .mockResolvedValueOnce(new Response('ok', { status: 200 }));
 
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken,
     });
@@ -198,7 +198,7 @@ describe('createAIGatewayFetch', () => {
       }),
     );
 
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'token',
     });
@@ -216,7 +216,7 @@ describe('createAIGatewayFetch', () => {
       }),
     );
 
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'token',
       normalizeErrors: false,
@@ -236,7 +236,7 @@ describe('createAIGatewayFetch', () => {
       .fn<() => Promise<string | null>>()
       .mockResolvedValueOnce('token-1')
       .mockResolvedValueOnce('token-2');
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken,
     });
@@ -251,7 +251,7 @@ describe('createAIGatewayFetch', () => {
   });
 
   it('runs provider fetch middleware through the shared request pipeline', async () => {
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => null,
       middleware: [
@@ -283,7 +283,7 @@ describe('createAIGatewayFetch', () => {
       )
       .mockResolvedValueOnce(new Response('ok', { status: 200 }));
 
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'token',
       retry: { maxAttempts: 2, initialDelayMs: 1, maxDelayMs: 1 },
@@ -307,7 +307,7 @@ describe('createAIGatewayFetch', () => {
         }),
     );
 
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'token',
       timeout: 50,
@@ -319,7 +319,7 @@ describe('createAIGatewayFetch', () => {
 
   it('uses a custom fetch implementation', async () => {
     const customFetchImpl = vi.fn().mockResolvedValue(new Response('ok', { status: 200 }));
-    const customFetch = createAIGatewayFetch({
+    const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'token',
       fetch: customFetchImpl,

@@ -1,17 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import * as root from '../index';
-import * as provider from '../provider';
 
 describe('root entry', () => {
-  it('re-exports the provider surface', () => {
-    const providerKeys = Object.keys(provider).sort();
-    const rootKeys = Object.keys(root).sort();
-    const missingProviderKeys = providerKeys.filter((key) => !rootKeys.includes(key));
-
-    expect(missingProviderKeys).toEqual([]);
+  it('exports the gateway provider surface', () => {
     expect(root.AIGatewayError).toBeDefined();
     expect(root.GatewayApiCode).toBeDefined();
-    expect(root.createAIGatewayProvider).toBe(provider.createAIGatewayProvider);
+    expect(root.createAIGatewayProvider).toBeDefined();
+    expect(root.createGatewayProvider).toBeDefined();
+    expect(root.GATEWAY_PROVIDERS).toBeDefined();
+    expect(root.createGatewayFetch).toBeDefined();
   });
 
   it('does not expose low-level internals or upstream helpers', () => {
