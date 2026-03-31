@@ -35,11 +35,10 @@ describe('createChatCompletion', () => {
     });
     const config = createMockConfig(response);
 
-    const raw = await createChatCompletion(config, {
+    const result = await createChatCompletion(config, {
       model: 'openai/gpt-4.1-nano',
       messages: [{ role: 'user', content: 'Hi' }],
     });
-    const result = 'response' in raw ? raw.data : raw;
 
     expect(result.id).toBe('chatcmpl-123');
     expect(result.choices[0].message?.content).toBe('Hello!');

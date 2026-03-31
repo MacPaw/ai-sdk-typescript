@@ -1,64 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { extractChatDelta, collectChatStream, extractResponseDelta, collectResponseStream } from '../helpers';
-import type { ChatCompletionChunk, ResponseStreamEvent } from '../types';
-
-describe('extractChatDelta', () => {
-  it('extracts content from delta', () => {
-    const chunk: ChatCompletionChunk = {
-      id: 'c1',
-      object: 'chat.completion.chunk',
-      created: 1,
-      model: 'm',
-      choices: [{ index: 0, delta: { content: 'Hello' }, finish_reason: null }],
-    };
-    expect(extractChatDelta(chunk)).toBe('Hello');
-  });
-
-  it('returns empty string when no content', () => {
-    const chunk: ChatCompletionChunk = {
-      id: 'c1',
-      object: 'chat.completion.chunk',
-      created: 1,
-      model: 'm',
-      choices: [{ index: 0, delta: { role: 'assistant' }, finish_reason: null }],
-    };
-    expect(extractChatDelta(chunk)).toBe('');
-  });
-
-  it('returns empty string when choices is empty', () => {
-    const chunk: ChatCompletionChunk = {
-      id: 'c1',
-      object: 'chat.completion.chunk',
-      created: 1,
-      model: 'm',
-      choices: [],
-    };
-    expect(extractChatDelta(chunk)).toBe('');
-  });
-});
-
-describe('collectChatStream', () => {
-  it('collects full text from stream', async () => {
-    async function* gen(): AsyncGenerator<ChatCompletionChunk> {
-      yield {
-        id: 'c1',
-        object: 'chat.completion.chunk',
-        created: 1,
-        model: 'm',
-        choices: [{ index: 0, delta: { content: 'Hello' }, finish_reason: null }],
-      };
-      yield {
-        id: 'c1',
-        object: 'chat.completion.chunk',
-        created: 1,
-        model: 'm',
-        choices: [{ index: 0, delta: { content: ' world' }, finish_reason: null }],
-      };
-    }
-    const text = await collectChatStream(gen());
-    expect(text).toBe('Hello world');
-  });
-});
+import { extractResponseDelta, collectResponseStream } from '../helpers';
+import type { ResponseStreamEvent } from '../types';
 
 describe('extractResponseDelta', () => {
   it('extracts delta from output_text.delta event', () => {

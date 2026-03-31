@@ -14,7 +14,11 @@
  */
 
 import type { ChatCompletionChunk, ChatCompletionUsage, ResponseStreamEvent, ResponseUsage } from '../types';
-import { extractChatDelta, extractResponseDelta } from '../helpers';
+import { extractResponseDelta } from '../helpers';
+
+function extractChatDelta(chunk: ChatCompletionChunk): string {
+  return chunk.choices?.[0]?.delta?.content ?? '';
+}
 
 interface Waiter {
   resolve: () => void;

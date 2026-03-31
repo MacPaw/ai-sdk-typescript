@@ -15,7 +15,6 @@ import type { StreamTextResult, StreamResponseResult } from '../runtime/stream-r
 import { anySignal } from '../runtime/abort';
 import type {
   ChatCompletion,
-  ChatCompletionChunk,
   CreateChatCompletionRequest,
   CreateEmbeddingRequest,
   CreateEmbeddingResponse,
@@ -31,7 +30,6 @@ import type {
   TranscriptionResponse,
   TranscriptionStreamEvent,
   TranslationResponse,
-  WithResponseResult,
 } from '../types';
 import type {
   AIGatewayClient,
@@ -48,66 +46,35 @@ import type {
 /** Public client surface types — request/response DTOs live in `@macpaw/ai-sdk/types`. */
 export type * from './types';
 
-function assertNonStreamingWithResponseRequest(request: { stream?: boolean }, methodName: string): void {
-  if (request.stream === true) {
-    throw new Error(`${methodName} does not support stream: true. Use the streaming method instead.`);
-  }
-}
-
 function buildChatCompletions(config: ResolvedConfig): ChatCompletionsAPI {
-  function create(
-    request: CreateChatCompletionRequest,
-    options?: RequestOptions,
-  ): Promise<ChatCompletion> | AsyncIterableIterator<ChatCompletionChunk> {
-    if (request.stream) {
-      return chatApi.createChatCompletionStream(config, request, options) as AsyncIterableIterator<ChatCompletionChunk>;
-    }
-    return chatApi.createChatCompletion(config, request, options) as Promise<ChatCompletion>;
-  }
-
-  function createWithResponse(
-    request: CreateChatCompletionRequest & { stream?: false | undefined },
-    options?: RequestOptions,
-  ): Promise<WithResponseResult<ChatCompletion>> {
-    assertNonStreamingWithResponseRequest(request, 'chat.completions.createWithResponse');
-    return chatApi.createChatCompletion(config, request, { ...options, withResponse: true }) as Promise<
-      WithResponseResult<ChatCompletion>
-    >;
-  }
-
-  function stream(request: Omit<CreateChatCompletionRequest, 'stream'>, options?: RequestOptions): StreamTextResult {
-    const ac = new AbortController();
-    const mergedOptions: RequestOptions = {
-      ...options,
-      signal: options?.signal ? anySignal([options.signal, ac.signal]) : ac.signal,
-    };
-    const fullRequest: CreateChatCompletionRequest = {
-      ...(request as CreateChatCompletionRequest),
-      stream: true,
-      stream_options: {
-        include_usage: true,
-        ...((request as Record<string, unknown>).stream_options as object | undefined),
-      },
-    };
-    const generator = chatApi.createChatCompletionStream(config, fullRequest, mergedOptions);
-    return createStreamTextResult(generator, ac);
-  }
-
-  // `as` cast required: TS cannot unify a union return type with overloaded signatures.
-  // Safety is ensured by the explicit ChatCompletionsAPI return type on buildChatCompletions.
-  return { create, createWithResponse, stream } as ChatCompletionsAPI;
+  return {
+    create(request: CreateChatCompletionRequest, options?: RequestOptions): Promise<ChatCompletion> {
+      return chatApi.createChatCompletion(config, request, options);
+    },
+    stream(request: Omit<CreateChatCompletionRequest, 'stream'>, options?: RequestOptions): StreamTextResult {
+      const ac = new AbortController();
+      const mergedOptions: RequestOptions = {
+        ...options,
+        signal: options?.signal ? anySignal([options.signal, ac.signal]) : ac.signal,
+      };
+      const fullRequest: CreateChatCompletionRequest = {
+        ...(request as CreateChatCompletionRequest),
+        stream: true,
+        stream_options: {
+          include_usage: true,
+          ...((request as Record<string, unknown>).stream_options as object | undefined),
+        },
+      };
+      const generator = chatApi.createChatCompletionStream(config, fullRequest, mergedOptions);
+      return createStreamTextResult(generator, ac);
+    },
+  };
 }
 
 function buildResponses(config: ResolvedConfig): ResponsesAPI {
   return {
-    create(request: CreateResponseRequest, options?: RequestOptions) {
-      return responsesApi.createResponse(config, request, options) as Promise<ResponseObject>;
-    },
-    createWithResponse(request: CreateResponseRequest, options?: RequestOptions) {
-      assertNonStreamingWithResponseRequest(request, 'responses.createWithResponse');
-      return responsesApi.createResponse(config, request, { ...options, withResponse: true }) as Promise<
-        WithResponseResult<ResponseObject>
-      >;
+    create(request: CreateResponseRequest, options?: RequestOptions): Promise<ResponseObject> {
+      return responsesApi.createResponse(config, request, options);
     },
     createStream(request: CreateResponseRequest, options?: RequestOptions) {
       return responsesApi.createResponseStream(config, request, options);
@@ -125,93 +92,56 @@ function buildResponses(config: ResolvedConfig): ResponsesAPI {
       );
       return createStreamResponseResult(generator, ac);
     },
-  } as ResponsesAPI;
+  };
 }
 
 function buildEmbeddings(config: ResolvedConfig): EmbeddingsAPI {
   return {
-    create(request: CreateEmbeddingRequest, options?: RequestOptions) {
-      return embeddingsApi.createEmbedding(config, request, options) as Promise<CreateEmbeddingResponse>;
+    create(request: CreateEmbeddingRequest, options?: RequestOptions): Promise<CreateEmbeddingResponse> {
+      return embeddingsApi.createEmbedding(config, request, options);
     },
-    createWithResponse(request: CreateEmbeddingRequest, options?: RequestOptions) {
-      return embeddingsApi.createEmbedding(config, request, { ...options, withResponse: true }) as Promise<
-        WithResponseResult<CreateEmbeddingResponse>
-      >;
-    },
-  } as EmbeddingsAPI;
+  };
 }
 
 function buildModels(config: ResolvedConfig): ModelsAPI {
   return {
-    getInfo(params?: { litellm_model_id?: string }, options?: RequestOptions) {
-      return modelsApi.getModelInfo(config, params, options) as Promise<ModelInfoResponse>;
+    getInfo(params?: { litellm_model_id?: string }, options?: RequestOptions): Promise<ModelInfoResponse> {
+      return modelsApi.getModelInfo(config, params, options);
     },
-    getInfoWithResponse(params?: { litellm_model_id?: string }, options?: RequestOptions) {
-      return modelsApi.getModelInfo(config, params, { ...options, withResponse: true }) as Promise<
-        WithResponseResult<ModelInfoResponse>
-      >;
-    },
-  } as ModelsAPI;
+  };
 }
 
 function buildImages(config: ResolvedConfig): ImagesAPI {
   return {
-    generate(request: CreateImageRequest, options?: RequestOptions) {
-      return imagesApi.createImage(config, request, options) as Promise<CreateImageResponse>;
+    generate(request: CreateImageRequest, options?: RequestOptions): Promise<CreateImageResponse> {
+      return imagesApi.createImage(config, request, options);
     },
-    generateWithResponse(request: CreateImageRequest, options?: RequestOptions) {
-      return imagesApi.createImage(config, request, { ...options, withResponse: true }) as Promise<
-        WithResponseResult<CreateImageResponse>
-      >;
+    edit(request: CreateImageEditRequest, options?: RequestOptions): Promise<CreateImageResponse> {
+      return imagesApi.createImageEdit(config, request, options);
     },
-    edit(request: CreateImageEditRequest, options?: RequestOptions) {
-      return imagesApi.createImageEdit(config, request, options) as Promise<CreateImageResponse>;
-    },
-    editWithResponse(request: CreateImageEditRequest, options?: RequestOptions) {
-      return imagesApi.createImageEdit(config, request, { ...options, withResponse: true }) as Promise<
-        WithResponseResult<CreateImageResponse>
-      >;
-    },
-  } as ImagesAPI;
+  };
 }
 
 function buildAudio(config: ResolvedConfig): AudioAPI {
-  function createTranscription(
-    request: CreateTranscriptionRequest,
-    options?: RequestOptions,
-  ): Promise<TranscriptionResponse> | AsyncGenerator<TranscriptionStreamEvent, void, undefined> {
-    if (request.stream) {
-      return audioApi.createTranscriptionStream(config, request, options);
-    }
-    return audioApi.createTranscription(config, request, options) as Promise<TranscriptionResponse>;
-  }
-
-  function createTranscriptionWithResponse(
-    request: CreateTranscriptionRequest & { stream?: false | undefined },
-    options?: RequestOptions,
-  ): Promise<WithResponseResult<TranscriptionResponse>> {
-    assertNonStreamingWithResponseRequest(request, 'audio.transcriptions.createWithResponse');
-    return audioApi.createTranscription(config, request, { ...options, withResponse: true }) as Promise<
-      WithResponseResult<TranscriptionResponse>
-    >;
-  }
-
-  return {
-    transcriptions: {
-      create: createTranscription,
-      createWithResponse: createTranscriptionWithResponse,
-    } as AudioTranscriptionsAPI,
-    translations: {
-      create(request: CreateTranslationRequest, options?: RequestOptions) {
-        return audioApi.createTranslation(config, request, options) as Promise<TranslationResponse>;
-      },
-      createWithResponse(request: CreateTranslationRequest, options?: RequestOptions) {
-        return audioApi.createTranslation(config, request, { ...options, withResponse: true }) as Promise<
-          WithResponseResult<TranslationResponse>
-        >;
-      },
-    } as AudioTranslationsAPI,
+  const transcriptions: AudioTranscriptionsAPI = {
+    create(request: CreateTranscriptionRequest, options?: RequestOptions): Promise<TranscriptionResponse> {
+      return audioApi.createTranscription(config, request, options);
+    },
+    stream(
+      request: Omit<CreateTranscriptionRequest, 'stream'>,
+      options?: RequestOptions,
+    ): AsyncGenerator<TranscriptionStreamEvent, void, undefined> {
+      return audioApi.createTranscriptionStream(config, request as CreateTranscriptionRequest, options);
+    },
   };
+
+  const translations: AudioTranslationsAPI = {
+    create(request: CreateTranslationRequest, options?: RequestOptions): Promise<TranslationResponse> {
+      return audioApi.createTranslation(config, request, options);
+    },
+  };
+
+  return { transcriptions, translations };
 }
 
 /**

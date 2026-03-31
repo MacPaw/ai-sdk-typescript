@@ -24,8 +24,6 @@ export {
 export { SDKValidationError } from './runtime/validation';
 
 export {
-  extractChatDelta,
-  collectChatStream,
   extractResponseDelta,
   collectResponseStream,
   extractTranscriptionDelta,

@@ -12,7 +12,7 @@ describe('root entry', () => {
     expect(root.AIGatewayError).toBeDefined();
     expect(root.ErrorCode).toBeDefined();
     expect(root.createAIGatewayProvider).toBe(provider.createAIGatewayProvider);
-    expect(root.collectChatStream).toBeDefined();
+    expect(root.collectResponseStream).toBeDefined();
     expect(root.SDKValidationError).toBeDefined();
   });
 

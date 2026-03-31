@@ -2,31 +2,7 @@
  * Convenience helpers for common SDK usage patterns.
  */
 
-import type { ChatCompletionChunk, ResponseStreamEvent, TranscriptionStreamEvent } from './types';
-
-/**
- * Extract text content from a streaming chat completion chunk.
- * Returns the delta content string or empty string.
- */
-export function extractChatDelta(chunk: ChatCompletionChunk): string {
-  return chunk.choices?.[0]?.delta?.content ?? '';
-}
-
-/**
- * Collect full text from a chat completion stream.
- *
- * @example
- * const text = await collectChatStream(
- *   client.chat.completions.create({ model: 'm', messages, stream: true })
- * );
- */
-export async function collectChatStream(stream: AsyncIterable<ChatCompletionChunk>): Promise<string> {
-  let text = '';
-  for await (const chunk of stream) {
-    text += extractChatDelta(chunk);
-  }
-  return text;
-}
+import type { ResponseStreamEvent, TranscriptionStreamEvent } from './types';
 
 /**
  * Extract text delta from a Responses API stream event.

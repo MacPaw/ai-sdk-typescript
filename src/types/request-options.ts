@@ -17,14 +17,3 @@ export interface RequestOptions {
   /** Extra headers merged into this request only. */
   headers?: Record<string, string>;
 }
-
-/**
- * Wrapper returned by explicit `*WithResponse()` client methods.
- * Provides access to both the parsed data and the raw `Response` for header inspection.
- */
-export interface WithResponseResult<T> {
-  /** The parsed response body. */
-  data: T;
-  /** The raw `Response` object for header access. */
-  response: Response;
-}

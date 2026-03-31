@@ -24,21 +24,25 @@ describe('createMockAIGatewayClient', () => {
 
     expect(client.chat).toBeDefined();
     expect(client.chat.completions).toBeDefined();
-    expect(client.chat.completions.createWithResponse).toBeDefined();
+    expect(client.chat.completions.create).toBeDefined();
+    expect(client.chat.completions.stream).toBeDefined();
     expect(client.responses).toBeDefined();
-    expect(client.responses.createWithResponse).toBeDefined();
+    expect(client.responses.create).toBeDefined();
+    expect(client.responses.createStream).toBeDefined();
+    expect(client.responses.stream).toBeDefined();
     expect(client.embeddings).toBeDefined();
-    expect(client.embeddings.createWithResponse).toBeDefined();
+    expect(client.embeddings.create).toBeDefined();
     expect(client.models).toBeDefined();
-    expect(client.models.getInfoWithResponse).toBeDefined();
+    expect(client.models.getInfo).toBeDefined();
     expect(client.images).toBeDefined();
-    expect(client.images.generateWithResponse).toBeDefined();
-    expect(client.images.editWithResponse).toBeDefined();
+    expect(client.images.generate).toBeDefined();
+    expect(client.images.edit).toBeDefined();
     expect(client.audio).toBeDefined();
     expect(client.audio.transcriptions).toBeDefined();
-    expect(client.audio.transcriptions.createWithResponse).toBeDefined();
+    expect(client.audio.transcriptions.create).toBeDefined();
+    expect(client.audio.transcriptions.stream).toBeDefined();
     expect(client.audio.translations).toBeDefined();
-    expect(client.audio.translations.createWithResponse).toBeDefined();
+    expect(client.audio.translations.create).toBeDefined();
     expect(client.use).toBeDefined();
   });
 

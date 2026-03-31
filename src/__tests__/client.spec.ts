@@ -56,24 +56,17 @@ describe('createAIGatewayClient', () => {
     });
 
     expect(typeof client.chat.completions.create).toBe('function');
-    expect(typeof client.chat.completions.createWithResponse).toBe('function');
     expect(typeof client.chat.completions.stream).toBe('function');
     expect(typeof client.responses.create).toBe('function');
-    expect(typeof client.responses.createWithResponse).toBe('function');
     expect(typeof client.responses.createStream).toBe('function');
     expect(typeof client.responses.stream).toBe('function');
     expect(typeof client.embeddings.create).toBe('function');
-    expect(typeof client.embeddings.createWithResponse).toBe('function');
     expect(typeof client.models.getInfo).toBe('function');
-    expect(typeof client.models.getInfoWithResponse).toBe('function');
     expect(typeof client.images.generate).toBe('function');
-    expect(typeof client.images.generateWithResponse).toBe('function');
     expect(typeof client.images.edit).toBe('function');
-    expect(typeof client.images.editWithResponse).toBe('function');
     expect(typeof client.audio.transcriptions.create).toBe('function');
-    expect(typeof client.audio.transcriptions.createWithResponse).toBe('function');
+    expect(typeof client.audio.transcriptions.stream).toBe('function');
     expect(typeof client.audio.translations.create).toBe('function');
-    expect(typeof client.audio.translations.createWithResponse).toBe('function');
   });
 
   it('chat.completions.stream uses the client pipeline and injects stream usage options', async () => {
@@ -121,7 +114,7 @@ describe('createAIGatewayClient', () => {
     });
   });
 
-  it('createWithResponse methods return data plus raw response', async () => {
+  it('audio.transcriptions.stream yields SSE events via the client pipeline', async () => {
     const transport = createMockTransport();
     const client = createAIGatewayClient({
       baseURL: 'https://api.example.com/ai',
@@ -129,41 +122,19 @@ describe('createAIGatewayClient', () => {
       transport,
     });
 
-    const result = await client.models.getInfoWithResponse();
+    const file = new Blob(['audio data'], { type: 'audio/wav' });
+    const events: Array<{ type: string; delta?: string; text?: string }> = [];
+    for await (const event of client.audio.transcriptions.stream({ model: 'openai/whisper-1', file })) {
+      events.push(event as { type: string; delta?: string; text?: string });
+    }
 
-    expect(result).toHaveProperty('data');
-    expect(result).toHaveProperty('response');
-    expect(result.response).toBeInstanceOf(Response);
+    expect(transport.requestCount).toBe(1);
+    expect(transport.requests[0].body).toMatchObject({ model: 'openai/whisper-1', stream: 'true' });
+    expect(events).toHaveLength(3);
+    expect(events[0].type).toBe('transcript.text.delta');
+    expect(events[0].delta).toBe('Mock ');
+    expect(events[2].type).toBe('transcript.text.done');
+    expect(events[2].text).toBe('Mock transcription');
   });
 
-  it('rejects stream:true for createWithResponse methods that are non-streaming only', async () => {
-    const client = createAIGatewayClient({
-      baseURL: 'https://api.example.com/ai',
-      getAuthToken: async () => 'token',
-    });
-
-    expect(() =>
-      client.chat.completions.createWithResponse({
-        model: 'openai/gpt-4.1-nano',
-        messages: [{ role: 'user', content: 'Hi' }],
-        stream: true,
-      } as never),
-    ).toThrow('chat.completions.createWithResponse does not support stream: true');
-
-    expect(() =>
-      client.audio.transcriptions.createWithResponse({
-        file: new Blob(['audio'], { type: 'audio/mp3' }),
-        model: 'whisper-1',
-        stream: true,
-      } as never),
-    ).toThrow('audio.transcriptions.createWithResponse does not support stream: true');
-
-    expect(() =>
-      client.responses.createWithResponse({
-        model: 'openai/gpt-4.1-nano',
-        input: 'Hi',
-        stream: true,
-      } as never),
-    ).toThrow('responses.createWithResponse does not support stream: true');
-  });
 });

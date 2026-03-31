@@ -34,11 +34,10 @@ describe('createEmbedding', () => {
     });
     const config = createMockConfig(response);
 
-    const raw = await createEmbedding(config, {
+    const result = await createEmbedding(config, {
       model: 'openai/text-embedding-3-small',
       input: 'Hello world',
     });
-    const result = 'response' in raw ? raw.data : raw;
 
     expect(result.data).toHaveLength(1);
     expect(result.data[0].embedding).toEqual([0.1, 0.2, 0.3]);

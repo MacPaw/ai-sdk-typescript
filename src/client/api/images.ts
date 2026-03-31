@@ -7,26 +7,22 @@ import { runRequest } from '../../runtime/request';
 import { validateImageGenerationRequest, validateImageEditRequest } from '../../runtime/validation';
 import type { CreateImageRequest, CreateImageResponse, CreateImageEditRequest, RequestOptions } from '../../types';
 
-type InternalRequestOptions = RequestOptions & { withResponse?: boolean };
-
 export async function createImage(
   config: ResolvedConfig,
   request: CreateImageRequest,
-  options?: InternalRequestOptions,
-): Promise<CreateImageResponse | { data: CreateImageResponse; response: Response }> {
+  options?: RequestOptions,
+): Promise<CreateImageResponse> {
   validateImageGenerationRequest(request);
   const body = JSON.stringify(request);
   const response = await runRequest(config, config.apiPaths.ImagesGenerations, { method: 'POST', body }, options);
-  const data = (await response.json()) as CreateImageResponse;
-  if (options?.withResponse) return { data, response };
-  return data;
+  return (await response.json()) as CreateImageResponse;
 }
 
 export async function createImageEdit(
   config: ResolvedConfig,
   request: CreateImageEditRequest,
-  options?: InternalRequestOptions,
-): Promise<CreateImageResponse | { data: CreateImageResponse; response: Response }> {
+  options?: RequestOptions,
+): Promise<CreateImageResponse> {
   validateImageEditRequest(request);
   const formData = new FormData();
   formData.append('image', request.image);
@@ -38,7 +34,5 @@ export async function createImageEdit(
   if (request.response_format) formData.append('response_format', request.response_format);
 
   const response = await runRequest(config, config.apiPaths.ImagesEdits, { method: 'POST', body: formData }, options);
-  const data = (await response.json()) as CreateImageResponse;
-  if (options?.withResponse) return { data, response };
-  return data;
+  return (await response.json()) as CreateImageResponse;
 }

@@ -15,4 +15,4 @@ export * from './embeddings';
 export * from './images';
 export * from './audio';
 export type { ModelInfo, ModelEntry, ModelInfoResponse } from './models';
-export type { RequestOptions, WithResponseResult } from './request-options';
+export type { RequestOptions } from './request-options';

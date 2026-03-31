@@ -8,25 +8,21 @@ import { assertSSEResponse, parseSSEAsJSON } from '../../runtime/sse';
 import { validateChatCompletionRequest } from '../../runtime/validation';
 import type { CreateChatCompletionRequest, ChatCompletion, ChatCompletionChunk, RequestOptions } from '../../types';
 
-type InternalRequestOptions = RequestOptions & { withResponse?: boolean };
-
 export async function createChatCompletion(
   config: ResolvedConfig,
   request: CreateChatCompletionRequest,
-  options?: InternalRequestOptions,
-): Promise<ChatCompletion | { data: ChatCompletion; response: Response }> {
+  options?: RequestOptions,
+): Promise<ChatCompletion> {
   validateChatCompletionRequest(request);
   const body = JSON.stringify(request);
   const response = await runRequest(config, config.apiPaths.ChatCompletions, { method: 'POST', body }, options);
-  const data = (await response.json()) as ChatCompletion;
-  if (options?.withResponse) return { data, response };
-  return data;
+  return (await response.json()) as ChatCompletion;
 }
 
 export async function* createChatCompletionStream(
   config: ResolvedConfig,
   request: CreateChatCompletionRequest,
-  options?: InternalRequestOptions,
+  options?: RequestOptions,
 ): AsyncGenerator<ChatCompletionChunk, void, undefined> {
   validateChatCompletionRequest(request);
   const streamRequest = { ...request, stream: true };
