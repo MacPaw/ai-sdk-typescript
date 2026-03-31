@@ -10,11 +10,11 @@ Core generation APIs stay on upstream **`ai`** and **`@ai-sdk/*`**. This package
 
 ## Package entry points
 
-| Import | Use for |
-| ------ | ------- |
-| `@macpaw/ai-sdk` | **Canonical** — providers, `createGatewayFetch`, errors, config types |
-| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets) |
-| `@macpaw/ai-sdk/nestjs` | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter` |
+| Import                    | Use for                                                               |
+| ------------------------- | --------------------------------------------------------------------- |
+| `@macpaw/ai-sdk`          | **Canonical** — providers, `createGatewayFetch`, errors, config types |
+| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets)         |
+| `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`   |
 
 Upstream **`ai`**, **`@ai-sdk/openai`**, **`@ai-sdk/react`** (or **`ai/react`**) remain the home for Vercel primitives and React hooks.
 
@@ -70,16 +70,16 @@ for await (const delta of result.textStream) {
 
 Used by `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, and Nest `AIGatewayModule`.
 
-| Field | Purpose |
-| ----- | ------- |
+| Field          | Purpose                                                          |
+| -------------- | ---------------------------------------------------------------- |
 | `getAuthToken` | Required — `Promise<string \| null>`; `true` = refresh after 401 |
-| `env` | `'production'` → default base URL `https://api.macpaw.com/ai` |
-| `baseURL` | Override gateway root (staging, etc.) |
-| `headers` | Extra headers (do not set `Authorization` here) |
-| `retry` | `RetryConfig` or `false` |
-| `timeout` | ms per attempt (default `60000`) |
-| `middleware` | Interceptor stack |
-| `fetch` | Custom `fetch` implementation |
+| `env`          | `'production'` → default base URL `https://api.macpaw.com/ai`    |
+| `baseURL`      | Override gateway root (staging, etc.)                            |
+| `headers`      | Extra headers (do not set `Authorization` here)                  |
+| `retry`        | `RetryConfig` or `false`                                         |
+| `timeout`      | ms per attempt (default `60000`)                                 |
+| `middleware`   | Interceptor stack                                                |
+| `fetch`        | Custom `fetch` implementation                                    |
 
 Internal resolution: `resolveConfig()` in `gateway-config.ts`.
 
@@ -110,19 +110,19 @@ Non-gateway absolute URLs are passed through without injecting Bearer auth (plac
 
 Bare model IDs get a default Gateway prefix per provider constant; IDs that already contain `/` are unchanged.
 
-| Constant | Default prefix |
-| -------- | ---------------- |
-| `GATEWAY_PROVIDERS.ANTHROPIC` | `anthropic` |
-| `GATEWAY_PROVIDERS.GOOGLE` | `google` |
-| `GATEWAY_PROVIDERS.XAI` | `xai` |
-| `GATEWAY_PROVIDERS.GROQ` | `groq` |
-| `GATEWAY_PROVIDERS.MISTRAL` | `mistral` |
-| `GATEWAY_PROVIDERS.AMAZON_BEDROCK` | `bedrock` |
-| `GATEWAY_PROVIDERS.AZURE` | `azure` |
-| `GATEWAY_PROVIDERS.COHERE` | `cohere` |
-| `GATEWAY_PROVIDERS.PERPLEXITY` | `perplexity` |
-| `GATEWAY_PROVIDERS.DEEPSEEK` | `deepseek` |
-| `GATEWAY_PROVIDERS.TOGETHERAI` | `togetherai` |
+| Constant                              | Default prefix                        |
+| ------------------------------------- | ------------------------------------- |
+| `GATEWAY_PROVIDERS.ANTHROPIC`         | `anthropic`                           |
+| `GATEWAY_PROVIDERS.GOOGLE`            | `google`                              |
+| `GATEWAY_PROVIDERS.XAI`               | `xai`                                 |
+| `GATEWAY_PROVIDERS.GROQ`              | `groq`                                |
+| `GATEWAY_PROVIDERS.MISTRAL`           | `mistral`                             |
+| `GATEWAY_PROVIDERS.AMAZON_BEDROCK`    | `bedrock`                             |
+| `GATEWAY_PROVIDERS.AZURE`             | `azure`                               |
+| `GATEWAY_PROVIDERS.COHERE`            | `cohere`                              |
+| `GATEWAY_PROVIDERS.PERPLEXITY`        | `perplexity`                          |
+| `GATEWAY_PROVIDERS.DEEPSEEK`          | `deepseek`                            |
+| `GATEWAY_PROVIDERS.TOGETHERAI`        | `togetherai`                          |
 | `GATEWAY_PROVIDERS.OPENAI_COMPATIBLE` | **requires** `modelPrefix` in options |
 
 ```ts
@@ -161,14 +161,14 @@ const loggingMiddleware: Middleware = async (config, next) => {
 
 ## Error handling
 
-| `ErrorCode` | Typical HTTP | Meaning |
-| ----------- | ------------ | ------- |
-| `AuthRequired` | 401 | Token missing / expired |
-| `InsufficientCredits` / `SubscriptionExpired` | 402 | Billing / subscription |
-| `ModelNotAllowed` | 403 | Model denied |
-| `RateLimited` | 429 | Rate limit (`retryAfter` when present) |
-| `Validation` | 422 | Validation body |
-| … | … | See `gateway-errors.ts` |
+| `ErrorCode`                                   | Typical HTTP | Meaning                                |
+| --------------------------------------------- | ------------ | -------------------------------------- |
+| `AuthRequired`                                | 401          | Token missing / expired                |
+| `InsufficientCredits` / `SubscriptionExpired` | 402          | Billing / subscription                 |
+| `ModelNotAllowed`                             | 403          | Model denied                           |
+| `RateLimited`                                 | 429          | Rate limit (`retryAfter` when present) |
+| `Validation`                                  | 422          | Validation body                        |
+| …                                             | …            | See `gateway-errors.ts`                |
 
 ```ts
 import { AIGatewayError, ErrorCode, isAIGatewayError } from '@macpaw/ai-sdk';

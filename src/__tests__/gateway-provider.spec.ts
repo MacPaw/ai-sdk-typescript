@@ -123,7 +123,10 @@ describe('createGatewayProvider', () => {
     const mockProvider = createMockProvider();
     const mockCreateOpenAI = vi.fn().mockReturnValue(mockProvider);
 
-    const provider = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, { ...baseOptions, createOpenAI: mockCreateOpenAI as never });
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, {
+      ...baseOptions,
+      createOpenAI: mockCreateOpenAI as never,
+    });
     provider('claude-sonnet-4-20250514');
 
     expect(mockProvider).toHaveBeenCalledWith('anthropic/claude-sonnet-4-20250514');
@@ -133,7 +136,10 @@ describe('createGatewayProvider', () => {
     const mockProvider = createMockProvider();
     const mockCreateOpenAI = vi.fn().mockReturnValue(mockProvider);
 
-    const provider = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, { ...baseOptions, createOpenAI: mockCreateOpenAI as never });
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, {
+      ...baseOptions,
+      createOpenAI: mockCreateOpenAI as never,
+    });
     provider('anthropic/claude-sonnet-4-20250514');
 
     expect(mockProvider).toHaveBeenCalledWith('anthropic/claude-sonnet-4-20250514');
@@ -143,7 +149,10 @@ describe('createGatewayProvider', () => {
     const mockProvider = createMockProvider();
     const mockCreateOpenAI = vi.fn().mockReturnValue(mockProvider);
 
-    const provider = createGatewayProvider(GATEWAY_PROVIDERS.GOOGLE, { ...baseOptions, createOpenAI: mockCreateOpenAI as never });
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.GOOGLE, {
+      ...baseOptions,
+      createOpenAI: mockCreateOpenAI as never,
+    });
     provider.languageModel('gemini-2.5-pro');
 
     expect(mockProvider.languageModel).toHaveBeenCalledWith('google/gemini-2.5-pro');
@@ -153,7 +162,10 @@ describe('createGatewayProvider', () => {
     const mockProvider = createMockProvider();
     const mockCreateOpenAI = vi.fn().mockReturnValue(mockProvider);
 
-    const provider = createGatewayProvider(GATEWAY_PROVIDERS.XAI, { ...baseOptions, createOpenAI: mockCreateOpenAI as never });
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.XAI, {
+      ...baseOptions,
+      createOpenAI: mockCreateOpenAI as never,
+    });
     provider.chat('grok-3');
 
     expect(mockProvider.chat).toHaveBeenCalledWith('xai/grok-3');
@@ -163,7 +175,10 @@ describe('createGatewayProvider', () => {
     const mockProvider = createMockProvider();
     const mockCreateOpenAI = vi.fn().mockReturnValue(mockProvider);
 
-    const provider = createGatewayProvider(GATEWAY_PROVIDERS.COHERE, { ...baseOptions, createOpenAI: mockCreateOpenAI as never });
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.COHERE, {
+      ...baseOptions,
+      createOpenAI: mockCreateOpenAI as never,
+    });
     provider.embedding('embed-english-v3.0');
 
     expect(mockProvider.embedding).toHaveBeenCalledWith('cohere/embed-english-v3.0');
@@ -173,7 +188,10 @@ describe('createGatewayProvider', () => {
     const mockProvider = createMockProvider();
     const mockCreateOpenAI = vi.fn().mockReturnValue(mockProvider);
 
-    const provider = createGatewayProvider(GATEWAY_PROVIDERS.AZURE, { ...baseOptions, createOpenAI: mockCreateOpenAI as never });
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.AZURE, {
+      ...baseOptions,
+      createOpenAI: mockCreateOpenAI as never,
+    });
     provider.image('dall-e-3');
 
     expect(mockProvider.image).toHaveBeenCalledWith('azure/dall-e-3');
@@ -183,7 +201,10 @@ describe('createGatewayProvider', () => {
     const mockProvider = createMockProvider();
     const mockCreateOpenAI = vi.fn().mockReturnValue(mockProvider);
 
-    const provider = createGatewayProvider(GATEWAY_PROVIDERS.AMAZON_BEDROCK, { ...baseOptions, createOpenAI: mockCreateOpenAI as never });
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.AMAZON_BEDROCK, {
+      ...baseOptions,
+      createOpenAI: mockCreateOpenAI as never,
+    });
     provider('anthropic.claude-v2');
 
     expect(mockProvider).toHaveBeenCalledWith('bedrock/anthropic.claude-v2');
@@ -227,7 +248,10 @@ describe('createGatewayProvider', () => {
     const mockProvider = createMockProvider();
     const mockCreateOpenAI = vi.fn().mockReturnValue(mockProvider);
 
-    const provider = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, { ...baseOptions, createOpenAI: mockCreateOpenAI as never });
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, {
+      ...baseOptions,
+      createOpenAI: mockCreateOpenAI as never,
+    });
     expect('languageModel' in provider).toBe(true);
     expect('chat' in provider).toBe(true);
   });
@@ -236,7 +260,10 @@ describe('createGatewayProvider', () => {
     const mockProvider = createMockProvider();
     const mockCreateOpenAI = vi.fn().mockReturnValue(mockProvider);
 
-    const provider = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, { ...baseOptions, createOpenAI: mockCreateOpenAI as never });
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.ANTHROPIC, {
+      ...baseOptions,
+      createOpenAI: mockCreateOpenAI as never,
+    });
     expect(provider.tools).toEqual({});
   });
 
@@ -244,7 +271,10 @@ describe('createGatewayProvider', () => {
     const mockProvider = createMockProvider();
     const mockCreateOpenAI = vi.fn().mockReturnValue(mockProvider);
 
-    const provider = createGatewayProvider(GATEWAY_PROVIDERS.GOOGLE, { ...baseOptions, createOpenAI: mockCreateOpenAI as never });
+    const provider = createGatewayProvider(GATEWAY_PROVIDERS.GOOGLE, {
+      ...baseOptions,
+      createOpenAI: mockCreateOpenAI as never,
+    });
     provider.languageModel('vertex_ai/gemini-pro');
 
     expect(mockProvider.languageModel).toHaveBeenCalledWith('vertex_ai/gemini-pro');

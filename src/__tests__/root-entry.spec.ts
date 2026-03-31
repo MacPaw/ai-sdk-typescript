@@ -10,10 +10,10 @@ describe('root entry', () => {
     expect(root.GATEWAY_PROVIDERS).toBeDefined();
     expect(root.createGatewayFetch).toBeDefined();
     expect(root.GATEWAY_PLACEHOLDER_API_KEY).toBeDefined();
-    expect(root.parseStreamErrorPayload).toBeDefined();
   });
 
   it('does not expose low-level internals or upstream helpers', () => {
+    expect('parseStreamErrorPayload' in root).toBe(false);
     expect('generateText' in root).toBe(false);
     expect('streamText' in root).toBe(false);
     expect('createOpenAI' in root).toBe(false);

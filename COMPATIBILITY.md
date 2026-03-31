@@ -6,16 +6,16 @@ This document relates **AI Gateway HTTP routes** to how **`@macpaw/ai-sdk`** tal
 
 Gateway routes (versioned under `/api/v1/...`) match the docs in `tmp/docs` when you call them with `createGatewayFetch` and the correct path, or when the Vercel/OpenAI stack issues requests under the same prefix.
 
-| API | Typical path |
-| --- | ------------ |
-| Chat completions | `/api/v1/chat/completions` |
-| Responses | `/api/v1/responses` |
-| Embeddings | `/api/v1/embeddings` |
-| Model info | `/api/v1/model/info` |
-| Images generations | `/api/v1/images/generations` |
-| Images edits | `/api/v1/images/edits` |
+| API                  | Typical path                   |
+| -------------------- | ------------------------------ |
+| Chat completions     | `/api/v1/chat/completions`     |
+| Responses            | `/api/v1/responses`            |
+| Embeddings           | `/api/v1/embeddings`           |
+| Model info           | `/api/v1/model/info`           |
+| Images generations   | `/api/v1/images/generations`   |
+| Images edits         | `/api/v1/images/edits`         |
 | Audio transcriptions | `/api/v1/audio/transcriptions` |
-| Audio translations | `/api/v1/audio/translations` |
+| Audio translations   | `/api/v1/audio/translations`   |
 
 ## Base URL
 
@@ -42,11 +42,11 @@ Codes map to `ErrorCode` and typed errors (`AuthError`, `CreditsError`, …).
 
 ## Provider vs custom fetch
 
-| Style | Mechanism |
-| ----- | --------- |
+| Style                                                      | Mechanism                                           |
+| ---------------------------------------------------------- | --------------------------------------------------- |
 | `generateText`, `streamText`, tools, embeddings via Vercel | `createAIGatewayProvider` / `createGatewayProvider` |
-| Custom HTTP (multipart, bespoke routes) | `createGatewayFetch` + `fetch` API |
-| Same gateway, same auth/retry/middleware | Both use `GatewayProviderSettings` semantics |
+| Custom HTTP (multipart, bespoke routes)                    | `createGatewayFetch` + `fetch` API                  |
+| Same gateway, same auth/retry/middleware                   | Both use `GatewayProviderSettings` semantics        |
 
 ---
 

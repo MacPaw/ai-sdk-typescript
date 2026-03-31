@@ -18,8 +18,7 @@ import { resolveGatewayBaseURL } from './gateway-config';
 const DEFAULT_API_VERSION = 'v1';
 
 export interface AIGatewayProviderOptions
-  extends Omit<OpenAIProviderSettings, 'apiKey' | 'baseURL' | 'fetch'>,
-    GatewayProviderSettings {
+  extends Omit<OpenAIProviderSettings, 'apiKey' | 'baseURL' | 'fetch'>, GatewayProviderSettings {
   /**
    * Optional override for the OpenAI provider factory.
    * Uses `createOpenAI` from `@ai-sdk/openai` by default.

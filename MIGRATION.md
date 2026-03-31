@@ -4,11 +4,11 @@ This package is a **small Vercel AI SDK extension** for MacPaw AI Gateway. Upstr
 
 ## Entry points
 
-| Path | Role |
-| ---- | ---- |
-| `@macpaw/ai-sdk` | **Use this** — `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `GATEWAY_PROVIDERS`, errors, `GatewayProviderSettings` |
-| `@macpaw/ai-sdk/provider` | **Compatibility alias** — same bundle and exports as the root |
-| `@macpaw/ai-sdk/nestjs` | NestJS module, `@InjectAIGateway()`, `AIGatewayExceptionFilter` |
+| Path                      | Role                                                                                                                                            |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@macpaw/ai-sdk`          | **Use this** — `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `GATEWAY_PROVIDERS`, errors, `GatewayProviderSettings` |
+| `@macpaw/ai-sdk/provider` | **Compatibility alias** — same bundle and exports as the root                                                                                   |
+| `@macpaw/ai-sdk/nestjs`   | NestJS module, `@InjectAIGateway()`, `AIGatewayExceptionFilter`                                                                                 |
 
 The following paths are **not** published in current versions:
 

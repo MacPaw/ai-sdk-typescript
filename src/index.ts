@@ -31,7 +31,6 @@ export {
   GatewayValidationError,
   isAIGatewayError,
   parseErrorResponse,
-  parseStreamErrorPayload,
   GatewayApiCode,
   ErrorCode,
 } from './gateway-errors';

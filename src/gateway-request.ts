@@ -29,7 +29,10 @@ function anySignal(signals: AbortSignal[]): AbortSignal {
       controller.abort(signal.reason);
       return controller.signal;
     }
-    const handler = () => { cleanup(); controller.abort(signal.reason); };
+    const handler = () => {
+      cleanup();
+      controller.abort(signal.reason);
+    };
     handlers.push([signal, handler]);
     signal.addEventListener('abort', handler, { once: true });
   }
@@ -71,13 +74,22 @@ function redactSensitiveHeaders(headers: Record<string, string>): Record<string,
 }
 
 const NODE_NETWORK_CODES = new Set([
-  'ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND', 'EPIPE', 'ETIMEDOUT',
-  'ENETUNREACH', 'EAI_AGAIN', 'UND_ERR_CONNECT_TIMEOUT',
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ENOTFOUND',
+  'EPIPE',
+  'ETIMEDOUT',
+  'ENETUNREACH',
+  'EAI_AGAIN',
+  'UND_ERR_CONNECT_TIMEOUT',
 ]);
 
 const FETCH_NETWORK_TYPEERROR_HINTS = [
-  'failed to fetch', 'fetch failed', 'load failed',
-  'networkerror', 'network error when attempting to fetch',
+  'failed to fetch',
+  'fetch failed',
+  'load failed',
+  'networkerror',
+  'network error when attempting to fetch',
 ];
 
 function hasRetryableNodeErrorCode(err: unknown): boolean {
@@ -106,7 +118,7 @@ async function executeFetch(fetchImpl: typeof fetch | undefined, requestConfig: 
   if (typeof impl === 'undefined') {
     throw new Error(
       '@macpaw/ai-sdk requires a global `fetch` implementation. ' +
-      'Use Node.js 18+ or install a polyfill like `undici`.',
+        'Use Node.js 18+ or install a polyfill like `undici`.',
     );
   }
   return impl(requestConfig.url, {
@@ -191,17 +203,6 @@ async function executeRequest(
     ...request.headers,
   };
 
-  if (behavior.includeAuth) {
-    const token = await config.getAuthToken(forceRefreshToken);
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    } else {
-      for (const key of Object.keys(headers)) {
-        if (key.toLowerCase() === 'authorization') delete headers[key];
-      }
-    }
-  }
-
   if (shouldAutoSetJsonContentType(request.body, headers)) {
     headers['Content-Type'] = 'application/json';
   }
@@ -225,7 +226,7 @@ async function executeRequest(
     const requestConfig: RequestConfig = {
       url: request.url,
       method: request.method,
-      headers,
+      headers: { ...headers },
       body: request.body,
       signal,
     };
@@ -238,7 +239,18 @@ async function executeRequest(
         const middlewareItem = middleware[index++];
         return middlewareItem(currentRequest, next);
       }
-      return executeFetch(config.fetchImpl, currentRequest);
+      const finalHeaders = { ...currentRequest.headers };
+      if (behavior.includeAuth) {
+        const token = await config.getAuthToken(forceRefreshToken);
+        if (token) {
+          finalHeaders.Authorization = `Bearer ${token}`;
+        } else {
+          for (const key of Object.keys(finalHeaders)) {
+            if (key.toLowerCase() === 'authorization') delete finalHeaders[key];
+          }
+        }
+      }
+      return executeFetch(config.fetchImpl, { ...currentRequest, headers: finalHeaders });
     };
 
     try {
@@ -255,6 +267,8 @@ async function executeRequest(
   }
 
   if (config.retry) {
+    // doRequest() re-runs the full middleware chain on each retry attempt.
+    // Middleware with side effects (metrics, audit logs) will fire per attempt.
     return withRetry(doRequest, {
       retryConfig: config.retry,
       signal: userSignal,

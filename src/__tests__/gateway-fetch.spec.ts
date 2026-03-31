@@ -250,6 +250,56 @@ describe('createGatewayFetch', () => {
     expect(headers.get('Authorization')).toBe('Bearer token-2');
   });
 
+  it('middleware does not see the Authorization header — auth injected after middleware', async () => {
+    let headersSeenByMiddleware: Record<string, string> = {};
+
+    const customFetch = createGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'secret-bearer',
+      middleware: [
+        async (request, next) => {
+          headersSeenByMiddleware = { ...request.headers };
+          return next(request);
+        },
+      ],
+    });
+
+    await customFetch('https://api.macpaw.com/ai/api/v1/chat/completions', { method: 'POST' });
+
+    // Middleware must not see the Bearer token — logging/telemetry interceptors
+    // should be unable to capture credentials.
+    const authHeader = Object.keys(headersSeenByMiddleware).find((k) => k.toLowerCase() === 'authorization');
+    expect(authHeader).toBeUndefined();
+
+    // The actual fetch must still carry the token.
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const headers = new Headers(fetchCall[1].headers);
+    expect(headers.get('Authorization')).toBe('Bearer secret-bearer');
+  });
+
+  it('smoke: retries on 429 with Retry-After header and succeeds on second attempt', async () => {
+    // Verifies Retry-After code path executes (retryAfterSeconds > 0).
+    // Timing precision is not asserted — see withRetry unit tests for that.
+    (globalThis.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ statusCode: 429, message: 'Rate limited', code: 'RATE_LIMIT_EXCEEDED' }), {
+          status: 429,
+          headers: { 'content-type': 'application/json', 'retry-after': '0.001' },
+        }),
+      )
+      .mockResolvedValueOnce(new Response('ok', { status: 200 }));
+
+    const customFetch = createGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'token',
+      retry: { maxAttempts: 2, initialDelayMs: 1, maxDelayMs: 1 },
+    });
+
+    const response = await customFetch('https://api.macpaw.com/ai/api/v1/chat/completions', { method: 'POST' });
+    expect(response.status).toBe(200);
+    expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(2);
+  });
+
   it('runs provider fetch middleware through the shared request pipeline', async () => {
     const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',

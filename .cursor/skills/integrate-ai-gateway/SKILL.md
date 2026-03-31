@@ -38,10 +38,10 @@ Scan `package.json` and source files, then choose exactly one primary path:
 
 | Marker                                           | Primary integration path                                   |
 | ------------------------------------------------ | ---------------------------------------------------------- |
-| `@nestjs/common` deps, `*.module.ts`, decorators | **NestJS** with `@macpaw/ai-sdk/nestjs` + `@macpaw/ai-sdk`  |
-| `next`, `@ai-sdk/*`, `ai` patterns               | **Vercel AI SDK / Next.js** with `@macpaw/ai-sdk`           |
-| `express`, `fastify`, `hono`, server scripts     | **`createGatewayFetch`** + `fetch`, or `ai` + provider      |
-| Vite/Webpack SPA with no backend                 | Same as server — token must come from your BFF              |
+| `@nestjs/common` deps, `*.module.ts`, decorators | **NestJS** with `@macpaw/ai-sdk/nestjs` + `@macpaw/ai-sdk` |
+| `next`, `@ai-sdk/*`, `ai` patterns               | **Vercel AI SDK / Next.js** with `@macpaw/ai-sdk`          |
+| `express`, `fastify`, `hono`, server scripts     | **`createGatewayFetch`** + `fetch`, or `ai` + provider     |
+| Vite/Webpack SPA with no backend                 | Same as server — token must come from your BFF             |
 
 If two paths are equally plausible, ask one concise clarification question and continue.
 
@@ -241,11 +241,11 @@ Run typecheck, lint, tests. Report files changed, verification status, and manua
 
 ## Migration from OpenAI / raw HTTP
 
-| Before                          | After                                                                 |
-| ------------------------------- | --------------------------------------------------------------------- |
-| `import OpenAI from 'openai'`   | `createGatewayFetch` + `fetch`, or Vercel `ai` + `createAIGatewayProvider` |
-| `import { openai } from '@ai-sdk/openai'` | Keep for non-gateway; use `createAIGatewayProvider` for Gateway branch |
-| `generateText` / `streamText`   | Keep from `ai`; swap model handle only                               |
+| Before                                    | After                                                                      |
+| ----------------------------------------- | -------------------------------------------------------------------------- |
+| `import OpenAI from 'openai'`             | `createGatewayFetch` + `fetch`, or Vercel `ai` + `createAIGatewayProvider` |
+| `import { openai } from '@ai-sdk/openai'` | Keep for non-gateway; use `createAIGatewayProvider` for Gateway branch     |
+| `generateText` / `streamText`             | Keep from `ai`; swap model handle only                                     |
 
 Remove dependencies only if nothing else needs them.
 
