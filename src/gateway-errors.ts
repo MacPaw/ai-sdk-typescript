@@ -210,10 +210,10 @@ function mapGatewayApiCodeToNormalized(code: string, statusCode: number): ErrorC
   }
 }
 
-function mapOpenAIErrorToNormalized(type?: string | null, code?: string | null): ErrorCode {
+function mapOpenAIErrorToNormalized(type?: string | null): ErrorCode {
   if (type === 'authentication_error') return ErrorCode.AuthRequired;
   if (type === 'rate_limit_error') return ErrorCode.RateLimited;
-  if (type === 'team_model_access_denied' || code === '403') return ErrorCode.ModelNotAllowed;
+  if (type === 'team_model_access_denied') return ErrorCode.ModelNotAllowed;
   if (type === 'api_error') return ErrorCode.InternalServerError;
   if (type === 'invalid_request_error') return ErrorCode.BadRequest;
   return ErrorCode.InternalServerError;
@@ -347,7 +347,7 @@ export function parseErrorResponse(statusCode: number, body: unknown): never {
 
   const oai = body as OpenAIErrorResponse | undefined;
   if (oai?.error?.message) {
-    const code = mapOpenAIErrorToNormalized(oai.error.type, oai.error.code);
+    const code = mapOpenAIErrorToNormalized(oai.error.type);
     if (oai.request_id) meta.requestId = oai.request_id;
     throw createTypedError(oai.error.message, code, statusCode, meta);
   }

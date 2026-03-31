@@ -18,7 +18,7 @@ export type {
 } from './gateway-provider';
 
 // Custom fetch bridge (for raw OpenAI client usage)
-export { createGatewayFetch } from './gateway-fetch';
+export { createGatewayFetch, GATEWAY_PLACEHOLDER_API_KEY } from './gateway-fetch';
 export type { GatewayFetchConfig } from './gateway-fetch';
 
 // Errors
@@ -31,6 +31,7 @@ export {
   GatewayValidationError,
   isAIGatewayError,
   parseErrorResponse,
+  parseStreamErrorPayload,
   GatewayApiCode,
   ErrorCode,
 } from './gateway-errors';
