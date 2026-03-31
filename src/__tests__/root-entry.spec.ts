@@ -9,6 +9,8 @@ describe('root entry', () => {
     expect(root.createGatewayProvider).toBeDefined();
     expect(root.GATEWAY_PROVIDERS).toBeDefined();
     expect(root.createGatewayFetch).toBeDefined();
+    expect(root.GATEWAY_PLACEHOLDER_API_KEY).toBeDefined();
+    expect(root.parseStreamErrorPayload).toBeDefined();
   });
 
   it('does not expose low-level internals or upstream helpers', () => {

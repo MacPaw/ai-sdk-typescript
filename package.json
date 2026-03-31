@@ -121,17 +121,13 @@
   },
   "peerDependencies": {
     "@ai-sdk/openai": "^3.0.0",
-    "@nestjs/common": ">=10.0.0",
-    "ai": "^6.0.0"
+    "@nestjs/common": ">=10.0.0"
   },
   "peerDependenciesMeta": {
     "@ai-sdk/openai": {
       "optional": true
     },
     "@nestjs/common": {
-      "optional": true
-    },
-    "ai": {
       "optional": true
     }
   }

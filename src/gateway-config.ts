@@ -5,6 +5,11 @@
  * ResolvedConfig is the internal resolved form used by the request pipeline.
  */
 
+/**
+ * Supported gateway environments.
+ * Only 'production' is exposed — non-production setups use a direct `baseURL`
+ * instead, keeping env-specific URL management out of this library.
+ */
 export type Environment = 'production';
 
 export interface RetryConfig {
