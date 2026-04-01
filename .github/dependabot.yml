@@ -1,0 +1,53 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '09:00'
+      timezone: Europe/Kyiv
+    open-pull-requests-limit: 10
+    reviewers:
+      - macpaw/team-entitlement
+    labels:
+      - dependencies
+      - automated
+    commit-message:
+      prefix: 'chore(deps):'
+    groups:
+      typescript:
+        patterns:
+          - 'typescript'
+      testing:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+      build:
+        patterns:
+          - 'tsup'
+          - 'esbuild'
+      linting:
+        patterns:
+          - 'eslint'
+          - '@eslint/*'
+          - 'typescript-eslint'
+          - 'prettier'
+      semantic-release:
+        patterns:
+          - 'semantic-release'
+          - '@semantic-release/*'
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - ci
+      - automated
+    commit-message:
+      prefix: 'ci(deps):'
