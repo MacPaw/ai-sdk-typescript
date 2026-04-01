@@ -55,6 +55,9 @@
     "node": ">=18.0.0"
   },
   "packageManager": "pnpm@10.15.1",
+  "publishConfig": {
+    "access": "restricted"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
