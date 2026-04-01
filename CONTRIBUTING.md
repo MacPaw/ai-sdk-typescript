@@ -52,9 +52,9 @@ feat!: rename createClient to createAIGatewayClient
 
 ## Branch strategy
 
-| Branch  | Purpose         | npm tag  |
-| ------- | --------------- | -------- |
-| `main`  | Stable releases | `latest` |
+| Branch | Purpose         | npm tag  |
+| ------ | --------------- | -------- |
+| `main` | Stable releases | `latest` |
 
 Feature and fix branches use the pattern `feat/<slug>`, `fix/<slug>`, `chore/<slug>`, etc.
 

@@ -140,9 +140,9 @@ describe('parseStreamErrorPayload', () => {
 describe('parseErrorResponse', () => {
   // Gateway API format
   it('throws AuthError for gateway body with UNAUTHORIZED code', () => {
-    expect(() =>
-      parseErrorResponse(401, { statusCode: 401, message: 'Unauthorized', code: 'UNAUTHORIZED' }),
-    ).toThrow(AuthError);
+    expect(() => parseErrorResponse(401, { statusCode: 401, message: 'Unauthorized', code: 'UNAUTHORIZED' })).toThrow(
+      AuthError,
+    );
   });
 
   it('throws CreditsError for gateway body with INSUFFICIENT_CREDITS at 402', () => {
@@ -185,15 +185,15 @@ describe('parseErrorResponse', () => {
 
   // OpenAI format
   it('throws AuthError for OpenAI error body with authentication_error type', () => {
-    expect(() =>
-      parseErrorResponse(401, { error: { message: 'Invalid key', type: 'authentication_error' } }),
-    ).toThrow(AuthError);
+    expect(() => parseErrorResponse(401, { error: { message: 'Invalid key', type: 'authentication_error' } })).toThrow(
+      AuthError,
+    );
   });
 
   it('throws RateLimitError for OpenAI error body with rate_limit_error type', () => {
-    expect(() =>
-      parseErrorResponse(429, { error: { message: 'Rate limited', type: 'rate_limit_error' } }),
-    ).toThrow(RateLimitError);
+    expect(() => parseErrorResponse(429, { error: { message: 'Rate limited', type: 'rate_limit_error' } })).toThrow(
+      RateLimitError,
+    );
   });
 
   it('throws AuthError for OpenAI error body without type on 401', () => {

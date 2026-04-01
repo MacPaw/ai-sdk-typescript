@@ -15,8 +15,12 @@ import { AuthError } from '../gateway-errors';
 const BASE_URL = 'https://api.test.com';
 const DEFAULT_AUTH: Pick<GatewayProviderSettings, 'getAuthToken'> = { getAuthToken: async () => null };
 
-function makeConfig(overrides: Omit<GatewayProviderSettings, 'getAuthToken'> & Partial<Pick<GatewayProviderSettings, 'getAuthToken'>>) {
-  return resolveConfig({ baseURL: BASE_URL, ...DEFAULT_AUTH, ...overrides } as GatewayProviderSettings & { baseURL: string });
+function makeConfig(
+  overrides: Omit<GatewayProviderSettings, 'getAuthToken'> & Partial<Pick<GatewayProviderSettings, 'getAuthToken'>>,
+) {
+  return resolveConfig({ baseURL: BASE_URL, ...DEFAULT_AUTH, ...overrides } as GatewayProviderSettings & {
+    baseURL: string;
+  });
 }
 
 // ─── isNetworkError ───────────────────────────────────────────────────────────
@@ -128,9 +132,9 @@ describe('isNetworkError — retry behaviour', () => {
       retry: { maxAttempts: 3, initialDelayMs: 1, maxDelayMs: 1 },
     });
 
-    await expect(
-      executeRequestPipeline(config, { url: `${BASE_URL}/test`, method: 'GET' }),
-    ).rejects.toThrow('some unexpected error');
+    await expect(executeRequestPipeline(config, { url: `${BASE_URL}/test`, method: 'GET' })).rejects.toThrow(
+      'some unexpected error',
+    );
     // Should not retry — non-network, non-status error
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
@@ -146,9 +150,9 @@ describe('executeFetch — fetch unavailable', () => {
 
     try {
       const config = makeConfig({ retry: false });
-      await expect(
-        executeRequestPipeline(config, { url: `${BASE_URL}/test`, method: 'GET' }),
-      ).rejects.toThrow(/requires a global `fetch`/);
+      await expect(executeRequestPipeline(config, { url: `${BASE_URL}/test`, method: 'GET' })).rejects.toThrow(
+        /requires a global `fetch`/,
+      );
     } finally {
       Object.defineProperty(globalThis, 'fetch', { value: originalFetch, writable: true, configurable: true });
     }
@@ -194,9 +198,9 @@ describe('anySignal polyfill (AbortSignal.any unavailable)', () => {
 
       const config = makeConfig({ fetch: mockFetch, timeout: 50, retry: false });
 
-      await expect(
-        executeRequestPipeline(config, { url: `${BASE_URL}/test`, method: 'GET' }),
-      ).rejects.toThrow(/timed out/i);
+      await expect(executeRequestPipeline(config, { url: `${BASE_URL}/test`, method: 'GET' })).rejects.toThrow(
+        /timed out/i,
+      );
     } finally {
       if (saved !== undefined) {
         (AbortSignal as unknown as { any?: unknown }).any = saved;
@@ -312,10 +316,7 @@ describe('executeWithAuth — ReadableStream body guard', () => {
       )
       .mockResolvedValueOnce(new Response('ok', { status: 200 }));
 
-    const getAuthToken = vi
-      .fn()
-      .mockResolvedValueOnce('stale-token')
-      .mockResolvedValueOnce('fresh-token');
+    const getAuthToken = vi.fn().mockResolvedValueOnce('stale-token').mockResolvedValueOnce('fresh-token');
 
     const config = makeConfig({ fetch: mockFetch, getAuthToken, retry: false });
 

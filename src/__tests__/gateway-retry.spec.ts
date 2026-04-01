@@ -58,10 +58,12 @@ describe('withRetry — basic behaviour', () => {
       if (++attempt < 3) return Promise.reject(new TypeError('Failed to fetch'));
       return Promise.resolve('recovered');
     });
-    expect(await withRetry(fn, {
-      retryConfig: FAST,
-      isNetworkError: (e) => e instanceof TypeError,
-    })).toBe('recovered');
+    expect(
+      await withRetry(fn, {
+        retryConfig: FAST,
+        isNetworkError: (e) => e instanceof TypeError,
+      }),
+    ).toBe('recovered');
     expect(fn).toHaveBeenCalledTimes(3);
   });
 });
@@ -80,24 +82,20 @@ describe('withRetry — attempt exhaustion (H-1)', () => {
 
   it('exhausts maxAttempts=1 and throws without any retry', async () => {
     const fn = vi.fn().mockRejectedValue({ statusCode: 503 });
-    await expect(
-      withRetry(fn, { retryConfig: { ...FAST, maxAttempts: 1 } }),
-    ).rejects.toMatchObject({ statusCode: 503 });
+    await expect(withRetry(fn, { retryConfig: { ...FAST, maxAttempts: 1 } })).rejects.toMatchObject({
+      statusCode: 503,
+    });
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
   it('exhausts all attempts when isNetworkError errors never recover', async () => {
     const fn = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
-    await expect(
-      withRetry(fn, { retryConfig: FAST, isNetworkError: () => true }),
-    ).rejects.toBeInstanceOf(TypeError);
+    await expect(withRetry(fn, { retryConfig: FAST, isNetworkError: () => true })).rejects.toBeInstanceOf(TypeError);
     expect(fn).toHaveBeenCalledTimes(3);
   });
 
   it('throws immediately on non-retryable error even with attempts remaining', async () => {
-    const fn = vi.fn()
-      .mockRejectedValueOnce({ statusCode: 401 })
-      .mockResolvedValue('should-not-reach');
+    const fn = vi.fn().mockRejectedValueOnce({ statusCode: 401 }).mockResolvedValue('should-not-reach');
     await expect(withRetry(fn, { retryConfig: FAST })).rejects.toMatchObject({ statusCode: 401 });
     expect(fn).toHaveBeenCalledTimes(1);
   });
@@ -111,9 +109,7 @@ describe('withRetry — delay abort (H-3)', () => {
     controller.abort(new Error('Pre-aborted'));
 
     const fn = vi.fn().mockRejectedValue({ statusCode: 503 });
-    await expect(
-      withRetry(fn, { retryConfig: FAST, signal: controller.signal }),
-    ).rejects.toThrow('Pre-aborted');
+    await expect(withRetry(fn, { retryConfig: FAST, signal: controller.signal })).rejects.toThrow('Pre-aborted');
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
@@ -156,7 +152,9 @@ describe('normalizeRetryConfig', () => {
   });
 
   it('coerces Infinity maxAttempts to default', () => {
-    expect(normalizeRetryConfig({ ...DEFAULT_RETRY, maxAttempts: Infinity }).maxAttempts).toBe(DEFAULT_RETRY.maxAttempts);
+    expect(normalizeRetryConfig({ ...DEFAULT_RETRY, maxAttempts: Infinity }).maxAttempts).toBe(
+      DEFAULT_RETRY.maxAttempts,
+    );
   });
 
   it('floors float maxAttempts', () => {
