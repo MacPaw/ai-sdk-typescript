@@ -12,6 +12,30 @@ import {
   ErrorCode,
 } from '../gateway-errors';
 
+// ─── AIGatewayError constructor ───────────────────────────────────────────────
+
+describe('AIGatewayError', () => {
+  it('stores cause when provided via options', () => {
+    const cause = new Error('network failure');
+    const err = new AIGatewayError('msg', ErrorCode.InternalServerError, 500, {}, { cause });
+    expect((err as unknown as { cause: unknown }).cause).toBe(cause);
+  });
+
+  it('does not set cause property when cause is undefined', () => {
+    const err = new AIGatewayError('msg', ErrorCode.BadRequest, 400);
+    expect('cause' in err).toBe(false);
+  });
+
+  it('toJSON includes all top-level fields', () => {
+    const err = new AIGatewayError('oops', ErrorCode.RateLimited, 429, { requestId: 'r1' });
+    const json = err.toJSON();
+    expect(json.name).toBe('AIGatewayError');
+    expect(json.code).toBe(ErrorCode.RateLimited);
+    expect(json.statusCode).toBe(429);
+    expect((json.metadata as { requestId?: string }).requestId).toBe('r1');
+  });
+});
+
 // ─── parseStreamErrorPayload ──────────────────────────────────────────────────
 
 describe('parseStreamErrorPayload', () => {
@@ -263,6 +287,22 @@ describe('parseErrorResponse', () => {
       parseErrorResponse(500, { request_id: 'req-fallback', message: 'oops' });
     } catch (e) {
       expect((e as AIGatewayError).requestId).toBe('req-fallback');
+    }
+  });
+
+  it('extracts path from body when present', () => {
+    try {
+      parseErrorResponse(500, { path: '/api/v1/chat', message: 'oops' });
+    } catch (e) {
+      expect((e as AIGatewayError).metadata.path).toBe('/api/v1/chat');
+    }
+  });
+
+  it('extracts timestamp from body when present', () => {
+    try {
+      parseErrorResponse(500, { timestamp: '2026-04-01T10:00:00.000Z', message: 'oops' });
+    } catch (e) {
+      expect((e as AIGatewayError).metadata.timestamp).toBe('2026-04-01T10:00:00.000Z');
     }
   });
 });

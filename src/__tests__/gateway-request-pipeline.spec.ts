@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { executeRequestPipeline } from '../gateway-request';
+import { executeRequestPipeline, redactSensitiveHeaders } from '../gateway-request';
 import { resolveConfig, type GatewayProviderSettings } from '../gateway-config';
 import { AuthError } from '../gateway-errors';
 
@@ -168,6 +168,102 @@ describe('executeFetch — fetch unavailable', () => {
     } finally {
       Object.defineProperty(globalThis, 'fetch', { value: originalFetch, writable: true, configurable: true });
     }
+  });
+});
+
+// ─── anySignal polyfill — AbortSignal.any unavailable ────────────────────────
+
+describe('anySignal polyfill (AbortSignal.any unavailable)', () => {
+  it('timeout still fires when AbortSignal.any is not available (Node 18/19 path)', async () => {
+    // AbortSignal.any was added in Node 20.3. On Node 18/19 the polyfill runs.
+    const saved = (AbortSignal as unknown as { any?: unknown }).any;
+    delete (AbortSignal as unknown as { any?: unknown }).any;
+
+    try {
+      const mockFetch = vi.fn().mockImplementation(
+        (_url: string, init?: RequestInit) =>
+          new Promise((resolve, reject) => {
+            const signal = init?.signal;
+            const id = setTimeout(() => resolve(new Response('ok', { status: 200 })), 5000);
+            signal?.addEventListener('abort', () => {
+              clearTimeout(id);
+              reject(signal.reason);
+            });
+          }),
+      );
+
+      const config = makeConfig({ fetch: mockFetch, timeout: 50, retry: false });
+
+      await expect(
+        executeRequestPipeline(config, { url: `${BASE_URL}/test`, method: 'GET' }),
+      ).rejects.toThrow(/timed out/i);
+    } finally {
+      if (saved !== undefined) {
+        (AbortSignal as unknown as { any?: unknown }).any = saved;
+      }
+    }
+  });
+
+  it('user abort signal respected through polyfill when AbortSignal.any absent', async () => {
+    const saved = (AbortSignal as unknown as { any?: unknown }).any;
+    delete (AbortSignal as unknown as { any?: unknown }).any;
+
+    try {
+      const controller = new AbortController();
+      const mockFetch = vi.fn().mockImplementation(
+        (_url: string, init?: RequestInit) =>
+          new Promise((resolve, reject) => {
+            const signal = init?.signal;
+            const id = setTimeout(() => resolve(new Response('ok', { status: 200 })), 5000);
+            signal?.addEventListener('abort', () => {
+              clearTimeout(id);
+              reject(signal.reason ?? new Error('aborted'));
+            });
+          }),
+      );
+
+      const config = makeConfig({ fetch: mockFetch, timeout: 5000, retry: false });
+
+      const promise = executeRequestPipeline(config, {
+        url: `${BASE_URL}/test`,
+        method: 'GET',
+        signal: controller.signal,
+      });
+
+      setTimeout(() => controller.abort(new Error('user cancelled')), 30);
+
+      await expect(promise).rejects.toThrow('user cancelled');
+    } finally {
+      if (saved !== undefined) {
+        (AbortSignal as unknown as { any?: unknown }).any = saved;
+      }
+    }
+  });
+});
+
+// ─── redactSensitiveHeaders ───────────────────────────────────────────────────
+
+describe('redactSensitiveHeaders', () => {
+  it('replaces Authorization value with [REDACTED]', () => {
+    const result = redactSensitiveHeaders({ Authorization: 'Bearer secret', 'Content-Type': 'application/json' });
+    expect(result.Authorization).toBe('[REDACTED]');
+    expect(result['Content-Type']).toBe('application/json');
+  });
+
+  it('redacts authorization regardless of casing', () => {
+    const result = redactSensitiveHeaders({ authorization: 'Bearer token', 'X-Request-ID': 'req-1' });
+    expect(result.authorization).toBe('[REDACTED]');
+    expect(result['X-Request-ID']).toBe('req-1');
+  });
+
+  it('returns empty object for empty input', () => {
+    expect(redactSensitiveHeaders({})).toEqual({});
+  });
+
+  it('does not mutate the input object', () => {
+    const input = { Authorization: 'secret', Accept: '*/*' };
+    redactSensitiveHeaders(input);
+    expect(input.Authorization).toBe('secret');
   });
 });
 

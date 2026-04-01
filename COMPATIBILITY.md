@@ -4,7 +4,7 @@ This document relates **AI Gateway HTTP routes** to how **`@macpaw/ai-sdk`** tal
 
 ## Paths
 
-Gateway routes (versioned under `/api/v1/...`) match the docs in `tmp/docs` when you call them with `createGatewayFetch` and the correct path, or when the Vercel/OpenAI stack issues requests under the same prefix.
+Gateway routes are versioned under `/api/v1/...`. Use `createGatewayFetch` with the correct path, or let the Vercel/OpenAI stack issue requests under the same prefix.
 
 | API                  | Typical path                   |
 | -------------------- | ------------------------------ |
