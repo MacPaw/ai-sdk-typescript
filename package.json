@@ -97,10 +97,10 @@
     "url": "https://github.com/macpaw/ai-sdk-typescript/issues"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.48"
+    "@ai-sdk/openai": "^3.0.49"
   },
   "devDependencies": {
-    "@ai-sdk/openai": "3.0.48",
+    "@ai-sdk/openai": "3.0.49",
     "@ai-sdk/provider": "3.0.8",
     "@eslint/js": "^10.0.1",
     "@macpaw/eslint-config-typescript": "^3.1.4",
