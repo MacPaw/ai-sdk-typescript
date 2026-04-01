@@ -6,7 +6,11 @@ export default defineConfig({
     'nestjs/index': 'src/nestjs/index.ts',
   },
   format: ['esm', 'cjs'],
-  dts: true,
+  dts: {
+    compilerOptions: {
+      ignoreDeprecations: '6.0',
+    },
+  },
   splitting: true,
   sourcemap: true,
   clean: true,
