@@ -250,6 +250,7 @@ describe('createGatewayFetch', () => {
       baseURL: 'https://api.macpaw.com/ai',
       getAuthToken: async () => 'token',
       normalizeErrors: false,
+      retry: false, // must disable retry; otherwise retryable statuses (429) trigger transport throw
     });
 
     const response = await customFetch('https://api.macpaw.com/ai/api/v1/chat/completions');

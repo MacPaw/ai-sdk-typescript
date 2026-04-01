@@ -255,6 +255,14 @@ pnpm exec macpaw-ai-setup
 
 Use `macpaw-ai-setup cursor`, `claude`, or `codex` to install only one target. Existing root `CLAUDE.md` / `AGENTS.md` files get Gateway sections appended, not replaced.
 
+The installed instructions enforce the current package surface and the main auth guardrails:
+
+- prefer `@macpaw/ai-sdk` / `@macpaw/ai-sdk/nestjs`
+- keep generation primitives on upstream `ai` / `@ai-sdk/*`
+- do not use removed subpaths such as `client`, `runtime`, `types`, or `testing`
+- do not invent a token source or expose gateway tokens to browser-only code
+- use `baseURL` for staging/custom hosts; `env` supports only `'production'`
+
 ## Versioning
 
 [Semantic Versioning](https://semver.org/). Releases via [semantic-release](https://github.com/semantic-release/semantic-release) and Conventional Commits.

@@ -257,8 +257,18 @@ async function executeRequest(
     try {
       const response = await next(requestConfig);
 
-      if (!response.ok && behavior.normalizeErrors) {
-        await parseErrorResponseFromResponse(response);
+      if (!response.ok) {
+        const retryableStatuses = config.retry !== false ? config.retry.retryableStatuses : [];
+        // Transport logic must fire regardless of normalizeErrors:
+        //   - 401 must throw AuthError so executeWithAuth can refresh the token
+        //   - retryable statuses must throw so withRetry can schedule retry attempts
+        const isTransportCritical =
+          (behavior.allowAuthRetry && response.status === 401) ||
+          (config.retry !== false && retryableStatuses.includes(response.status));
+
+        if (behavior.normalizeErrors || isTransportCritical) {
+          await parseErrorResponseFromResponse(response);
+        }
       }
 
       return response;
