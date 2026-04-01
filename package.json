@@ -1,12 +1,13 @@
 {
   "name": "@macpaw/ai-sdk",
   "version": "0.1.0",
-  "description": "Commercial Web SDK for AI Gateway - universal TypeScript client for browser and Node.js",
+  "description": "Vercel AI SDK extension layer for AI Gateway with MacPaw and Setapp auth flows",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./package.json": "./package.json",
     ".": {
       "import": {
         "types": "./dist/index.d.ts",
@@ -17,24 +18,14 @@
         "default": "./dist/index.cjs"
       }
     },
-    "./core": {
-      "import": {
-        "types": "./dist/core/index.d.ts",
-        "default": "./dist/core/index.js"
-      },
-      "require": {
-        "types": "./dist/core/index.d.cts",
-        "default": "./dist/core/index.cjs"
-      }
-    },
     "./provider": {
       "import": {
-        "types": "./dist/provider/index.d.ts",
-        "default": "./dist/provider/index.js"
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
       },
       "require": {
-        "types": "./dist/provider/index.d.cts",
-        "default": "./dist/provider/index.cjs"
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
       }
     },
     "./nestjs": {
@@ -46,16 +37,6 @@
         "types": "./dist/nestjs/index.d.cts",
         "default": "./dist/nestjs/index.cjs"
       }
-    },
-    "./testing": {
-      "import": {
-        "types": "./dist/testing/index.d.ts",
-        "default": "./dist/testing/index.js"
-      },
-      "require": {
-        "types": "./dist/testing/index.d.cts",
-        "default": "./dist/testing/index.cjs"
-      }
     }
   },
   "bin": {
@@ -64,10 +45,8 @@
   "files": [
     "dist",
     "README.md",
+    "MIGRATION.md",
     "CHANGELOG.md",
-    "AGENTS.md",
-    "CLAUDE.md",
-    ".cursor",
     "scripts",
     "templates"
   ],
@@ -80,13 +59,18 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint 'src/**/*.ts'",
-    "lint:fix": "eslint 'src/**/*.ts' --fix",
-    "format": "prettier --write 'src/**/*.ts'",
-    "format:check": "prettier --check 'src/**/*.ts'",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "docs": "typedoc",
+    "docs:watch": "typedoc --watch",
+    "size:pack": "npm pack --dry-run",
+    "verify:release": "pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm size:pack",
+    "example:provider": "pnpm build && node examples/vercel-provider.mjs",
     "prepublishOnly": "pnpm build"
   },
   "keywords": [
@@ -113,34 +97,37 @@
     "url": "https://github.com/macpaw/ai-sdk-typescript/issues"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.48",
-    "ai": "^6.0.141"
+    "@ai-sdk/openai": "^3.0.48"
   },
   "devDependencies": {
+    "@ai-sdk/openai": "3.0.48",
+    "@ai-sdk/provider": "3.0.8",
+    "@eslint/js": "^10.0.1",
+    "@macpaw/eslint-config-typescript": "^3.1.4",
     "@nestjs/common": "^11.1.17",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/node": "^25.5.0",
-    "@eslint/js": "^10.0.1",
     "eslint": "^10.1.0",
-    "typescript-eslint": "^8.57.2",
     "prettier": "^3.8.1",
     "rxjs": "^7.8.2",
     "semantic-release": "^25.0.3",
     "tsup": "^8.5.1",
+    "typedoc": "^0.28.18",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.2",
     "@vitest/coverage-v8": "^4.1.2",
     "vitest": "^4.1.2"
   },
   "peerDependencies": {
-    "@nestjs/common": ">=10.0.0",
-    "rxjs": ">=7.0.0"
+    "@ai-sdk/openai": "^3.0.0",
+    "@nestjs/common": ">=10.0.0"
   },
   "peerDependenciesMeta": {
-    "@nestjs/common": {
+    "@ai-sdk/openai": {
       "optional": true
     },
-    "rxjs": {
+    "@nestjs/common": {
       "optional": true
     }
   }

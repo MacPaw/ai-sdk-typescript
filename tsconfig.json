@@ -3,6 +3,11 @@
     "target": "ES2020",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@macpaw/ai-sdk": ["src/index.ts"],
+      "@macpaw/ai-sdk/*": ["src/*/index.ts"]
+    },
     "lib": ["ES2022"],
     "strict": true,
     "skipLibCheck": true,

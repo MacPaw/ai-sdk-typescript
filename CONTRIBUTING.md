@@ -13,6 +13,10 @@ cd ai-sdk-typescript
 pnpm install
 ```
 
+### Lint and format config
+
+ESLint, Prettier, and TypeScript are configured directly in this repository via `eslint.config.js`, `.prettierrc`, and `tsconfig.json`. Keep `pnpm format:check` and `pnpm lint` both green after edits.
+
 ## Development workflow
 
 ```bash
@@ -48,30 +52,36 @@ feat!: rename createClient to createAIGatewayClient
 
 ## Branch strategy
 
-| Branch | Purpose | npm tag |
-|--------|---------|---------|
-| `main` | Stable releases | `latest` |
-| `develop` | Release candidates | `rc` |
-| `beta` | Beta releases | `beta` |
+| Branch    | Purpose            | npm tag  |
+| --------- | ------------------ | -------- |
+| `main`    | Stable releases    | `latest` |
+| `develop` | Release candidates | `rc`     |
+| `beta`    | Beta releases      | `beta`   |
 
 ## Pull requests
 
 1. Branch from `develop`
 2. Make your changes
-3. Ensure all checks pass: `pnpm typecheck && pnpm lint && pnpm test && pnpm build`
+3. Ensure all checks pass: `pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build`
 4. Open a PR against `develop`
 5. Fill in the PR template
+
+## Tests
+
+Place specs next to the feature they cover using a `__tests__` directory (e.g. `src/__tests__/gateway-fetch.spec.ts`). `vitest.config.ts` picks up `src/**/__tests__/**/*.spec.ts` and `src/**/__tests__/**/*.test.ts`.
 
 ## Project structure
 
 ```
 src/
-├── api/           # API resource classes (chat, responses, embeddings, etc.)
-├── core/          # Config, errors, retry, SSE parser, validation
-├── nestjs/        # NestJS module integration
-├── provider/      # Vercel AI SDK provider
-├── transport/     # HTTP transport layer
-├── client.ts      # Main client factory
-├── helpers.ts     # Utility functions
-└── index.ts       # Public API exports
+├── gateway-config.ts   # GatewayProviderSettings, resolveConfig, retry defaults
+├── gateway-errors.ts   # AIGatewayError family, ErrorCode, parsers
+├── gateway-fetch.ts    # createGatewayFetch (custom fetch for OpenAI SDK / raw HTTP)
+├── gateway-provider.ts # createAIGatewayProvider, createGatewayProvider, GATEWAY_PROVIDERS
+├── gateway-request.ts  # executeRequestPipeline (internal; not re-exported from root)
+├── gateway-retry.ts    # withRetry
+├── index.ts            # Public API — @macpaw/ai-sdk
+└── nestjs/             # @macpaw/ai-sdk/nestjs
 ```
+
+Add behavior beside the smallest module that owns it; avoid new public entry points unless `package.json` `exports` and tests are updated together.

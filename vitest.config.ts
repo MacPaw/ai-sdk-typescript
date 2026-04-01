@@ -8,12 +8,13 @@ export default defineConfig({
   test: {
     globals: false,
     environment: 'node',
-    include: ['src/**/*.spec.ts', 'src/**/*.test.ts'],
-    passWithNoTests: true,
+    include: ['src/**/__tests__/**/*.spec.ts', 'src/**/__tests__/**/*.test.ts'],
+    passWithNoTests: false,
   },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
+      '@macpaw/ai-sdk/react': resolve(__dirname, './src/react/index.ts'),
     },
   },
 });

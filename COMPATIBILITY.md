@@ -1,65 +1,53 @@
-# SDK ↔ AI Gateway BFF — Compatibility Check
+# SDK ↔ AI Gateway API — Compatibility Check
 
-This document confirms that `@macpaw/ai-sdk` is aligned with the AI Gateway BFF (this repo).
+This document relates **AI Gateway HTTP routes** to how **`@macpaw/ai-sdk`** talks to the gateway today. The SDK does not ship a typed HTTP client; it uses an OpenAI-compatible **provider** plus **`createGatewayFetch`** for arbitrary paths.
 
-## ✅ Paths
+## Paths
 
-| API              | SDK path                          | BFF (NestJS)                    | Status |
-|------------------|-----------------------------------|----------------------------------|--------|
-| Chat completions | `/api/v1/chat/completions`        | `@Controller('chat')` + `@Post('completions')` | ✓ |
-| Responses        | `/api/v1/responses`               | `@Controller('responses')` + `@Post()`        | ✓ |
-| Embeddings       | `/api/v1/embeddings`              | `@Controller('embeddings')` + `@Post()`       | ✓ |
-| Model info       | `/api/v1/model/info`              | `@Controller()` + `@Get('model/info')`        | ✓ |
-| Images generations | `/api/v1/images/generations`    | `@Controller('images')` + `@Post('generations')` | ✓ |
-| Images edits     | `/api/v1/images/edits`            | `@Controller('images')` + `@Post('edits')`    | ✓ |
-| Audio transcriptions | `/api/v1/audio/transcriptions` | `@Controller('audio')` + `@Post('transcriptions')` | ✓ |
-| Audio translations   | `/api/v1/audio/translations`   | `@Controller('audio')` + `@Post('translations')`   | ✓ |
+Gateway routes (versioned under `/api/v1/...`) match the docs in `tmp/docs` when you call them with `createGatewayFetch` and the correct path, or when the Vercel/OpenAI stack issues requests under the same prefix.
 
-BFF uses `setGlobalPrefix('api')` and URI versioning with default version `'1'`, so full paths are ` /api/v1/...`. SDK uses the same paths.
+| API                  | Typical path                   |
+| -------------------- | ------------------------------ |
+| Chat completions     | `/api/v1/chat/completions`     |
+| Responses            | `/api/v1/responses`            |
+| Embeddings           | `/api/v1/embeddings`           |
+| Model info           | `/api/v1/model/info`           |
+| Images generations   | `/api/v1/images/generations`   |
+| Images edits         | `/api/v1/images/edits`         |
+| Audio transcriptions | `/api/v1/audio/transcriptions` |
+| Audio translations   | `/api/v1/audio/translations`   |
 
-## ✅ Base URL
+## Base URL
 
-- **SDK** `DEFAULT_BASE_URLS`: `production: https://api.macpaw.com/ai`. Non-production URLs are not built-in; pass via `baseURL`.
-- **Docs** (e.g. `create-chat-completion.yaml`, `ai-gateway-errors.yaml`): `https://api.{domain}/ai` with `macpaw.com`
+- **SDK** `DEFAULT_BASE_URLS.production`: `https://api.macpaw.com/ai`
+- Other environments: pass `baseURL` explicitly on `GatewayProviderSettings` / `createGatewayFetch`.
 
-So the SDK base URL and docs match.
+## Authorization
 
-## ✅ Authorization
+Gateway expects `Authorization: Bearer <token>`. The SDK sets it from `getAuthToken()` on gateway-scoped requests. After **401**, it calls `getAuthToken(true)` once and retries.
 
-- **BFF**: Expects `Authorization: Bearer <token>` (BearerAuth in Swagger, guards).
-- **SDK**: Sends `Authorization: Bearer ${token}` from `getAuthToken()`.
+## Error formats
 
-No mismatch.
+`parseErrorResponse` / `parseErrorResponseFromResponse` in `gateway-errors.ts` support:
 
-## ✅ Error formats
+1. Gateway JSON: `statusCode`, `message`, `timestamp`, `code`, `path`, optional `errors[]`
+2. OpenAI proxy shape: `{ error: { message, type, code } }`
 
-- **BFF** (from `ai-gateway-errors.yaml`): Returns `statusCode`, `message`, `timestamp`, `code`, `path`, optional `errors[]`; `errors[].metadata` can contain `paymentUrl`, `retryAfter`.
-- **SDK** `parseErrorResponse`: Handles this BFF shape and maps `code` to normalized codes; reads `paymentUrl` and `retryAfter` from `errors[0].metadata`.
-- **BFF codes** (UNAUTHORIZED, INSUFFICIENT_CREDITS, FORBIDDEN, RATE_LIMIT_EXCEEDED, BAD_REQUEST, VALIDATION, …) are mapped to SDK codes (AUTH_REQUIRED, INSUFFICIENT_CREDITS, MODEL_NOT_ALLOWED, RATE_LIMITED, …). OpenAI proxy format (`error.message`, `error.type`) is also handled.
+Codes map to `ErrorCode` and typed errors (`AuthError`, `CreditsError`, …).
 
-So error handling is compatible.
+## Multipart and streaming
 
-## ✅ Request/response bodies
+- **Multipart** (`multipart/form-data`): build `FormData` in app code and `POST` via `createGatewayFetch`.
+- **SSE**: consumed by upstream **`ai`** / provider streaming, not by a separate SSE helper in this package’s public API.
 
-- **Chat / Responses / Embeddings / Images (generations)**: JSON; SDK sends JSON and parses JSON. BFF uses OpenAI-compatible DTOs.
-- **Images (edits) / Audio**: `multipart/form-data`. SDK uses `FormData` with fields `image`, `prompt`, `mask`, `model`, etc. (image edit) and `file`, `model`, etc. (audio). BFF uses `FileFieldsInterceptor` / `FileInterceptor` with the same field names (`image`, `mask`, `file`).
+## Provider vs custom fetch
 
-No known mismatch.
-
-## ✅ Streaming
-
-- **Chat / Responses**: BFF returns SSE when `stream: true`; SDK uses `parseSSEAsJSON` and expects `text/event-stream` (or `application/json` for non-streaming).
-- **Audio transcriptions**: BFF supports streaming; SDK sends `stream: true` in form data and consumes SSE.
-
-Aligned.
-
-## ✅ Model info endpoint
-
-- **SDK**: GET `/api/v1/model/info` with optional query `litellm_model_id`.
-- **BFF**: `ModelsController` `@Get('model/info')` with `@Query('litellm_model_id')`.
-
-Same contract; `@Public()` on the controller means auth is optional, but SDK still sends the token when available.
+| Style                                                      | Mechanism                                           |
+| ---------------------------------------------------------- | --------------------------------------------------- |
+| `generateText`, `streamText`, tools, embeddings via Vercel | `createAIGatewayProvider` / `createGatewayProvider` |
+| Custom HTTP (multipart, bespoke routes)                    | `createGatewayFetch` + `fetch` API                  |
+| Same gateway, same auth/retry/middleware                   | Both use `GatewayProviderSettings` semantics        |
 
 ---
 
-**Conclusion**: The SDK is compatible with the current AI Gateway BFF. Paths, base URLs, auth, error handling, body formats, and streaming behavior match the implementation and docs.
+**Conclusion:** Wire format, base URL, auth, and error shapes stay aligned with AI Gateway. The SDK surface is intentionally thin: provider + fetch bridge + NestJS helpers.

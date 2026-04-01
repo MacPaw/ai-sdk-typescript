@@ -1,13 +1,8 @@
 import type { DynamicModule, Provider, Type } from '@nestjs/common';
 import { Module } from '@nestjs/common';
-import { createAIGatewayClient } from '../client';
-import type { AIGatewayClient } from '../client';
-import { AI_GATEWAY_CLIENT, AI_GATEWAY_OPTIONS } from './constants';
-import type {
-  AIGatewayModuleOptions,
-  AIGatewayModuleAsyncOptions,
-  AIGatewayOptionsFactory,
-} from './interfaces';
+import type { GatewayProviderSettings } from '../gateway-config';
+import { AI_GATEWAY_CONFIG, AI_GATEWAY_OPTIONS } from './ai-gateway.constants';
+import type { AIGatewayModuleOptions, AIGatewayModuleAsyncOptions, AIGatewayOptionsFactory } from './ai-gateway.types';
 
 @Module({})
 export class AIGatewayModule {
@@ -29,16 +24,16 @@ export class AIGatewayModule {
    */
   static forRoot(options: AIGatewayModuleOptions): DynamicModule {
     const { isGlobal, ...clientConfig } = options;
-    const clientProvider: Provider<AIGatewayClient> = {
-      provide: AI_GATEWAY_CLIENT,
-      useFactory: () => createAIGatewayClient(clientConfig),
+    const configProvider: Provider<GatewayProviderSettings> = {
+      provide: AI_GATEWAY_CONFIG,
+      useFactory: () => clientConfig,
     };
 
     return {
       module: AIGatewayModule,
       global: isGlobal ?? true,
-      providers: [clientProvider],
-      exports: [clientProvider],
+      providers: [configProvider],
+      exports: [configProvider],
     };
   }
 
@@ -65,9 +60,10 @@ export class AIGatewayModule {
    * ```
    */
   static forRootAsync(options: AIGatewayModuleAsyncOptions): DynamicModule {
-    const clientProvider: Provider<AIGatewayClient> = {
-      provide: AI_GATEWAY_CLIENT,
-      useFactory: (moduleOptions: AIGatewayModuleOptions) => createAIGatewayClient(moduleOptions),
+    const configProvider: Provider<GatewayProviderSettings> = {
+      provide: AI_GATEWAY_CONFIG,
+      useFactory: ({ isGlobal: _isGlobal, ...clientConfig }: AIGatewayModuleOptions) =>
+        clientConfig as GatewayProviderSettings,
       inject: [AI_GATEWAY_OPTIONS],
     };
 
@@ -77,8 +73,8 @@ export class AIGatewayModule {
       module: AIGatewayModule,
       global: options.isGlobal ?? true,
       imports: options.imports ?? [],
-      providers: [...asyncProviders, clientProvider],
-      exports: [clientProvider],
+      providers: [...asyncProviders, configProvider],
+      exports: [configProvider],
     };
   }
 

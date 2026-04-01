@@ -23,6 +23,9 @@ lerna-debug.log*
 /coverage
 /.nyc_output
 
+# Generated docs
+/docs
+
 # IDEs and editors
 /.idea
 .project
@@ -40,3 +43,16 @@ lerna-debug.log*
 !.vscode/extensions.json
 
 .env
+
+# Claude Code Toolkit
+.claude/
+plans/
+.mcp.json
+.claude/.env
+tmp/
+repomix-output.xml
+!**/templates/plans/**
+AGENTS.md
+CLAUDE.md
+.repomixignore
+# /Claude Code Toolkit

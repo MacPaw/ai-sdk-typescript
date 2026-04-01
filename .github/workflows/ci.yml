@@ -40,6 +40,10 @@ jobs:
         if: matrix.node-version == 22
         run: pnpm lint
 
+      - name: Format check
+        if: matrix.node-version == 22
+        run: pnpm format:check
+
       - name: Test with coverage
         run: |
           # coverage-v8 uses node:inspector/promises (Node 19+), so run coverage only on Node 20+
