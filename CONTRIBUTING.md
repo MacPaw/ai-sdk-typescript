@@ -52,18 +52,18 @@ feat!: rename createClient to createAIGatewayClient
 
 ## Branch strategy
 
-| Branch    | Purpose            | npm tag  |
-| --------- | ------------------ | -------- |
-| `main`    | Stable releases    | `latest` |
-| `develop` | Release candidates | `rc`     |
-| `beta`    | Beta releases      | `beta`   |
+| Branch | Purpose         | npm tag  |
+| ------ | --------------- | -------- |
+| `main` | Stable releases | `latest` |
+
+Feature and fix branches use the pattern `feat/<slug>`, `fix/<slug>`, `chore/<slug>`, etc.
 
 ## Pull requests
 
-1. Branch from `develop`
+1. Branch from `main`
 2. Make your changes
 3. Ensure all checks pass: `pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build`
-4. Open a PR against `develop`
+4. Open a PR against `main`
 5. Fill in the PR template
 
 ## Tests

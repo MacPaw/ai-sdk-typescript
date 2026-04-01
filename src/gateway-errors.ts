@@ -219,7 +219,10 @@ function mapOpenAIErrorToNormalized(type?: string | null, statusCode?: number): 
   if (statusCode === 401) return ErrorCode.AuthRequired;
   if (statusCode === 429) return ErrorCode.RateLimited;
   if (statusCode === 403) return ErrorCode.ModelNotAllowed;
-  return ErrorCode.InternalServerError;
+  // Unknown OpenAI error.type: map by status category rather than defaulting to 5xx.
+  return statusCode !== undefined && statusCode >= 400 && statusCode < 500
+    ? ErrorCode.BadRequest
+    : ErrorCode.InternalServerError;
 }
 
 function parseRetryAfterHeader(value: string): number | undefined {

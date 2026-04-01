@@ -4,51 +4,36 @@
 
 ## Unreleased
 
-### Added
-
-- ESLint: `examples/**/*.{js,mjs,cjs}` use Node globals so `pnpm lint` passes on demo scripts.
-- Runnable examples for mock transport, direct client, Vercel-style provider flow, and a copy-ready NestJS skeleton.
-- README badges and release signals documentation; local `pnpm size:pack` script for publish-size inspection.
-- README and COMPATIBILITY: when to use `@macpaw/ai-sdk/provider` vs `createAIGatewayClient`, env-based gateway vs direct OpenAI example, and auth placement notes.
-- CONTRIBUTING: package layout, `__tests__` convention, and linting/formatting notes.
-- `@macpaw/ai-sdk/types` subpath for domain types; `GatewayApiCode`, `GatewayApiErrorResponse`, and related symbols.
-- Shared request pipeline parity between the low-level client and provider fetch path, including retries, middleware, hooks, timeout, and transport support.
-
 ### Changed
 
-- Shared auth token caching and request execution logic between the client runtime and provider fetch path; stronger integration coverage around retries, token refresh, middleware, multipart flows, and provider/client parity.
-- HTTP facades moved from `src/api/` to `src/client/api/` (internal structure only; public imports unchanged).
-- Tests live under colocated `src/**/__tests__/` directories.
-- Client entry moved to `src/client/index.ts`; advanced runtime primitives now live under the explicit `@macpaw/ai-sdk/runtime` surface (use the main entry or `@macpaw/ai-sdk/types` for app-facing imports).
-- README and AI-assistant templates describe `@macpaw/ai-sdk/provider` as a full re-export of `ai` plus AI Gateway helpers.
-- `macpaw-ai-setup` reads the Cursor skill from published templates bundled in the package.
-- Vitest now fails when no tests are discovered, tightening release-time verification.
-
-### Deprecated
-
-- Prefer importing domain types from `@macpaw/ai-sdk/types`; the root entry may duplicate some of these for convenience.
+- Flat `src/` architecture — no `src/api/` or `src/client/` subdirectories.
+- `createGatewayFetch` replaces the old low-level client as the escape-hatch for custom HTTP calls.
+- `@ai-sdk/openai` is now a required peer dependency (used directly in `gateway-provider.ts`).
+- `withRetry` now accepts `Required<RetryConfig>` (already-normalised config); callers must not pass un-normalised objects.
+- Auth retry guard: requests with a streaming body (`ReadableStream`) throw `AuthError` immediately instead of attempting a silent re-play of the consumed stream.
+- Test coverage added for `gateway-errors`, `gateway-retry`, `gateway-request` internals, and NestJS decorators.
+- Removed `@macpaw/ai-sdk/types` subpath — domain types are exported from the root entry.
+- Removed `@macpaw/ai-sdk/runtime` subpath — there is no separate runtime surface.
+- Removed lifecycle hooks (`onRequest`, `onResponse`, `onError`, `onRetry`) — not part of the public API.
+- Removed pluggable transport layer — `GatewayProviderSettings.fetch` covers custom fetch injection.
+- Removed `autoRefreshToken` / `tokenCacheTTL` options — token refresh is handled automatically on 401.
+- Vitest fails when no tests are discovered, tightening release-time verification.
 
 ## 0.1.0
 
-### Major Changes
-
-- Initial release: AI Gateway SDK for browser and Node.js.
-
 ### Added
 
-- Chat Completions API with streaming support
-- Responses API (OpenAI format) with streaming support
-- Embeddings API
-- Images API (generation and editing)
-- Audio API (transcription and translation with streaming)
-- Model discovery API
-- Error normalization layer (Gateway API + OpenAI formats)
-- Retry with exponential backoff
-- Middleware / interceptor chain
-- Pluggable transport layer
-- Per-request AbortSignal and timeout support
-- Lifecycle hooks (onRequest, onResponse, onError, onRetry)
-- X-Request-ID generation and tracking
-- Vercel AI SDK provider integration
-- Dual ESM + CJS output
-- Tree-shakeable, zero runtime dependencies
+- `createAIGatewayProvider` / `createGatewayProvider` — Vercel AI SDK provider for the MacPaw AI Gateway.
+- `GATEWAY_PROVIDERS` — map of supported model providers.
+- `createGatewayFetch` / `GATEWAY_PLACEHOLDER_API_KEY` — escape-hatch for custom HTTP calls to the gateway.
+- Error class hierarchy: `AIGatewayError`, `AuthError`, `CreditsError`, `RateLimitError`, `ModelNotAllowedError`, `GatewayValidationError`.
+- `parseErrorResponse` / `parseStreamErrorPayload` / `parseErrorResponseFromResponse` — normalise both Gateway API and OpenAI proxy error shapes.
+- Auth via `getAuthToken` callback; automatic token refresh on 401 with a single retry.
+- Retry with exponential backoff and jitter (`withRetry`, `RetryConfig`).
+- Middleware pipeline (`Middleware` type, applied per-request).
+- Per-request timeout via `AbortController`; combined `AbortSignal` support via `anySignal`.
+- `X-Request-ID` auto-generation and propagation.
+- NestJS integration: `AIGatewayModule`, `AI_GATEWAY_CONFIG` token, `@InjectAIGateway()` decorator, `AIGatewayExceptionFilter`.
+- Exported types: `GatewayProviderSettings`, `RetryConfig`, `Middleware`, `ErrorCode`, `NormalizedErrorMetadata`, etc.
+- Dual ESM + CJS output via tsup.
+- Strict TypeScript targeting ES2022.

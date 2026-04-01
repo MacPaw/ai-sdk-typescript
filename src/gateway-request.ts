@@ -182,10 +182,11 @@ async function executeWithAuth(
     return await executeRequest(config, request, behavior, isTokenRetry);
   } catch (err) {
     if (behavior.allowAuthRetry && !isTokenRetry && err instanceof AuthError) {
-      // Note: request.body is re-used as-is on the auth retry. This is safe
-      // because @ai-sdk/openai always serialises the body to a JSON string
-      // before handing it to fetch. If a ReadableStream body is ever passed
-      // here it will already be consumed and the retry will fail silently.
+      // ReadableStream bodies are single-consumer: once the first request reads
+      // the stream it is consumed and cannot be replayed on the retry attempt.
+      if (typeof ReadableStream !== 'undefined' && request.body instanceof ReadableStream) {
+        throw err;
+      }
       return executeWithAuth(config, request, behavior, true);
     }
     throw err;
@@ -256,8 +257,18 @@ async function executeRequest(
     try {
       const response = await next(requestConfig);
 
-      if (!response.ok && behavior.normalizeErrors) {
-        await parseErrorResponseFromResponse(response);
+      if (!response.ok) {
+        const retryableStatuses = config.retry !== false ? config.retry.retryableStatuses : [];
+        // Transport logic must fire regardless of normalizeErrors:
+        //   - 401 must throw AuthError so executeWithAuth can refresh the token
+        //   - retryable statuses must throw so withRetry can schedule retry attempts
+        const isTransportCritical =
+          (behavior.allowAuthRetry && response.status === 401) ||
+          (config.retry !== false && retryableStatuses.includes(response.status));
+
+        if (behavior.normalizeErrors || isTransportCritical) {
+          await parseErrorResponseFromResponse(response);
+        }
       }
 
       return response;
