@@ -93,11 +93,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/macpaw/ai-sdk-typescript.git"
+    "url": "https://github.com/MacPaw/ai-sdk-typescript.git"
   },
-  "homepage": "https://github.com/macpaw/ai-sdk-typescript#readme",
+  "homepage": "https://github.com/MacPaw/ai-sdk-typescript#readme",
   "bugs": {
-    "url": "https://github.com/macpaw/ai-sdk-typescript/issues"
+    "url": "https://github.com/MacPaw/ai-sdk-typescript/issues"
   },
   "devDependencies": {
     "@ai-sdk/openai": "3.0.49",
