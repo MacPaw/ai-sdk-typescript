@@ -14,7 +14,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
-      '@macpaw/ai-sdk/react': resolve(__dirname, './src/react/index.ts'),
     },
   },
 });

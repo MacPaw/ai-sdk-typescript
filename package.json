@@ -96,9 +96,6 @@
   "bugs": {
     "url": "https://github.com/macpaw/ai-sdk-typescript/issues"
   },
-  "dependencies": {
-    "@ai-sdk/openai": "^3.0.48"
-  },
   "devDependencies": {
     "@ai-sdk/openai": "3.0.48",
     "@ai-sdk/provider": "3.0.8",

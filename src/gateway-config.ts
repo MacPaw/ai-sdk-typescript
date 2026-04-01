@@ -84,7 +84,8 @@ export interface GatewayProviderSettings {
 export interface ResolvedConfig {
   baseURL: string;
   getAuthToken: (forceRefresh?: boolean) => Promise<string | null>;
-  retry: RetryConfig | false;
+  /** Already normalized — all fields present, maxAttempts ≥ 1. */
+  retry: Required<RetryConfig> | false;
   middleware: Middleware[];
   headers?: Record<string, string>;
   timeout: number;

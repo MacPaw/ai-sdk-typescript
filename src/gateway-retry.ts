@@ -7,7 +7,6 @@
  */
 
 import type { RetryConfig } from './gateway-config';
-import { DEFAULT_RETRY, normalizeRetryConfig } from './gateway-config';
 import type { AIGatewayError } from './gateway-errors';
 
 function delay(ms: number, signal?: AbortSignal): Promise<void> {
@@ -41,15 +40,13 @@ function addJitter(delayMs: number): number {
 export async function withRetry<T>(
   fn: () => Promise<T>,
   options: {
-    retryConfig: RetryConfig;
+    /** Already-normalized config — all fields must be present. */
+    retryConfig: Required<RetryConfig>;
     signal?: AbortSignal;
     isNetworkError?: (err: unknown) => boolean;
   },
 ): Promise<T> {
-  const { maxAttempts, initialDelayMs, maxDelayMs, retryableStatuses } = normalizeRetryConfig({
-    ...DEFAULT_RETRY,
-    ...options.retryConfig,
-  });
+  const { maxAttempts, initialDelayMs, maxDelayMs, retryableStatuses } = options.retryConfig;
   let lastError: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {

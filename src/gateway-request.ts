@@ -182,10 +182,11 @@ async function executeWithAuth(
     return await executeRequest(config, request, behavior, isTokenRetry);
   } catch (err) {
     if (behavior.allowAuthRetry && !isTokenRetry && err instanceof AuthError) {
-      // Note: request.body is re-used as-is on the auth retry. This is safe
-      // because @ai-sdk/openai always serialises the body to a JSON string
-      // before handing it to fetch. If a ReadableStream body is ever passed
-      // here it will already be consumed and the retry will fail silently.
+      // ReadableStream bodies are single-consumer: once the first request reads
+      // the stream it is consumed and cannot be replayed on the retry attempt.
+      if (typeof ReadableStream !== 'undefined' && request.body instanceof ReadableStream) {
+        throw err;
+      }
       return executeWithAuth(config, request, behavior, true);
     }
     throw err;
