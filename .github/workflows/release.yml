@@ -34,9 +34,18 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: '22' # LTS; package.json engines: >=18
+          node-version: '22.14.0' # npm trusted publishing requires Node 22.14+
           cache: pnpm
           registry-url: https://registry.npmjs.org
+
+      - name: Upgrade npm for trusted publishing
+        run: npm install --global npm@^11.5.1
+
+      - name: Show tool versions
+        run: |
+          node --version
+          npm --version
+          pnpm --version
 
       - run: pnpm install --frozen-lockfile
 

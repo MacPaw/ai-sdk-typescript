@@ -93,7 +93,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MacPaw/ai-sdk-typescript.git"
+    "url": "git+https://github.com/MacPaw/ai-sdk-typescript.git"
   },
   "homepage": "https://github.com/MacPaw/ai-sdk-typescript#readme",
   "bugs": {
