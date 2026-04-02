@@ -8,10 +8,10 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { GATEWAY_PLACEHOLDER_API_KEY } from '../gateway-auth-token';
 import { executeRequestPipeline, redactSensitiveHeaders } from '../gateway-request';
 import { resolveConfig, type GatewayProviderSettings } from '../gateway-config';
 import { AuthError } from '../gateway-errors';
+import { GATEWAY_PLACEHOLDER_API_KEY } from '../gateway-fetch';
 
 const BASE_URL = 'https://api.test.com';
 const DEFAULT_AUTH: Pick<GatewayProviderSettings, 'getAuthToken'> = { getAuthToken: async () => null };

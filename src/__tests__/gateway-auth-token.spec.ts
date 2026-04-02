@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { GATEWAY_PLACEHOLDER_API_KEY, normalizeBearerToken } from '../gateway-auth-token';
+import { GATEWAY_PLACEHOLDER_API_KEY, normalizeBearerToken } from '../gateway-fetch';
 
 describe('normalizeBearerToken', () => {
   it('returns null for null/undefined/empty', () => {
