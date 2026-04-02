@@ -111,6 +111,51 @@ describe('createGatewayFetch', () => {
     expect(headers.has('Authorization')).toBe(false);
   });
 
+  it('strips placeholder Authorization with trailing comma for external hosts', async () => {
+    const customFetch = createGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'secret-token',
+    });
+
+    await customFetch(
+      new Request('https://evil.example.com/steal', {
+        headers: { Authorization: 'Bearer ai-gateway-auth-via-fetch,' },
+      }),
+    );
+
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const headers = new Headers(fetchCall[1].headers);
+    expect(headers.has('Authorization')).toBe(false);
+  });
+
+  it('sends Bearer without trailing comma when getAuthToken returns noisy token', async () => {
+    const customFetch = createGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'my-jwt,',
+    });
+
+    await customFetch('https://api.macpaw.com/ai/api/v1/chat/completions', {
+      method: 'POST',
+    });
+
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const headers = new Headers(fetchCall[1].headers);
+    expect(headers.get('Authorization')).toBe('Bearer my-jwt');
+  });
+
+  it('omits Authorization when getAuthToken returns only the placeholder', async () => {
+    const customFetch = createGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'ai-gateway-auth-via-fetch',
+    });
+
+    await customFetch('https://api.macpaw.com/ai/api/v1/test', { method: 'GET' });
+
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const headers = new Headers(fetchCall[1].headers);
+    expect(headers.has('Authorization')).toBe(false);
+  });
+
   it('does not treat prefix-matching absolute URLs as gateway requests', async () => {
     const customFetch = createGatewayFetch({
       baseURL: 'https://api.macpaw.com/ai',

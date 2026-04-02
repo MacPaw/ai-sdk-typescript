@@ -11,6 +11,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { executeRequestPipeline, redactSensitiveHeaders } from '../gateway-request';
 import { resolveConfig, type GatewayProviderSettings } from '../gateway-config';
 import { AuthError } from '../gateway-errors';
+import { GATEWAY_PLACEHOLDER_API_KEY } from '../gateway-fetch';
 
 const BASE_URL = 'https://api.test.com';
 const DEFAULT_AUTH: Pick<GatewayProviderSettings, 'getAuthToken'> = { getAuthToken: async () => null };
@@ -22,6 +23,33 @@ function makeConfig(
     baseURL: string;
   });
 }
+
+// ─── Authorization: avoid duplicate header fields (comma-merged on some servers) ─
+
+describe('executeRequestPipeline — single Authorization field', () => {
+  it('removes all Authorization casings then sets one Bearer from getAuthToken', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(new Response('ok', { status: 200 }));
+    const config = makeConfig({
+      fetch: mockFetch,
+      getAuthToken: async () => 'user-jwt',
+      retry: false,
+    });
+
+    await executeRequestPipeline(config, {
+      url: `${BASE_URL}/test`,
+      method: 'GET',
+      headers: {
+        authorization: `Bearer ${GATEWAY_PLACEHOLDER_API_KEY}`,
+        Authorization: `Bearer ${GATEWAY_PLACEHOLDER_API_KEY}`,
+      },
+    });
+
+    const passedHeaders = mockFetch.mock.calls[0][1].headers as Record<string, string>;
+    const authKeys = Object.keys(passedHeaders).filter((k) => k.toLowerCase() === 'authorization');
+    expect(authKeys).toHaveLength(1);
+    expect(passedHeaders.Authorization).toBe('Bearer user-jwt');
+  });
+});
 
 // ─── isNetworkError ───────────────────────────────────────────────────────────
 
