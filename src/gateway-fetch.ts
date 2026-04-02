@@ -117,9 +117,10 @@ export function createGatewayFetch(
       }
     }
 
-    if (!isGatewayRequest) {
-      stripPlaceholderAuthorization(headers, GATEWAY_PLACEHOLDER_API_KEY);
-    }
+    // Always strip the OpenAI placeholder before entering the shared pipeline.
+    // For gateway requests the real Bearer is injected later via getAuthToken();
+    // for non-gateway requests we also avoid leaking the sentinel downstream.
+    stripPlaceholderAuthorization(headers, GATEWAY_PLACEHOLDER_API_KEY);
 
     return executeRequestPipeline(
       resolvedConfig,

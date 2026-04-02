@@ -353,6 +353,35 @@ describe('createGatewayFetch', () => {
     expect(headers.get('Authorization')).toBe('Bearer secret-bearer');
   });
 
+  it('strips placeholder Authorization before middleware on gateway requests', async () => {
+    let headersSeenByMiddleware: Record<string, string> = {};
+
+    const customFetch = createGatewayFetch({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'secret-bearer',
+      middleware: [
+        async (request, next) => {
+          headersSeenByMiddleware = { ...request.headers };
+          return next(request);
+        },
+      ],
+    });
+
+    await customFetch(
+      new Request('https://api.macpaw.com/ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ai-gateway-auth-via-fetch,' },
+      }),
+    );
+
+    const authHeader = Object.keys(headersSeenByMiddleware).find((k) => k.toLowerCase() === 'authorization');
+    expect(authHeader).toBeUndefined();
+
+    const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    const headers = new Headers(fetchCall[1].headers);
+    expect(headers.get('Authorization')).toBe('Bearer secret-bearer');
+  });
+
   it('smoke: retries on 429 with Retry-After header and succeeds on second attempt', async () => {
     // Verifies Retry-After code path executes (retryAfterSeconds > 0).
     // Timing precision is not asserted — see withRetry unit tests for that.

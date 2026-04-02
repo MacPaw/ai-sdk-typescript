@@ -30,6 +30,8 @@ npm install @macpaw/ai-sdk
 
 Also install upstream packages you call directly, for example `ai`, `@ai-sdk/openai`, `@ai-sdk/react`.
 
+This package does not pin or wrap the upstream UI/hooks API from `ai` / `@ai-sdk/react`. Follow the versioned upstream docs for the exact major version you install there. If your chosen upstream version requires version-specific imports or patterns (for example schema helpers), use the upstream guidance for those APIs.
+
 ## Quick start (Vercel AI SDK)
 
 ```ts
@@ -88,9 +90,9 @@ Internal resolution: `resolveConfig()` in `gateway-config.ts`.
 Same auth, retry, middleware, and error normalization as the provider path. Use **relative** URLs under the gateway root (e.g. `'/api/v1/images/edits'`) or absolute URLs that stay under the same gateway origin.
 
 ```ts
-import { createGatewayFetch } from '@macpaw/ai-sdk';
+import { createGatewayFetch, resolveGatewayBaseURL } from '@macpaw/ai-sdk';
 
-const baseURL = 'https://api.macpaw.com/ai'; // or resolve via env: 'production'
+const baseURL = resolveGatewayBaseURL(undefined, 'production', 'gatewayFetch');
 const gatewayFetch = createGatewayFetch({
   baseURL,
   getAuthToken: async () => token,
@@ -105,6 +107,8 @@ const res = await gatewayFetch('/api/v1/images/edits', { method: 'POST', body: f
 ```
 
 Non-gateway absolute URLs are passed through without injecting Bearer auth (placeholder key is stripped). See `gateway-fetch.ts`.
+
+`createGatewayFetch` requires a resolved `baseURL`. Use the exported `resolveGatewayBaseURL()` helper if you want the same `'production'` shortcut that provider factories support.
 
 ## `createGatewayProvider` — prefixed model IDs
 
@@ -146,6 +150,8 @@ Extends `GatewayProviderSettings` plus OpenAI provider settings (without `apiKey
 
 - `normalizeErrors` — default `true`; non-OK Gateway responses throw typed errors
 - `createOpenAI` — optional override of `createOpenAI` from `@ai-sdk/openai` (tests/advanced)
+
+Use `normalizeErrors: false` only when you intentionally want to inspect raw failed `Response` objects in provider-driven tests or adapters. Auth refresh and retry behavior still stay on; only typed non-OK error throwing is relaxed.
 
 ## Middleware
 
@@ -199,6 +205,8 @@ AIGatewayModule.forRoot({
 });
 ```
 
+If your Nest app uses TypeScript subpath exports strictly, make sure its `tsconfig` uses a modern resolver such as `moduleResolution: "Node16"`, `"NodeNext"`, or `"bundler"` so `@macpaw/ai-sdk/nestjs` resolves correctly.
+
 Inject **`GatewayProviderSettings`** (not an HTTP client) and build providers in the service:
 
 ```ts
@@ -224,6 +232,8 @@ export class ChatService {
 ```
 
 `AIGatewayExceptionFilter` maps `AIGatewayError` to JSON HTTP responses. See `examples/nestjs/` for a copy-paste skeleton.
+
+Only documented root exports are public API. Source-level helpers such as `parseErrorResponseFromResponse` and `parseStreamErrorPayload` may exist internally, but they are not supported import targets unless exported from `@macpaw/ai-sdk`.
 
 ## Examples
 
