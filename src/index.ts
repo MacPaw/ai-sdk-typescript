@@ -42,4 +42,5 @@ export type {
 } from './gateway-errors';
 
 // Config types (consumers need these to configure the SDK)
-export type { GatewayProviderSettings, Middleware, RetryConfig } from './gateway-config';
+export { DEFAULT_BASE_URLS, resolveGatewayBaseURL } from './gateway-config';
+export type { Environment, GatewayProviderSettings, Middleware, RetryConfig } from './gateway-config';

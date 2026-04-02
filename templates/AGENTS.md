@@ -9,6 +9,7 @@ Apply these rules when integrating MacPaw AI Gateway.
 - `@macpaw/ai-sdk/nestjs`: NestJS module and decorators.
 - Install `@ai-sdk/openai` when using `createAIGatewayProvider` or `createGatewayProvider`.
 - Never use `createAIGatewayClient`, `@macpaw/ai-sdk/client`, `runtime`, `types`, or `testing`.
+- For UI hooks or schema helpers, follow the versioned upstream docs for the installed `ai` / `@ai-sdk/react` major version; this package does not redefine those APIs.
 
 ## Choose one integration path
 
@@ -22,7 +23,7 @@ Apply these rules when integrating MacPaw AI Gateway.
 - Do not invent a token source. Ask once if unclear.
 - Do not place gateway tokens in browser-only code.
 - `env` supports only `'production'`; use `baseURL` for staging/custom hosts.
-- `createGatewayFetch` requires `baseURL`.
+- `createGatewayFetch` requires a resolved `baseURL`; prefer `resolveGatewayBaseURL()` when you want the default production host.
 - Remove legacy imports and dependencies only after confirming all usages are migrated.
 
 ## Canonical snippets

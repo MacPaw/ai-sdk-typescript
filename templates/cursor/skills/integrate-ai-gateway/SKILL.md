@@ -15,6 +15,7 @@ Detect the app shape, choose one integration path, apply the smallest correct pa
 - Use `@macpaw/ai-sdk/provider` only as a compatibility alias.
 - Use `@macpaw/ai-sdk/nestjs` for `AIGatewayModule`, `@InjectAIGateway()`, and `AIGatewayExceptionFilter`.
 - Do not use `createAIGatewayClient`, `@macpaw/ai-sdk/client`, `runtime`, `types`, or `testing`; they do not exist.
+- For UI hooks or schema helpers, follow the versioned upstream docs for the installed `ai` / `@ai-sdk/react` major version; this package does not redefine those APIs.
 
 ## Guardrails
 
@@ -22,7 +23,7 @@ Detect the app shape, choose one integration path, apply the smallest correct pa
 - Do not place real tokens in browser-only code. Frontend-only apps need a backend/BFF token source.
 - Do not remove direct OpenAI/Anthropic paths unless all usages are migrated or the user asked for it.
 - Use `baseURL` for staging/custom hosts. `env` supports only `'production'`.
-- `createGatewayFetch` requires a resolved `baseURL`; do not pass only `env`.
+- `createGatewayFetch` requires a resolved `baseURL`; do not pass only `env`. Prefer `resolveGatewayBaseURL()` when you want the default production host.
 
 ## Choose one path
 

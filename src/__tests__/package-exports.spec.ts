@@ -37,6 +37,8 @@ describe('package exports', () => {
 
   it('publishes the folders required for built code', () => {
     expect(packageJson.files).toContain('dist');
+    expect(packageJson.files).toContain('scripts');
+    expect(packageJson.files).toContain('templates');
     expect(packageJson.files).not.toContain('shims');
   });
 });

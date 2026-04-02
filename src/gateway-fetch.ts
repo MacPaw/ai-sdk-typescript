@@ -13,6 +13,8 @@ import type { GatewayProviderSettings } from './gateway-config';
 import { resolveConfig } from './gateway-config';
 import { executeRequestPipeline } from './gateway-request';
 
+export const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
+
 /**
  * Config for `createGatewayFetch`.
  * Extends GatewayProviderSettings with baseURL required (already resolved)
@@ -36,9 +38,37 @@ function resolveRequestUrl(input: FetchInput): string {
   return input.url;
 }
 
+/**
+ * Trims, strips a single layer of surrounding ASCII quotes, and removes
+ * trailing comma/semicolon noise often introduced by .env or copy-paste.
+ */
+export function normalizeBearerToken(raw: string | null | undefined): string | null {
+  if (raw == null) return null;
+  let s = String(raw).trim();
+  if (!s) return null;
+
+  if (
+    (s.startsWith('"') && s.endsWith('"') && s.length >= 2) ||
+    (s.startsWith("'") && s.endsWith("'") && s.length >= 2)
+  ) {
+    s = s.slice(1, -1).trim();
+  }
+
+  s = s.replace(/[,;]+\s*$/g, '').trim();
+  return s.length > 0 ? s : null;
+}
+
+/**
+ * Removes Authorization when it is only the OpenAI apiKey placeholder (optional trailing comma),
+ * so a real Bearer from getAuthToken() is not merged with a junk value.
+ */
 function stripPlaceholderAuthorization(headers: Headers, placeholder: string): void {
   const auth = headers.get('authorization');
-  if (auth === `Bearer ${placeholder}`) {
+  if (!auth) return;
+  const m = auth.match(/^Bearer\s+(\S+)/i);
+  if (!m) return;
+  const credential = normalizeBearerToken(m[1]);
+  if (credential === placeholder) {
     headers.delete('authorization');
   }
 }
@@ -62,8 +92,6 @@ function isGatewayUrl(url: URL, gatewayBaseUrl: URL): boolean {
     url.origin === gatewayBaseUrl.origin && (requestPath === gatewayPath || requestPath.startsWith(`${gatewayPath}/`))
   );
 }
-
-export const GATEWAY_PLACEHOLDER_API_KEY = 'ai-gateway-auth-via-fetch';
 
 export function createGatewayFetch(
   options: GatewayFetchConfig,
@@ -89,9 +117,10 @@ export function createGatewayFetch(
       }
     }
 
-    if (!isGatewayRequest) {
-      stripPlaceholderAuthorization(headers, GATEWAY_PLACEHOLDER_API_KEY);
-    }
+    // Always strip the OpenAI placeholder before entering the shared pipeline.
+    // For gateway requests the real Bearer is injected later via getAuthToken();
+    // for non-gateway requests we also avoid leaking the sentinel downstream.
+    stripPlaceholderAuthorization(headers, GATEWAY_PLACEHOLDER_API_KEY);
 
     return executeRequestPipeline(
       resolvedConfig,

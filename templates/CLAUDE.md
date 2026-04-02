@@ -9,13 +9,14 @@ Use this guidance when integrating MacPaw AI Gateway into this project.
 - Keep generation primitives on upstream `ai` / `@ai-sdk/*`.
 - Install `@ai-sdk/openai` when using `createAIGatewayProvider` or `createGatewayProvider`; those paths depend on the OpenAI-compatible provider package.
 - Do not use `createAIGatewayClient`, `@macpaw/ai-sdk/client`, `runtime`, `types`, or `testing`; those surfaces do not exist.
+- For UI hooks or schema helpers, follow the versioned upstream docs for the installed `ai` / `@ai-sdk/react` major version; this package does not redefine those APIs.
 
 ## Guardrails
 
 - Do not invent a token source. If server-side token retrieval is unclear, ask one concise question.
 - Do not put real gateway tokens in browser-only code.
 - Use `env: 'production'` only for the default MacPaw host. Use `baseURL` for staging or custom hosts.
-- `createGatewayFetch` requires a resolved `baseURL`; do not pass only `env`.
+- `createGatewayFetch` requires a resolved `baseURL`; do not pass only `env`. Prefer `resolveGatewayBaseURL()` when you want the default production host.
 - Remove old provider dependencies only after verifying there are no remaining usages.
 
 ## Preferred paths

@@ -8,6 +8,7 @@
 
 import type { RequestConfig, ResolvedConfig } from './gateway-config';
 import { AuthError, parseErrorResponseFromResponse } from './gateway-errors';
+import { GATEWAY_PLACEHOLDER_API_KEY, normalizeBearerToken } from './gateway-fetch';
 import { withRetry } from './gateway-retry';
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
@@ -56,6 +57,17 @@ function generateRequestId(prefix: string = 'sdk'): string {
 function hasHeaderCaseInsensitive(headers: Record<string, string>, name: string): boolean {
   const lower = name.toLowerCase();
   return Object.keys(headers).some((k) => k.toLowerCase() === lower);
+}
+
+/**
+ * Drops every `Authorization` key regardless of casing.
+ * Some runtimes would emit two header fields if both `authorization` and `Authorization`
+ * exist on the same object; servers then merge them into one value with a comma.
+ */
+function deleteAllAuthorizationHeaders(headers: Record<string, string>): void {
+  for (const key of Object.keys(headers)) {
+    if (key.toLowerCase() === 'authorization') delete headers[key];
+  }
 }
 
 function shouldAutoSetJsonContentType(body: RequestInit['body'], headers: Record<string, string>): boolean {
@@ -242,13 +254,11 @@ async function executeRequest(
       }
       const finalHeaders = { ...currentRequest.headers };
       if (behavior.includeAuth) {
-        const token = await config.getAuthToken(forceRefreshToken);
-        if (token) {
+        deleteAllAuthorizationHeaders(finalHeaders);
+        const rawToken = await config.getAuthToken(forceRefreshToken);
+        const token = normalizeBearerToken(rawToken);
+        if (token && token !== GATEWAY_PLACEHOLDER_API_KEY) {
           finalHeaders.Authorization = `Bearer ${token}`;
-        } else {
-          for (const key of Object.keys(finalHeaders)) {
-            if (key.toLowerCase() === 'authorization') delete finalHeaders[key];
-          }
         }
       }
       return executeFetch(config.fetchImpl, { ...currentRequest, headers: finalHeaders });
