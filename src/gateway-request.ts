@@ -6,9 +6,9 @@
  * and fetch transport as private helpers.
  */
 
-import { GATEWAY_PLACEHOLDER_API_KEY, normalizeBearerToken } from './gateway-auth-token';
 import type { RequestConfig, ResolvedConfig } from './gateway-config';
 import { AuthError, parseErrorResponseFromResponse } from './gateway-errors';
+import { GATEWAY_PLACEHOLDER_API_KEY, normalizeBearerToken } from './gateway-fetch';
 import { withRetry } from './gateway-retry';
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
