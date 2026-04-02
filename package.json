@@ -1,6 +1,6 @@
 {
   "name": "@macpaw/ai-sdk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Vercel AI SDK extension layer for AI Gateway with MacPaw and Setapp auth flows",
   "type": "module",
   "main": "./dist/index.cjs",
