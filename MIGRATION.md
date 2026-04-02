@@ -2,6 +2,8 @@
 
 This package is a **small Vercel AI SDK extension** for MacPaw AI Gateway. Upstream **`ai`**, **`@ai-sdk/openai`**, **`@ai-sdk/react`** (or **`ai/react`**) stay the source for core APIs and hooks.
 
+That also means upstream UI/hooks/version migrations stay upstream. If your installed `ai` / `@ai-sdk/react` version changes hook or schema APIs, follow the upstream versioned docs for those packages rather than expecting `@macpaw/ai-sdk` to redefine them.
+
 ## Entry points
 
 | Path                      | Role                                                                                                                                            |
@@ -26,9 +28,13 @@ Replace `createAIGatewayClient` with:
 
 Types for request/response bodies can come from your app, from OpenAI SDK types, or from gateway OpenAPI — they are not re-exported from this package today.
 
+If you want the default production Gateway URL in fetch-only flows, use the public `resolveGatewayBaseURL()` helper and pass the resolved value into `createGatewayFetch()`.
+
 ## If you used `@macpaw/ai-sdk/runtime`
 
 Internals (`executeRequestPipeline`, etc.) are not part of the public API. Prefer `createGatewayFetch` or provider options (`middleware`, `retry`, `timeout`, `fetch`).
+
+The same applies to source-only error helpers: if a helper is not exported from `@macpaw/ai-sdk`, treat it as internal even if you see it in the repository source.
 
 ## Quick import cheatsheet
 

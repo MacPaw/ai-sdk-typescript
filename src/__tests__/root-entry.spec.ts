@@ -9,6 +9,8 @@ describe('root entry', () => {
     expect(root.createGatewayProvider).toBeDefined();
     expect(root.GATEWAY_PROVIDERS).toBeDefined();
     expect(root.createGatewayFetch).toBeDefined();
+    expect(root.resolveGatewayBaseURL).toBeDefined();
+    expect(root.DEFAULT_BASE_URLS).toBeDefined();
     expect(root.GATEWAY_PLACEHOLDER_API_KEY).toBeDefined();
   });
 
