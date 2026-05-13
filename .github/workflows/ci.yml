@@ -106,7 +106,7 @@ jobs:
           echo "total=${TOTAL}" >> "$GITHUB_OUTPUT"
 
       - name: Comment on PR
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           PKG_SIZE: ${{ steps.pack.outputs.pkg_size }}
           UNPACKED: ${{ steps.pack.outputs.unpacked }}
