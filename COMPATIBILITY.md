@@ -4,18 +4,18 @@ This document relates **AI Gateway HTTP routes** to how **`@macpaw/ai-sdk`** tal
 
 ## Paths
 
-Gateway routes are versioned under `/api/v1/...`. Use `createGatewayFetch` with the correct path, or let the Vercel/OpenAI stack issue requests under the same prefix.
+Gateway routes are versioned under `/ai/v1/...` (from the host root). With `createGatewayFetch` the base already includes `/ai`, so pass the path relative to it (`/v1/...`). The Vercel/OpenAI stack issues requests under the same prefix automatically.
 
-| API                  | Typical path                   |
-| -------------------- | ------------------------------ |
-| Chat completions     | `/api/v1/chat/completions`     |
-| Responses            | `/api/v1/responses`            |
-| Embeddings           | `/api/v1/embeddings`           |
-| Model info           | `/api/v1/model/info`           |
-| Images generations   | `/api/v1/images/generations`   |
-| Images edits         | `/api/v1/images/edits`         |
-| Audio transcriptions | `/api/v1/audio/transcriptions` |
-| Audio translations   | `/api/v1/audio/translations`   |
+| API                  | Full route (from host)        | Relative path (base `…/ai`) |
+| -------------------- | ----------------------------- | --------------------------- |
+| Chat completions     | `/ai/v1/chat/completions`     | `/v1/chat/completions`      |
+| Responses            | `/ai/v1/responses`            | `/v1/responses`             |
+| Embeddings           | `/ai/v1/embeddings`           | `/v1/embeddings`            |
+| Model info           | `/ai/v1/model/info`           | `/v1/model/info`            |
+| Images generations   | `/ai/v1/images/generations`   | `/v1/images/generations`    |
+| Images edits         | `/ai/v1/images/edits`         | `/v1/images/edits`          |
+| Audio transcriptions | `/ai/v1/audio/transcriptions` | `/v1/audio/transcriptions`  |
+| Audio translations   | `/ai/v1/audio/translations`   | `/v1/audio/translations`    |
 
 ## Base URL
 
