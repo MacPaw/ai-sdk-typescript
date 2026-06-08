@@ -51,7 +51,7 @@ describe('createAIGatewayProvider', () => {
 
     expect(mockCreateOpenAI).toHaveBeenCalledTimes(1);
     const config = mockCreateOpenAI.mock.calls[0][0];
-    expect(config.baseURL).toBe('https://api.macpaw.com/ai/api/v1');
+    expect(config.baseURL).toBe('https://api.macpaw.com/ai/v1');
     expect(config.apiKey).toBe('ai-gateway-auth-via-fetch');
     expect(typeof config.fetch).toBe('function');
   });
@@ -79,7 +79,7 @@ describe('createAIGatewayProvider', () => {
     });
 
     const config = mockCreateOpenAI.mock.calls[0][0];
-    expect(config.baseURL).toBe('https://custom.gateway.com/ai/api/v1');
+    expect(config.baseURL).toBe('https://custom.gateway.com/ai/v1');
   });
 
   it('returns the result of createOpenAI', () => {
@@ -241,7 +241,7 @@ describe('createGatewayProvider', () => {
     expect(mockProvider).toHaveBeenCalledWith('custom/claude-opus-4');
     // createOpenAI was called with correct baseURL (production env)
     const config = mockCreateOpenAI.mock.calls[0][0];
-    expect(config.baseURL).toContain('/api/v1');
+    expect(config.baseURL).toContain('/ai/v1');
   });
 
   it('supports "has" trap for property checks', () => {

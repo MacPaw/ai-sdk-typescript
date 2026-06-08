@@ -47,7 +47,7 @@ export function createAIGatewayProvider(options: AIGatewayProviderOptions): Open
     name: options.name,
     organization: options.organization,
     project: options.project,
-    baseURL: `${baseURL.replace(/\/$/, '')}/api/${DEFAULT_API_VERSION}`,
+    baseURL: `${baseURL.replace(/\/$/, '')}/${DEFAULT_API_VERSION}`,
     fetch: customFetch,
     apiKey: GATEWAY_PLACEHOLDER_API_KEY,
   });
