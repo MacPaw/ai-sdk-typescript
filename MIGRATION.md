@@ -24,7 +24,7 @@ The following paths are **not** published in current versions:
 Replace `createAIGatewayClient` with:
 
 1. **Vercel flows** — `createAIGatewayProvider` / `createGatewayProvider` + `generateText` / `streamText` / `embed` from `ai` where the OpenAI-compatible surface is enough.
-2. **Raw JSON or multipart** — `createGatewayFetch({ baseURL, getAuthToken, ... })` then `gatewayFetch('/api/v1/...', { method, headers, body })` (e.g. `FormData` for image edits or audio).
+2. **Raw JSON or multipart** — `createGatewayFetch({ baseURL, getAuthToken, ... })` then `gatewayFetch('/v1/...', { method, headers, body })` (e.g. `FormData` for image edits or audio).
 
 Types for request/response bodies can come from your app, from OpenAI SDK types, or from gateway OpenAPI — they are not re-exported from this package today.
 
