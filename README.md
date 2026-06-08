@@ -87,7 +87,7 @@ Internal resolution: `resolveConfig()` in `gateway-config.ts`.
 
 ## `createGatewayFetch` — raw HTTP / multipart
 
-Same auth, retry, middleware, and error normalization as the provider path. Use **relative** URLs under the gateway root (e.g. `'/api/v1/images/edits'`) or absolute URLs that stay under the same gateway origin.
+Same auth, retry, middleware, and error normalization as the provider path. The base already includes `/ai`, so use **relative** URLs under it (e.g. `'/v1/images/edits'`, which resolves to `https://api.macpaw.com/ai/v1/images/edits`) or absolute URLs that stay under the same gateway origin.
 
 ```ts
 import { createGatewayFetch, resolveGatewayBaseURL } from '@macpaw/ai-sdk';
@@ -103,7 +103,7 @@ form.append('image', imageBlob, 'photo.png');
 form.append('prompt', 'Add a hat');
 form.append('model', 'openai/dall-e-2');
 
-const res = await gatewayFetch('/api/v1/images/edits', { method: 'POST', body: form });
+const res = await gatewayFetch('/v1/images/edits', { method: 'POST', body: form });
 ```
 
 Non-gateway absolute URLs are passed through without injecting Bearer auth (placeholder key is stripped). See `gateway-fetch.ts`.
