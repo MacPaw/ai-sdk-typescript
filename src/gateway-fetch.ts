@@ -2,7 +2,7 @@
  * Custom fetch factory for use with Vercel AI SDK and other OpenAI-compatible clients.
  * Use this with createOpenAI({ baseURL, fetch: createGatewayFetch(...) }) or similar.
  *
- * AI Gateway HTTP paths are under /api/v1 (e.g. /api/v1/chat/completions).
+ * AI Gateway HTTP paths are under /ai/v1 (e.g. /ai/v1/chat/completions).
  * So baseURL should be the gateway root, e.g. https://api.macpaw.com/ai
  *
  * Internally delegates to the shared request pipeline while guarding against
