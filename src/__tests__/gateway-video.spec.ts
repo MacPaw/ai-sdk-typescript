@@ -99,10 +99,10 @@ describe('createVideo', () => {
 
   it('error path: throws AIGatewayError on 4xx responses', async () => {
     const customFetch = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({ statusCode: 422, message: 'Invalid model', code: 'VALIDATION' }),
-        { status: 422, headers: { 'Content-Type': 'application/json' } },
-      ),
+      new Response(JSON.stringify({ statusCode: 422, message: 'Invalid model', code: 'VALIDATION' }), {
+        status: 422,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     );
 
     const client = createVideoClient({
@@ -164,10 +164,10 @@ describe('getVideo', () => {
 
   it('error path: throws AIGatewayError on 404 responses', async () => {
     const customFetch = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({ statusCode: 404, message: 'Video not found', code: 'NOT_FOUND' }),
-        { status: 404, headers: { 'Content-Type': 'application/json' } },
-      ),
+      new Response(JSON.stringify({ statusCode: 404, message: 'Video not found', code: 'NOT_FOUND' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      }),
     );
 
     const client = createVideoClient({
@@ -220,9 +220,7 @@ describe('getVideoContent', () => {
 
   it('defaults contentType to "video/mp4" when Content-Type header is absent', async () => {
     const videoBytes = new Uint8Array([0xff, 0xfe]).buffer;
-    const customFetch = vi.fn().mockResolvedValue(
-      new Response(videoBytes, { status: 200 }),
-    );
+    const customFetch = vi.fn().mockResolvedValue(new Response(videoBytes, { status: 200 }));
 
     const client = createVideoClient({
       baseURL: 'https://api.macpaw.com/ai',
@@ -236,9 +234,9 @@ describe('getVideoContent', () => {
 
   it('encodes the videoId in the content path', async () => {
     const videoBytes = new Uint8Array([]).buffer;
-    const customFetch = vi.fn().mockResolvedValue(
-      new Response(videoBytes, { status: 200, headers: { 'Content-Type': 'video/mp4' } }),
-    );
+    const customFetch = vi
+      .fn()
+      .mockResolvedValue(new Response(videoBytes, { status: 200, headers: { 'Content-Type': 'video/mp4' } }));
 
     const client = createVideoClient({
       baseURL: 'https://api.macpaw.com/ai',
