@@ -1,0 +1,8 @@
+node:
+  version: 22
+  package_manager: pnpm
+
+additional_tools: pnpm
+
+required_tools: |
+  pnpm --version
