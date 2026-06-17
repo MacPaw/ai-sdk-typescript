@@ -44,3 +44,14 @@ export type {
 // Config types (consumers need these to configure the SDK)
 export { DEFAULT_BASE_URLS, resolveGatewayBaseURL } from './gateway-config';
 export type { Environment, GatewayProviderSettings, Middleware, RetryConfig } from './gateway-config';
+
+// Video generation client
+export { createVideoClient } from './gateway-video';
+export type {
+  VideoClient,
+  VideoClientOptions,
+  VideoJob,
+  VideoStatus,
+  VideoContent,
+  CreateVideoRequest,
+} from './gateway-video';

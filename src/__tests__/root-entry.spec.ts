@@ -14,6 +14,10 @@ describe('root entry', () => {
     expect(root.GATEWAY_PLACEHOLDER_API_KEY).toBeDefined();
   });
 
+  it('exports the video client surface', () => {
+    expect(root.createVideoClient).toBeDefined();
+  });
+
   it('does not expose low-level internals or upstream helpers', () => {
     expect('parseStreamErrorPayload' in root).toBe(false);
     expect('generateText' in root).toBe(false);
