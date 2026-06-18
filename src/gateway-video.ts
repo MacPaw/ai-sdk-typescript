@@ -71,10 +71,7 @@ export interface VideoContent {
  * Extends `GatewayProviderSettings` — same surface as `createGatewayProvider`
  * and `createGatewayFetch`.
  */
-export interface VideoClientOptions extends GatewayProviderSettings {
-  /** Gateway base URL. Required if env is not set. */
-  baseURL?: string;
-}
+export type VideoClientOptions = GatewayProviderSettings;
 
 /** Video generation client returned by `createVideoClient`. */
 export interface VideoClient {

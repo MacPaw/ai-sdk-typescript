@@ -248,6 +248,24 @@ describe('getVideoContent', () => {
     const [url] = customFetch.mock.calls[0];
     expect(url).toBe('https://api.macpaw.com/ai/v1/videos/a%2Fb/content');
   });
+
+  it('error path: throws AIGatewayError on non-OK responses', async () => {
+    const customFetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ statusCode: 404, message: 'Video not found', code: 'NOT_FOUND' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    const client = createVideoClient({
+      baseURL: 'https://api.macpaw.com/ai',
+      getAuthToken: async () => 'tok',
+      fetch: customFetch,
+      retry: false,
+    });
+
+    await expect(client.getVideoContent('missing-id')).rejects.toBeInstanceOf(AIGatewayError);
+  });
 });
 
 // ─── Bearer auth propagation ───────────────────────────────────────────────────
