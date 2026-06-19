@@ -144,7 +144,6 @@ export function createVideoClient(options: GatewayVideoClientOptions): VideoClie
         {
           url: `${base}/v1/videos/${videoId}`,
           method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
         },
         pipelineOptions,
       );
