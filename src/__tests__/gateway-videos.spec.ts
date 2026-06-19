@@ -106,14 +106,12 @@ describe('createVideoClient', () => {
         { status: 401, headers: { 'content-type': 'application/json' } },
       );
       // Auth retry fires once — both attempts must return 401 to surface the AuthError.
-      (globalThis.fetch as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce(unauthorized)
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify({ statusCode: 401, message: 'Unauthorized', code: 'UNAUTHORIZED' }), {
-            status: 401,
-            headers: { 'content-type': 'application/json' },
-          }),
-        );
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(unauthorized).mockResolvedValueOnce(
+        new Response(JSON.stringify({ statusCode: 401, message: 'Unauthorized', code: 'UNAUTHORIZED' }), {
+          status: 401,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
 
       const client = createVideoClient({
         baseURL: BASE_URL,
@@ -125,10 +123,10 @@ describe('createVideoClient', () => {
 
     it('throws AIGatewayError on 400 with OpenAI error body', async () => {
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ error: { message: 'Invalid model', type: 'invalid_request_error' } }),
-          { status: 400, headers: { 'content-type': 'application/json' } },
-        ),
+        new Response(JSON.stringify({ error: { message: 'Invalid model', type: 'invalid_request_error' } }), {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        }),
       );
 
       const client = createVideoClient({
@@ -141,10 +139,10 @@ describe('createVideoClient', () => {
 
     it('throws RateLimitError on 429', async () => {
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
-        new Response(
-          JSON.stringify({ statusCode: 429, message: 'Rate limited', code: 'RATE_LIMIT_EXCEEDED' }),
-          { status: 429, headers: { 'content-type': 'application/json' } },
-        ),
+        new Response(JSON.stringify({ statusCode: 429, message: 'Rate limited', code: 'RATE_LIMIT_EXCEEDED' }), {
+          status: 429,
+          headers: { 'content-type': 'application/json' },
+        }),
       );
 
       const client = createVideoClient({
@@ -189,10 +187,10 @@ describe('createVideoClient', () => {
 
     it('throws AIGatewayError on 404 with OpenAI NOT_FOUND body', async () => {
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ error: { message: 'Video not found', type: null, code: 'NOT_FOUND' } }),
-          { status: 404, headers: { 'content-type': 'application/json' } },
-        ),
+        new Response(JSON.stringify({ error: { message: 'Video not found', type: null, code: 'NOT_FOUND' } }), {
+          status: 404,
+          headers: { 'content-type': 'application/json' },
+        }),
       );
 
       const client = createVideoClient({
