@@ -11,7 +11,8 @@
  */
 
 import type { GatewayProviderSettings } from './gateway-config';
-import { resolveConfig } from './gateway-config';
+import { resolveConfig, resolveGatewayBaseURL } from './gateway-config';
+import { AIGatewayError, ErrorCode } from './gateway-errors';
 import { executeRequestPipeline } from './gateway-request';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -77,12 +78,10 @@ export interface VideoCreateRequest {
 
 /**
  * Options for `createVideoClient`.
- * Extends `GatewayProviderSettings` with `baseURL` required.
+ * Accepts either `baseURL` or `env: 'production'` — the same convention used by
+ * `createGatewayProvider` and `createAIGatewayProvider`.
  */
-export interface GatewayVideoClientOptions extends GatewayProviderSettings {
-  /** Gateway base URL (required). E.g. `https://api.macpaw.com/ai`. */
-  baseURL: string;
-}
+export interface GatewayVideoClientOptions extends GatewayProviderSettings {}
 
 /** Public interface returned by `createVideoClient`. */
 export interface VideoClient {
@@ -105,8 +104,15 @@ export interface VideoClient {
  *
  * @example
  * ```ts
+ * // With an explicit URL:
  * const videos = createVideoClient({
  *   baseURL: 'https://api.macpaw.com/ai',
+ *   getAuthToken: () => Promise.resolve(myJwt),
+ * });
+ *
+ * // Or using the production environment shorthand:
+ * const videos = createVideoClient({
+ *   env: 'production',
  *   getAuthToken: () => Promise.resolve(myJwt),
  * });
  *
@@ -114,8 +120,12 @@ export interface VideoClient {
  * ```
  */
 export function createVideoClient(options: GatewayVideoClientOptions): VideoClient {
-  const base = options.baseURL.replace(/\/$/, '');
-  const resolvedConfig = resolveConfig(options);
+  const resolvedBaseURL = resolveGatewayBaseURL(options.baseURL, options.env, 'createVideoClient');
+  const base = resolvedBaseURL.replace(/\/$/, '');
+  const resolvedConfig = resolveConfig({ ...options, baseURL: resolvedBaseURL });
+  // POST create() is non-idempotent: retrying on 5xx risks duplicate video-generation jobs.
+  // Auth retry (401 → fresh token) is still handled at the behavior level.
+  const noRetryConfig = { ...resolvedConfig, retry: false as const };
 
   const pipelineOptions = {
     includeAuth: true,
@@ -126,34 +136,55 @@ export function createVideoClient(options: GatewayVideoClientOptions): VideoClie
   return {
     async create(request: VideoCreateRequest): Promise<VideoJob> {
       const response = await executeRequestPipeline(
-        resolvedConfig,
+        noRetryConfig,
         {
           url: `${base}/v1/videos`,
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(request),
         },
         pipelineOptions,
       );
-      return response.json() as Promise<VideoJob>;
+      try {
+        return (await response.json()) as VideoJob;
+      } catch (err) {
+        throw new AIGatewayError(
+          'Failed to parse video creation response as JSON',
+          ErrorCode.InternalServerError,
+          response.status,
+          {},
+          { cause: err },
+        );
+      }
     },
 
     async get(videoId: string): Promise<VideoJob> {
+      const id = encodeURIComponent(videoId);
       const response = await executeRequestPipeline(
         resolvedConfig,
         {
-          url: `${base}/v1/videos/${videoId}`,
+          url: `${base}/v1/videos/${id}`,
           method: 'GET',
         },
         pipelineOptions,
       );
-      return response.json() as Promise<VideoJob>;
+      try {
+        return (await response.json()) as VideoJob;
+      } catch (err) {
+        throw new AIGatewayError(
+          'Failed to parse video job response as JSON',
+          ErrorCode.InternalServerError,
+          response.status,
+          {},
+          { cause: err },
+        );
+      }
     },
 
     async getContent(videoId: string, variant?: VideoContentVariant): Promise<Response> {
+      const id = encodeURIComponent(videoId);
       const url = variant
-        ? `${base}/v1/videos/${videoId}/content?variant=${encodeURIComponent(variant)}`
-        : `${base}/v1/videos/${videoId}/content`;
+        ? `${base}/v1/videos/${id}/content?variant=${encodeURIComponent(variant)}`
+        : `${base}/v1/videos/${id}/content`;
 
       return executeRequestPipeline(
         resolvedConfig,

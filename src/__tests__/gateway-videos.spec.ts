@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createVideoClient } from '../gateway-videos';
 import { AIGatewayError, AuthError, RateLimitError } from '../gateway-errors';
+import { DEFAULT_BASE_URLS } from '../gateway-config';
 
 const BASE_URL = 'https://api.macpaw.com/ai';
 const VIDEO_ID = 'vid_abc123';
@@ -30,6 +31,30 @@ describe('createVideoClient', () => {
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+  });
+
+  // ─── createVideoClient() — factory options ────────────────────────────────
+
+  describe('factory options', () => {
+    it('accepts env: "production" and resolves the production base URL', async () => {
+      const client = createVideoClient({
+        env: 'production',
+        getAuthToken: async () => 'my-jwt',
+      });
+
+      await client.create({ model: 'veo-2', prompt: 'A sunset over the ocean' });
+
+      const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(fetchCall[0]).toBe(`${DEFAULT_BASE_URLS.production}/v1/videos`);
+    });
+
+    it('throws when neither baseURL nor env is provided', () => {
+      expect(() =>
+        createVideoClient({
+          getAuthToken: async () => 'token',
+        }),
+      ).toThrow(/requires baseURL or env/);
+    });
   });
 
   // ─── create() ─────────────────────────────────────────────────────────────
@@ -145,13 +170,27 @@ describe('createVideoClient', () => {
         }),
       );
 
+      // create() disables config-level retries (POST is non-idempotent), so a single
+      // 429 response immediately surfaces the RateLimitError without needing maxAttempts.
       const client = createVideoClient({
         baseURL: BASE_URL,
         getAuthToken: async () => 'token',
-        retry: { maxAttempts: 1 }, // exhaust retries immediately
       });
 
       await expect(client.create({ model: 'veo-2', prompt: 'test' })).rejects.toBeInstanceOf(RateLimitError);
+    });
+
+    it('throws AIGatewayError when the 200 response body is not valid JSON', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        new Response('not-json', { status: 200, headers: { 'content-type': 'text/plain' } }),
+      );
+
+      const client = createVideoClient({
+        baseURL: BASE_URL,
+        getAuthToken: async () => 'token',
+      });
+
+      await expect(client.create({ model: 'veo-2', prompt: 'test' })).rejects.toBeInstanceOf(AIGatewayError);
     });
   });
 
@@ -183,6 +222,32 @@ describe('createVideoClient', () => {
 
       expect(job.id).toBe(VIDEO_ID);
       expect(job.status).toBe('queued');
+    });
+
+    it('encodes special characters in videoId in the URL', async () => {
+      const client = createVideoClient({
+        baseURL: BASE_URL,
+        getAuthToken: async () => 'token',
+      });
+
+      const specialId = 'vid/with?special#chars';
+      await client.get(specialId);
+
+      const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(fetchCall[0]).toBe(`${BASE_URL}/v1/videos/${encodeURIComponent(specialId)}`);
+    });
+
+    it('throws AIGatewayError when the 200 response body is not valid JSON', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        new Response('not-json', { status: 200, headers: { 'content-type': 'text/plain' } }),
+      );
+
+      const client = createVideoClient({
+        baseURL: BASE_URL,
+        getAuthToken: async () => 'token',
+      });
+
+      await expect(client.get(VIDEO_ID)).rejects.toBeInstanceOf(AIGatewayError);
     });
 
     it('throws AIGatewayError on 404 with OpenAI NOT_FOUND body', async () => {
@@ -289,6 +354,19 @@ describe('createVideoClient', () => {
 
       const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
       expect(fetchCall[0]).toContain('?variant=video');
+    });
+
+    it('encodes special characters in videoId in the URL', async () => {
+      const client = createVideoClient({
+        baseURL: BASE_URL,
+        getAuthToken: async () => 'token',
+      });
+
+      const specialId = 'vid/with?special#chars';
+      await client.getContent(specialId);
+
+      const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      expect(fetchCall[0]).toBe(`${BASE_URL}/v1/videos/${encodeURIComponent(specialId)}/content`);
     });
 
     it('throws AIGatewayError on 404 (content not yet available)', async () => {
