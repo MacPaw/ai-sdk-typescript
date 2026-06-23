@@ -4,7 +4,7 @@ Use this guidance when integrating MacPaw AI Gateway into this project.
 
 ## Rules
 
-- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, errors, and `GatewayProviderSettings`.
+- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, errors, and `GatewayProviderSettings`.
 - Use `@macpaw/ai-sdk/nestjs` for `AIGatewayModule`, `@InjectAIGateway()`, and `AIGatewayExceptionFilter`.
 - Keep generation primitives on upstream `ai` / `@ai-sdk/*`.
 - Install `@ai-sdk/openai` when using `createAIGatewayProvider` or `createGatewayProvider`; those paths depend on the OpenAI-compatible provider package.
@@ -24,6 +24,7 @@ Use this guidance when integrating MacPaw AI Gateway into this project.
 - NestJS: register `AIGatewayModule.forRoot()` / `forRootAsync()`, inject `GatewayProviderSettings` via `@InjectAIGateway()`, build the provider inside services.
 - Next.js / Vercel AI SDK: keep `generateText`, `streamText`, hooks, and other Vercel APIs on `ai`; swap only the model provider to `createAIGatewayProvider`.
 - Raw server HTTP or multipart: use `createGatewayFetch`.
+- Video generation (create job, poll, fetch content): use `createVideoClient`.
 
 ## Minimal examples
 
@@ -39,6 +40,14 @@ const gatewayFetch = createGatewayFetch({
   baseURL: process.env.AI_GATEWAY_BASE_URL ?? 'https://api.macpaw.com/ai',
   getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
 });
+```
+
+```ts
+const videos = createVideoClient({
+  env: 'production',
+  getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
+});
+const job = await videos.create({ model: 'veo-2', prompt: 'A sunset over the ocean' });
 ```
 
 ## Error handling
