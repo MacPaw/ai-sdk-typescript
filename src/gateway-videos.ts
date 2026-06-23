@@ -81,7 +81,7 @@ export interface VideoCreateRequest {
  * Accepts either `baseURL` or `env: 'production'` — the same convention used by
  * `createGatewayProvider` and `createAIGatewayProvider`.
  */
-export interface GatewayVideoClientOptions extends GatewayProviderSettings {}
+export type GatewayVideoClientOptions = GatewayProviderSettings;
 
 /** Public interface returned by `createVideoClient`. */
 export interface VideoClient {
