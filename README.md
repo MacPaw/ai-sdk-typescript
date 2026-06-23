@@ -12,11 +12,11 @@ Core generation APIs stay on upstream **`ai`** and **`@ai-sdk/*`**. This package
 
 ## Package entry points
 
-| Import                    | Use for                                                               |
-| ------------------------- | --------------------------------------------------------------------- |
-| `@macpaw/ai-sdk`          | **Canonical** — providers, `createGatewayFetch`, errors, config types |
-| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets)         |
-| `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`   |
+| Import                    | Use for                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------ |
+| `@macpaw/ai-sdk`          | **Canonical** — providers, `createGatewayFetch`, `createVideoClient`, errors, config types |
+| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets)                              |
+| `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`                        |
 
 Upstream **`ai`**, **`@ai-sdk/openai`**, **`@ai-sdk/react`** (or **`ai/react`**) remain the home for Vercel primitives and React hooks.
 
