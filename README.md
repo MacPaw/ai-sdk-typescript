@@ -6,7 +6,7 @@
 [![npm version](https://img.shields.io/npm/v/%40macpaw%2Fai-sdk)](https://www.npmjs.com/package/@macpaw/ai-sdk)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-Thin **Vercel AI SDK** extension for **MacPaw AI Gateway**: OpenAI-compatible providers (`createAIGatewayProvider`, `createGatewayProvider`), a **`createGatewayFetch`** bridge for any HTTP client, shared **auth / retry / middleware / errors**, and optional **NestJS** wiring.
+Thin **Vercel AI SDK** extension for **MacPaw AI Gateway**: OpenAI-compatible providers (`createAIGatewayProvider`, `createGatewayProvider`), a **`createGatewayFetch`** bridge for any HTTP client, a **`createVideoClient`** for video generation, shared **auth / retry / middleware / errors**, and optional **NestJS** wiring.
 
 Core generation APIs stay on upstream **`ai`** and **`@ai-sdk/*`**. This package only adds Gateway-specific construction and the fetch pipeline.
 
@@ -68,11 +68,12 @@ for await (const delta of result.textStream) {
 - **Errors** — Gateway JSON and OpenAI-shaped bodies → `AIGatewayError` subclasses + `ErrorCode`
 - **Request ID** — `X-Request-ID` on Gateway requests when missing
 - **Timeout** — per attempt, combined with caller `AbortSignal`
+- **Video generation** — `createVideoClient` wraps the Gateway video endpoints (create job, poll status, fetch content)
 - **Tree-shakeable** — ESM + CJS
 
 ## Configuration (`GatewayProviderSettings`)
 
-Used by `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, and Nest `AIGatewayModule`.
+Used by `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, and Nest `AIGatewayModule`.
 
 | Field          | Purpose                                                          |
 | -------------- | ---------------------------------------------------------------- |
@@ -154,6 +155,39 @@ Extends `GatewayProviderSettings` plus OpenAI provider settings (without `apiKey
 - `createOpenAI` — optional override of `createOpenAI` from `@ai-sdk/openai` (tests/advanced)
 
 Use `normalizeErrors: false` only when you intentionally want to inspect raw failed `Response` objects in provider-driven tests or adapters. Auth refresh and retry behavior still stay on; only typed non-OK error throwing is relaxed.
+
+## `createVideoClient` — video generation
+
+Wraps three Gateway endpoints: create a job, poll its status, and fetch binary content. Same auth, retry, and error normalization as the other clients.
+
+```ts
+import { createVideoClient } from '@macpaw/ai-sdk';
+
+const videos = createVideoClient({
+  env: 'production',
+  getAuthToken: async () => (await getSetappSession()).accessToken,
+});
+
+const job = await videos.create({
+  model: 'veo-2',
+  prompt: 'A sunset over the ocean',
+  seconds: '5',
+  size: '1280x720',
+});
+
+let current = job;
+while (current.status !== 'completed' && current.status !== 'failed') {
+  await new Promise((r) => setTimeout(r, 3000));
+  current = await videos.get(job.id);
+}
+
+const res = await videos.getContent(job.id, 'video');
+const buffer = await res.arrayBuffer();
+```
+
+`getContent` returns the raw `Response` so callers can consume `.arrayBuffer()`, `.blob()`, or `.body` as a stream — the `Content-Type` is provider-dependent (`video/mp4`, `image/jpeg`, etc.). Pass `'thumbnail'` or `'spritesheet'` as the second argument to fetch those variants instead.
+
+`create` does **not** retry on 5xx — POST video jobs are non-idempotent. Auth retry (401 → fresh token) still applies.
 
 ## Middleware
 
