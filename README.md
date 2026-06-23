@@ -158,7 +158,7 @@ Use `normalizeErrors: false` only when you intentionally want to inspect raw fai
 
 ## `createVideoClient` — video generation
 
-Wraps three Gateway endpoints: create a job, poll its status, and fetch binary content. Same auth, retry, and error normalization as the other clients.
+Wraps three Gateway endpoints: create a job, poll its status, and fetch binary content. Same auth and error normalization as the other clients.
 
 ```ts
 import { createVideoClient } from '@macpaw/ai-sdk';
