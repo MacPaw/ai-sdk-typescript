@@ -15,7 +15,6 @@ Gateway routes are versioned under `/ai/v1/...` (from the host root). With `crea
 | Images generations   | `/ai/v1/images/generations`   | `/v1/images/generations`    |
 | Images edits         | `/ai/v1/images/edits`         | `/v1/images/edits`          |
 | Audio transcriptions | `/ai/v1/audio/transcriptions` | `/v1/audio/transcriptions`  |
-| Audio translations   | `/ai/v1/audio/translations`   | `/v1/audio/translations`    |
 
 ## Base URL
 
