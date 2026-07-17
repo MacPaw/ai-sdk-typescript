@@ -65,7 +65,7 @@ jobs:
         id: semantic
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+        run: pnpm exec semantic-release
 
       - name: Release summary
         if: steps.semantic.outputs.new_release_published == 'true'
