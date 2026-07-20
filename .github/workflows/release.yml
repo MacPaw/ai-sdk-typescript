@@ -32,7 +32,7 @@ jobs:
 
       - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: '22.14.0' # npm trusted publishing requires Node 22.14+
           cache: pnpm
