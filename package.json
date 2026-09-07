@@ -100,7 +100,7 @@
     "url": "https://github.com/MacPaw/ai-sdk-typescript/issues"
   },
   "devDependencies": {
-    "@ai-sdk/openai": "4.0.22",
+    "@ai-sdk/openai": "4.0.58",
     "@ai-sdk/provider": "4.0.3",
     "@eslint/js": "^10.0.1",
     "@nestjs/common": "^11.1.17",
