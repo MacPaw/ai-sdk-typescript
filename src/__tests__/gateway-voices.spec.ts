@@ -6,11 +6,13 @@ import { DEFAULT_BASE_URLS } from '../gateway-config';
 const BASE_URL = 'https://api.macpaw.com/ai';
 
 const mockVoicesListResponse = {
-  object: 'list',
-  data: [
-    { id: 'voice_1', name: 'Alice', object: 'voice' },
-    { id: 'voice_2', name: 'Bob', object: 'voice' },
+  voices: [
+    { voice_id: 'voice_1', name: 'Alice' },
+    { voice_id: 'voice_2', name: 'Bob' },
   ],
+  has_more: false,
+  total_count: 2,
+  next_page_token: '',
 };
 
 function makeVoicesListResponseObj(body = mockVoicesListResponse): Response {
@@ -40,10 +42,10 @@ describe('createVoiceClient', () => {
         getAuthToken: async () => 'my-jwt',
       });
 
-      await client.list();
+      await client.list({ provider: 'elevenlabs' });
 
       const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-      expect(fetchCall[0]).toBe(`${DEFAULT_BASE_URLS.production}/v1/voices`);
+      expect(fetchCall[0]).toContain(`${DEFAULT_BASE_URLS.production}/v1/voices`);
     });
 
     it('throws when neither baseURL nor env is provided', () => {
@@ -58,19 +60,59 @@ describe('createVoiceClient', () => {
   // ─── list() ───────────────────────────────────────────────────────────────
 
   describe('list()', () => {
-    it('sends GET to /v1/voices with Authorization header', async () => {
+    it('sends GET to /v1/voices with Authorization header and provider param', async () => {
       const client = createVoiceClient({
         baseURL: BASE_URL,
         getAuthToken: async () => 'my-jwt',
       });
 
-      await client.list();
+      await client.list({ provider: 'elevenlabs' });
 
       const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-      expect(fetchCall[0]).toBe(`${BASE_URL}/v1/voices`);
+      expect(fetchCall[0]).toBe(`${BASE_URL}/v1/voices?provider=elevenlabs`);
       expect(fetchCall[1].method).toBe('GET');
       const headers = new Headers(fetchCall[1].headers);
       expect(headers.get('Authorization')).toBe('Bearer my-jwt');
+    });
+
+    it('forwards provider query param in the request URL', async () => {
+      const client = createVoiceClient({
+        baseURL: BASE_URL,
+        getAuthToken: async () => 'token',
+      });
+
+      await client.list({ provider: 'elevenlabs' });
+
+      const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      const url = new URL(fetchCall[0]);
+      expect(url.searchParams.get('provider')).toBe('elevenlabs');
+    });
+
+    it('forwards next_page_token query param when provided', async () => {
+      const client = createVoiceClient({
+        baseURL: BASE_URL,
+        getAuthToken: async () => 'token',
+      });
+
+      await client.list({ provider: 'elevenlabs', next_page_token: 'tok_abc123' });
+
+      const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      const url = new URL(fetchCall[0]);
+      expect(url.searchParams.get('provider')).toBe('elevenlabs');
+      expect(url.searchParams.get('next_page_token')).toBe('tok_abc123');
+    });
+
+    it('does not include next_page_token when not provided', async () => {
+      const client = createVoiceClient({
+        baseURL: BASE_URL,
+        getAuthToken: async () => 'token',
+      });
+
+      await client.list({ provider: 'elevenlabs' });
+
+      const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      const url = new URL(fetchCall[0]);
+      expect(url.searchParams.has('next_page_token')).toBe(false);
     });
 
     it('parses and returns the VoicesListResponse', async () => {
@@ -79,14 +121,13 @@ describe('createVoiceClient', () => {
         getAuthToken: async () => 'token',
       });
 
-      const result = await client.list();
+      const result = await client.list({ provider: 'elevenlabs' });
 
-      expect(result.object).toBe('list');
-      expect(result.data).toHaveLength(2);
-      expect(result.data[0].id).toBe('voice_1');
-      expect(result.data[0].name).toBe('Alice');
-      expect(result.data[1].id).toBe('voice_2');
-      expect(result.data[1].name).toBe('Bob');
+      expect(result.voices).toHaveLength(2);
+      expect(result.voices[0].voice_id).toBe('voice_1');
+      expect(result.voices[1].voice_id).toBe('voice_2');
+      expect(result.has_more).toBe(false);
+      expect(result.total_count).toBe(2);
     });
 
     it('throws AuthError on 401 with gateway error body', async () => {
@@ -109,7 +150,7 @@ describe('createVoiceClient', () => {
         getAuthToken: async () => 'stale-token',
       });
 
-      await expect(client.list()).rejects.toBeInstanceOf(AuthError);
+      await expect(client.list({ provider: 'elevenlabs' })).rejects.toBeInstanceOf(AuthError);
     });
 
     it('throws RateLimitError on 429', async () => {
@@ -125,7 +166,7 @@ describe('createVoiceClient', () => {
         getAuthToken: async () => 'token',
       });
 
-      await expect(client.list()).rejects.toBeInstanceOf(RateLimitError);
+      await expect(client.list({ provider: 'elevenlabs' })).rejects.toBeInstanceOf(RateLimitError);
     });
 
     it('throws AIGatewayError when the 200 response body is not valid JSON', async () => {
@@ -138,7 +179,7 @@ describe('createVoiceClient', () => {
         getAuthToken: async () => 'token',
       });
 
-      await expect(client.list()).rejects.toBeInstanceOf(AIGatewayError);
+      await expect(client.list({ provider: 'elevenlabs' })).rejects.toBeInstanceOf(AIGatewayError);
     });
   });
 
@@ -151,7 +192,7 @@ describe('createVoiceClient', () => {
         getAuthToken: async () => 'bearer-for-list',
       });
 
-      await client.list();
+      await client.list({ provider: 'elevenlabs' });
 
       const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
       const headers = new Headers(fetchCall[1].headers);
@@ -178,7 +219,7 @@ describe('createVoiceClient', () => {
         getAuthToken,
       });
 
-      await client.list();
+      await client.list({ provider: 'elevenlabs' });
 
       expect(getAuthToken).toHaveBeenNthCalledWith(1, false);
       expect(getAuthToken).toHaveBeenNthCalledWith(2, true);
