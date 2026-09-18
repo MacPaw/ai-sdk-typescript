@@ -160,7 +160,11 @@ export function createSpeechClient(options: GatewaySpeechClientOptions): SpeechC
         pipelineOptions,
       );
 
-      return (await response.json()) as VoicesResponse;
+      try {
+        return (await response.json()) as VoicesResponse;
+      } catch {
+        throw new Error('Failed to parse voices response as JSON');
+      }
     },
   };
 }
