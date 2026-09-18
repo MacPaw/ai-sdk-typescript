@@ -56,3 +56,14 @@ export type {
   VideoJobError,
   VideoContentVariant,
 } from './gateway-videos';
+
+// Voices client
+export { createVoiceClient } from './gateway-voices';
+export type {
+  GatewayVoiceClientOptions,
+  VoiceClient,
+  Voice,
+  VoiceProvider,
+  VoicesListResponse,
+  ListVoicesParams,
+} from './gateway-voices';
