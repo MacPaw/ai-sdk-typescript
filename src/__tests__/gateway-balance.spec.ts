@@ -170,9 +170,7 @@ describe('createCreditBalanceClient', () => {
       });
 
       const result = await client.getBalances();
-      expect(result.data.balances[0].metadata?.membership?.referenceId).toBe(
-        '8fcf5165-8a10-44ce-be25-21867da3b41b',
-      );
+      expect(result.data.balances[0].metadata?.membership?.referenceId).toBe('8fcf5165-8a10-44ce-be25-21867da3b41b');
     });
 
     it('throws AuthError on 401', async () => {
@@ -180,14 +178,12 @@ describe('createCreditBalanceClient', () => {
         JSON.stringify({ statusCode: 401, message: 'Unauthorized', code: 'UNAUTHORIZED' }),
         { status: 401, headers: { 'content-type': 'application/json' } },
       );
-      (globalThis.fetch as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce(unauthorized)
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify({ statusCode: 401, message: 'Unauthorized', code: 'UNAUTHORIZED' }), {
-            status: 401,
-            headers: { 'content-type': 'application/json' },
-          }),
-        );
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(unauthorized).mockResolvedValueOnce(
+        new Response(JSON.stringify({ statusCode: 401, message: 'Unauthorized', code: 'UNAUTHORIZED' }), {
+          status: 401,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
 
       const client = createCreditBalanceClient({
         baseURL: BASE_URL,

@@ -12,11 +12,11 @@ Core generation APIs stay on upstream **`ai`** and **`@ai-sdk/*`**. This package
 
 ## Package entry points
 
-| Import                    | Use for                                                                                    |
-| ------------------------- | ------------------------------------------------------------------------------------------ |
+| Import                    | Use for                                                                                                                 |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `@macpaw/ai-sdk`          | **Canonical** — providers, `createGatewayFetch`, `createVideoClient`, `createCreditBalanceClient`, errors, config types |
-| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets)                              |
-| `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`                        |
+| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets)                                                           |
+| `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`                                                     |
 
 Upstream **`ai`**, **`@ai-sdk/openai`**, **`@ai-sdk/react`** (or **`ai/react`**) remain the home for Vercel primitives and React hooks.
 
@@ -204,7 +204,7 @@ const balance = createCreditBalanceClient({
 
 const { data } = await balance.getBalances();
 
-console.log(data.totalAvailable.amount);   // e.g. "1000000"
+console.log(data.totalAvailable.amount); // e.g. "1000000"
 console.log(data.totalAvailable.currency); // "MACPAW_CREDITS"
 
 for (const b of data.balances) {
