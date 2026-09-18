@@ -17,9 +17,11 @@ import { executeRequestPipeline } from './gateway-request';
 
 /**
  * AI voice provider identifier.
- * Only `"elevenlabs"` is supported today.
+ *
+ * Deliberately an open union: `"elevenlabs"` is the only provider available
+ * today and is offered as an editor autocomplete hint.
  */
-export type VoiceProvider = 'elevenlabs';
+export type VoiceProvider = 'elevenlabs' | (string & {});
 
 /**
  * A single voice available through the AI Gateway.
@@ -48,7 +50,11 @@ export interface VoicesListResponse {
 
 /** Query parameters accepted by `VoiceClient.list()`. */
 export interface ListVoicesParams {
-  /** AI voice provider to list voices from. Only `"elevenlabs"` is available today. */
+  /**
+   * AI voice provider to list voices from.
+   * `"elevenlabs"` is the only provider available today; any other provider
+   * the Gateway starts supporting can be passed as a plain string.
+   */
   provider: VoiceProvider;
   /**
    * Pagination cursor returned by the previous request.

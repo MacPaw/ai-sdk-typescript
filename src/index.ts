@@ -63,5 +63,7 @@ export type {
   GatewayVoiceClientOptions,
   VoiceClient,
   Voice,
+  VoiceProvider,
   VoicesListResponse,
+  ListVoicesParams,
 } from './gateway-voices';

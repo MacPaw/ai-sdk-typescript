@@ -88,6 +88,19 @@ describe('createVoiceClient', () => {
       expect(url.searchParams.get('provider')).toBe('elevenlabs');
     });
 
+    it('forwards a provider not yet known to the SDK without type or runtime changes', async () => {
+      const client = createVoiceClient({
+        baseURL: BASE_URL,
+        getAuthToken: async () => 'token',
+      });
+
+      await client.list({ provider: 'some-future-provider' });
+
+      const fetchCall = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+      const url = new URL(fetchCall[0]);
+      expect(url.searchParams.get('provider')).toBe('some-future-provider');
+    });
+
     it('forwards next_page_token query param when provided', async () => {
       const client = createVoiceClient({
         baseURL: BASE_URL,
@@ -136,14 +149,12 @@ describe('createVoiceClient', () => {
         { status: 401, headers: { 'content-type': 'application/json' } },
       );
       // Auth retry fires once — both attempts must return 401 to surface the AuthError.
-      (globalThis.fetch as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce(unauthorized)
-        .mockResolvedValueOnce(
-          new Response(JSON.stringify({ statusCode: 401, message: 'Unauthorized', code: 'UNAUTHORIZED' }), {
-            status: 401,
-            headers: { 'content-type': 'application/json' },
-          }),
-        );
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(unauthorized).mockResolvedValueOnce(
+        new Response(JSON.stringify({ statusCode: 401, message: 'Unauthorized', code: 'UNAUTHORIZED' }), {
+          status: 401,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
 
       const client = createVoiceClient({
         baseURL: BASE_URL,
