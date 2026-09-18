@@ -56,3 +56,13 @@ export type {
   VideoJobError,
   VideoContentVariant,
 } from './gateway-videos';
+
+// Speech synthesis client
+export { createSpeechClient } from './gateway-speech';
+export type {
+  GatewaySpeechClientOptions,
+  SpeechClient,
+  SpeechSynthesisRequest,
+  Voice,
+  VoicesResponse,
+} from './gateway-speech';
