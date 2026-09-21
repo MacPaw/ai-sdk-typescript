@@ -6,17 +6,17 @@
 [![npm version](https://img.shields.io/npm/v/%40macpaw%2Fai-sdk)](https://www.npmjs.com/package/@macpaw/ai-sdk)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-Thin **Vercel AI SDK** extension for **MacPaw AI Gateway**: OpenAI-compatible providers (`createAIGatewayProvider`, `createGatewayProvider`), a **`createGatewayFetch`** bridge for any HTTP client, **`createVideoClient`** / **`createVoiceClient`** for video generation and voice listing, shared **auth / retry / middleware / errors**, and optional **NestJS** wiring.
+Thin **Vercel AI SDK** extension for **MacPaw AI Gateway**: OpenAI-compatible providers (`createAIGatewayProvider`, `createGatewayProvider`), a **`createGatewayFetch`** bridge for any HTTP client, **`createVideoClient`** / **`createVoiceClient`** for video generation and voice listing, a **`createCreditBalanceClient`** for querying AI credit balances, shared **auth / retry / middleware / errors**, and optional **NestJS** wiring.
 
 Core generation APIs stay on upstream **`ai`** and **`@ai-sdk/*`**. This package only adds Gateway-specific construction and the fetch pipeline.
 
 ## Package entry points
 
-| Import                    | Use for                                                                                                         |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `@macpaw/ai-sdk`          | **Canonical** — providers, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, errors, config types |
-| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets)                                                   |
-| `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`                                             |
+| Import                    | Use for                                                                                                                                      |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@macpaw/ai-sdk`          | **Canonical** — providers, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createCreditBalanceClient`, errors, config types |
+| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets)                                                                                |
+| `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`                                                                          |
 
 Upstream **`ai`**, **`@ai-sdk/openai`**, **`@ai-sdk/react`** (or **`ai/react`**) remain the home for Vercel primitives and React hooks.
 
@@ -70,11 +70,12 @@ for await (const delta of result.textStream) {
 - **Timeout** — per attempt, combined with caller `AbortSignal`
 - **Video generation** — `createVideoClient` wraps the Gateway video endpoints (create job, poll status, fetch content)
 - **Voices** — `createVoiceClient` lists voices from Gateway providers (paginated `GET /v1/voices`)
+- **Credit balances** — `createCreditBalanceClient` fetches active AI credit balances for the authenticated user
 - **Tree-shakeable** — ESM + CJS
 
 ## Configuration (`GatewayProviderSettings`)
 
-Used by `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, and Nest `AIGatewayModule`.
+Used by `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createCreditBalanceClient`, and Nest `AIGatewayModule`.
 
 | Field          | Purpose                                                          |
 | -------------- | ---------------------------------------------------------------- |
@@ -217,6 +218,30 @@ if (first.has_more) {
 ```
 
 Each `Voice` always has `voice_id`; other fields are provider-specific and passed through as-is. `list()` is a GET, so config-level retries on **429** / **5xx** still apply. Auth retry (401 → fresh token) also applies.
+
+## `createCreditBalanceClient` — AI credit balances
+
+Fetches all active AI credit balances for the user identified by the Bearer token. Balances are ordered FEFO (First Expiring, First Out) and include optional membership metadata.
+
+```ts
+import { createCreditBalanceClient } from '@macpaw/ai-sdk';
+
+const balance = createCreditBalanceClient({
+  env: 'production',
+  getAuthToken: async () => (await getSetappSession()).accessToken,
+});
+
+const { data } = await balance.getBalances();
+
+console.log(data.totalAvailable.amount); // e.g. "1000000"
+console.log(data.totalAvailable.currency); // "MACPAW_CREDITS"
+
+for (const b of data.balances) {
+  console.log(b.id, b.currentValue.amount, b.expiresAt);
+}
+```
+
+`getBalances` calls `GET /entitlement/v1/ai/credits/balances` on the gateway's root domain (derived from your `baseURL` origin). The response shape mirrors the API spec exactly — `data.balances`, `data.totalAvailable`, and `data.totalInitialAmount`.
 
 ## Middleware
 

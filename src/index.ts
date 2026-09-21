@@ -67,3 +67,17 @@ export type {
   VoicesListResponse,
   ListVoicesParams,
 } from './gateway-voices';
+
+// Credit balance client
+export { createCreditBalanceClient } from './gateway-balance';
+export type {
+  GatewayCreditBalanceClientOptions,
+  CreditBalanceClient,
+  CreditBalancesResponse,
+  CreditBalanceSummary,
+  CreditBalance,
+  CreditBalanceType,
+  CreditBalanceMetadata,
+  CreditBalanceMembershipMetadata,
+  CreditAmount,
+} from './gateway-balance';

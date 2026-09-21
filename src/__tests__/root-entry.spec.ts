@@ -14,6 +14,7 @@ describe('root entry', () => {
     expect(root.GATEWAY_PLACEHOLDER_API_KEY).toBeDefined();
     expect(root.createVideoClient).toBeDefined();
     expect(root.createVoiceClient).toBeDefined();
+    expect(root.createCreditBalanceClient).toBeDefined();
   });
 
   it('does not expose low-level internals or upstream helpers', () => {

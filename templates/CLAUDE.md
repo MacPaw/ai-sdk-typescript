@@ -4,7 +4,7 @@ Use this guidance when integrating MacPaw AI Gateway into this project.
 
 ## Rules
 
-- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, errors, and `GatewayProviderSettings`.
+- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createCreditBalanceClient`, errors, and `GatewayProviderSettings`.
 - Use `@macpaw/ai-sdk/nestjs` for `AIGatewayModule`, `@InjectAIGateway()`, and `AIGatewayExceptionFilter`.
 - Keep generation primitives on upstream `ai` / `@ai-sdk/*`.
 - Install `@ai-sdk/openai` when using `createAIGatewayProvider` or `createGatewayProvider`; those paths depend on the OpenAI-compatible provider package.
@@ -26,6 +26,7 @@ Use this guidance when integrating MacPaw AI Gateway into this project.
 - Raw server HTTP or multipart: use `createGatewayFetch`.
 - Video generation (create job, poll, fetch content): use `createVideoClient`.
 - Voice listing (paginated `GET /v1/voices`): use `createVoiceClient`.
+- Credit balance queries (active balances, totals): use `createCreditBalanceClient`.
 
 ## Minimal examples
 
@@ -57,6 +58,15 @@ const voices = createVoiceClient({
   getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
 });
 const page = await voices.list({ provider: 'elevenlabs' });
+```
+
+```ts
+const balance = createCreditBalanceClient({
+  env: 'production',
+  getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
+});
+const { data } = await balance.getBalances();
+console.log(data.totalAvailable.amount); // e.g. "1000000"
 ```
 
 ## Error handling
