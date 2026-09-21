@@ -175,6 +175,7 @@ describe('createVoiceClient', () => {
       const client = createVoiceClient({
         baseURL: BASE_URL,
         getAuthToken: async () => 'token',
+        retry: false,
       });
 
       await expect(client.list({ provider: 'elevenlabs' })).rejects.toBeInstanceOf(RateLimitError);
