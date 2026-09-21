@@ -81,3 +81,15 @@ export type {
   CreditBalanceMembershipMetadata,
   CreditAmount,
 } from './gateway-balance';
+
+// Speech (text-to-speech) client
+export { createSpeechClient } from './gateway-speech';
+export type {
+  GatewaySpeechClientOptions,
+  SpeechClient,
+  CreateSpeechRequest,
+  SpeechResponseFormat,
+  CreateSpeechStreamEvent,
+  SpeechAudioDeltaEvent,
+  SpeechAudioDoneEvent,
+} from './gateway-speech';

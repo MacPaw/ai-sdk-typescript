@@ -15,6 +15,7 @@ export const GatewayApiCode = {
   BadRequest: 'BAD_REQUEST',
   Unauthorized: 'UNAUTHORIZED',
   InsufficientCredits: 'INSUFFICIENT_CREDITS',
+  PaymentRequired: 'PAYMENT_REQUIRED',
   Forbidden: 'FORBIDDEN',
   Validation: 'VALIDATION',
   RateLimitExceeded: 'RATE_LIMIT_EXCEEDED',
@@ -187,6 +188,8 @@ function mapGatewayApiCodeToNormalized(code: string, statusCode: number): ErrorC
       return ErrorCode.AuthRequired;
     case GatewayApiCode.InsufficientCredits:
       return statusCode === 402 ? ErrorCode.InsufficientCredits : ErrorCode.SubscriptionExpired;
+    case GatewayApiCode.PaymentRequired:
+      return ErrorCode.InsufficientCredits;
     case GatewayApiCode.Forbidden:
       return ErrorCode.ModelNotAllowed;
     case GatewayApiCode.RateLimitExceeded:
