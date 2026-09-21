@@ -12,19 +12,19 @@ The SDK uses:
 
 Gateway routes are versioned under `/ai/v1/...` (from the host root). With `createGatewayFetch` the base already includes `/ai`, so pass the path relative to it (`/v1/...`). The Vercel/OpenAI stack issues requests under the same prefix automatically. Typed clients use the same relative paths on a resolved `baseURL`.
 
-| API                  | Full route (from host)              | Relative path (base `…/ai`)       | SDK surface                         |
-| -------------------- | ----------------------------------- | --------------------------------- | ----------------------------------- |
-| Chat completions     | `/ai/v1/chat/completions`           | `/v1/chat/completions`            | provider                            |
-| Responses            | `/ai/v1/responses`                  | `/v1/responses`                   | provider                            |
-| Embeddings           | `/ai/v1/embeddings`                 | `/v1/embeddings`                  | provider                            |
-| Model info           | `/ai/v1/model/info`                 | `/v1/model/info`                  | provider / `createGatewayFetch`     |
-| Images generations   | `/ai/v1/images/generations`         | `/v1/images/generations`          | provider / `createGatewayFetch`     |
-| Images edits         | `/ai/v1/images/edits`               | `/v1/images/edits`                | `createGatewayFetch` (multipart)    |
-| Audio transcriptions | `/ai/v1/audio/transcriptions`       | `/v1/audio/transcriptions`        | provider / `createGatewayFetch`     |
-| Videos create        | `/ai/v1/videos`                     | `/v1/videos`                      | `createVideoClient.create`          |
-| Videos get           | `/ai/v1/videos/{video_id}`          | `/v1/videos/{video_id}`           | `createVideoClient.get`             |
-| Videos content       | `/ai/v1/videos/{video_id}/content`  | `/v1/videos/{video_id}/content`   | `createVideoClient.getContent`      |
-| Voices list          | `/ai/v1/voices`                     | `/v1/voices`                      | `createVoiceClient.list`            |
+| API                  | Full route (from host)             | Relative path (base `…/ai`)     | SDK surface                      |
+| -------------------- | ---------------------------------- | ------------------------------- | -------------------------------- |
+| Chat completions     | `/ai/v1/chat/completions`          | `/v1/chat/completions`          | provider                         |
+| Responses            | `/ai/v1/responses`                 | `/v1/responses`                 | provider                         |
+| Embeddings           | `/ai/v1/embeddings`                | `/v1/embeddings`                | provider                         |
+| Model info           | `/ai/v1/model/info`                | `/v1/model/info`                | provider / `createGatewayFetch`  |
+| Images generations   | `/ai/v1/images/generations`        | `/v1/images/generations`        | provider / `createGatewayFetch`  |
+| Images edits         | `/ai/v1/images/edits`              | `/v1/images/edits`              | `createGatewayFetch` (multipart) |
+| Audio transcriptions | `/ai/v1/audio/transcriptions`      | `/v1/audio/transcriptions`      | provider / `createGatewayFetch`  |
+| Videos create        | `/ai/v1/videos`                    | `/v1/videos`                    | `createVideoClient.create`       |
+| Videos get           | `/ai/v1/videos/{video_id}`         | `/v1/videos/{video_id}`         | `createVideoClient.get`          |
+| Videos content       | `/ai/v1/videos/{video_id}/content` | `/v1/videos/{video_id}/content` | `createVideoClient.getContent`   |
+| Voices list          | `/ai/v1/voices`                    | `/v1/voices`                    | `createVoiceClient.list`         |
 
 `createVoiceClient.list()` sends `provider` (required) and optional `next_page_token` as query params.
 
