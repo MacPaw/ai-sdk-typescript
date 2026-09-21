@@ -28,7 +28,7 @@ const mockBalancesResponse = {
       },
     ],
     totalAvailable: { amount: '1000000', currency: 'MACPAW_CREDITS' as const },
-    totalInitialAmount: { amount: '1000000', currency: 'MACPAW_CREDITS' as const },
+    totalInitialAmount: { amount: '1500000', currency: 'MACPAW_CREDITS' as const },
   },
 };
 
