@@ -1,6 +1,6 @@
 ---
 name: integrate-ai-gateway
-description: Integrate applications with AI Gateway using @macpaw/ai-sdk. Use for NestJS, Next.js, Vercel AI SDK, raw fetch migrations, video generation, MacPaw AI, Setapp AI, createAIGatewayProvider, createGatewayFetch, createVideoClient, and AI Gateway auth/error wiring.
+description: Integrate applications with AI Gateway using @macpaw/ai-sdk. Use for NestJS, Next.js, Vercel AI SDK, raw fetch migrations, video generation, credit balance queries, MacPaw AI, Setapp AI, createAIGatewayProvider, createGatewayFetch, createVideoClient, createCreditBalanceClient, and AI Gateway auth/error wiring.
 ---
 
 # AI Gateway Integration (@macpaw/ai-sdk)
@@ -11,7 +11,7 @@ Detect the app shape, choose one integration path, apply the smallest correct pa
 
 ## Package surface
 
-- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `GATEWAY_PROVIDERS`, errors, and `GatewayProviderSettings`.
+- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createCreditBalanceClient`, `GATEWAY_PROVIDERS`, errors, and `GatewayProviderSettings`.
 - Use `@macpaw/ai-sdk/provider` only as a compatibility alias.
 - Use `@macpaw/ai-sdk/nestjs` for `AIGatewayModule`, `@InjectAIGateway()`, and `AIGatewayExceptionFilter`.
 - Do not use `createAIGatewayClient`, `@macpaw/ai-sdk/client`, `runtime`, `types`, or `testing`; they do not exist.
@@ -31,6 +31,7 @@ Detect the app shape, choose one integration path, apply the smallest correct pa
 - Next.js / Vercel markers: `next`, `ai`, `@ai-sdk/*` -> keep generation on `ai`, swap only the model provider.
 - Express/Fastify/Hono/server scripts -> use `createGatewayFetch`, or `ai` + provider if already Vercel-shaped.
 - Video generation (create job, poll status, fetch content) -> use `createVideoClient`.
+- Credit balance queries (active balances, totals) -> use `createCreditBalanceClient`.
 - Existing `openai`, `@ai-sdk/openai`, or `@anthropic-ai/sdk` usage -> treat as migration, not greenfield.
 
 ## Canonical patterns
@@ -71,6 +72,16 @@ const videos = createVideoClient({
   getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
 });
 const job = await videos.create({ model: 'veo-2', prompt: 'A sunset over the ocean' });
+```
+
+```ts
+// Credit balance
+const balance = createCreditBalanceClient({
+  env: 'production',
+  getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
+});
+const { data } = await balance.getBalances();
+console.log(data.totalAvailable.amount); // e.g. "1000000"
 ```
 
 ## Error handling
