@@ -57,6 +57,17 @@ export type {
   VideoContentVariant,
 } from './gateway-videos';
 
+// Voices client
+export { createVoiceClient } from './gateway-voices';
+export type {
+  GatewayVoiceClientOptions,
+  VoiceClient,
+  Voice,
+  VoiceProvider,
+  VoicesListResponse,
+  ListVoicesParams,
+} from './gateway-voices';
+
 // Credit balance client
 export { createCreditBalanceClient } from './gateway-balance';
 export type {
@@ -70,3 +81,15 @@ export type {
   CreditBalanceMembershipMetadata,
   CreditAmount,
 } from './gateway-balance';
+
+// Speech (text-to-speech) client
+export { createSpeechClient } from './gateway-speech';
+export type {
+  GatewaySpeechClientOptions,
+  SpeechClient,
+  CreateSpeechRequest,
+  SpeechResponseFormat,
+  CreateSpeechStreamEvent,
+  SpeechAudioDeltaEvent,
+  SpeechAudioDoneEvent,
+} from './gateway-speech';
