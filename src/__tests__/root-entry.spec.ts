@@ -15,6 +15,7 @@ describe('root entry', () => {
     expect(root.createVideoClient).toBeDefined();
     expect(root.createVoiceClient).toBeDefined();
     expect(root.createCreditBalanceClient).toBeDefined();
+    expect(root.createSpeechClient).toBeDefined();
   });
 
   it('does not expose low-level internals or upstream helpers', () => {

@@ -59,6 +59,12 @@ describe('parseStreamErrorPayload', () => {
     expect(err.code).toBe(ErrorCode.SubscriptionExpired);
   });
 
+  it('returns CreditsError (InsufficientCredits) for PAYMENT_REQUIRED', () => {
+    const err = parseStreamErrorPayload({ code: 'PAYMENT_REQUIRED', statusCode: 402 });
+    expect(err).toBeInstanceOf(CreditsError);
+    expect(err.code).toBe(ErrorCode.InsufficientCredits);
+  });
+
   it('returns RateLimitError for RATE_LIMIT_EXCEEDED', () => {
     const err = parseStreamErrorPayload({ code: 'RATE_LIMIT_EXCEEDED', statusCode: 429 });
     expect(err).toBeInstanceOf(RateLimitError);
@@ -148,6 +154,12 @@ describe('parseErrorResponse', () => {
   it('throws CreditsError for gateway body with INSUFFICIENT_CREDITS at 402', () => {
     expect(() =>
       parseErrorResponse(402, { statusCode: 402, message: 'No credits', code: 'INSUFFICIENT_CREDITS' }),
+    ).toThrow(CreditsError);
+  });
+
+  it('throws CreditsError for gateway body with PAYMENT_REQUIRED at 402', () => {
+    expect(() =>
+      parseErrorResponse(402, { statusCode: 402, message: 'Payment required', code: 'PAYMENT_REQUIRED' }),
     ).toThrow(CreditsError);
   });
 
