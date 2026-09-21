@@ -6,7 +6,7 @@
 [![npm version](https://img.shields.io/npm/v/%40macpaw%2Fai-sdk)](https://www.npmjs.com/package/@macpaw/ai-sdk)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-Thin **Vercel AI SDK** extension for **MacPaw AI Gateway**: OpenAI-compatible providers (`createAIGatewayProvider`, `createGatewayProvider`), a **`createGatewayFetch`** bridge for any HTTP client, a **`createVideoClient`** for video generation, shared **auth / retry / middleware / errors**, and optional **NestJS** wiring.
+Thin **Vercel AI SDK** extension for **MacPaw AI Gateway**: OpenAI-compatible providers (`createAIGatewayProvider`, `createGatewayProvider`), a **`createGatewayFetch`** bridge for any HTTP client, **`createVideoClient`** / **`createVoiceClient`** for video generation and voice listing, shared **auth / retry / middleware / errors**, and optional **NestJS** wiring.
 
 Core generation APIs stay on upstream **`ai`** and **`@ai-sdk/*`**. This package only adds Gateway-specific construction and the fetch pipeline.
 
@@ -14,7 +14,7 @@ Core generation APIs stay on upstream **`ai`** and **`@ai-sdk/*`**. This package
 
 | Import                    | Use for                                                                                    |
 | ------------------------- | ------------------------------------------------------------------------------------------ |
-| `@macpaw/ai-sdk`          | **Canonical** — providers, `createGatewayFetch`, `createVideoClient`, errors, config types |
+| `@macpaw/ai-sdk`          | **Canonical** — providers, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, errors, config types |
 | `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets)                              |
 | `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`                        |
 
@@ -69,11 +69,12 @@ for await (const delta of result.textStream) {
 - **Request ID** — `X-Request-ID` on Gateway requests when missing
 - **Timeout** — per attempt, combined with caller `AbortSignal`
 - **Video generation** — `createVideoClient` wraps the Gateway video endpoints (create job, poll status, fetch content)
+- **Voices** — `createVoiceClient` lists voices from Gateway providers (paginated `GET /v1/voices`)
 - **Tree-shakeable** — ESM + CJS
 
 ## Configuration (`GatewayProviderSettings`)
 
-Used by `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, and Nest `AIGatewayModule`.
+Used by `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, and Nest `AIGatewayModule`.
 
 | Field          | Purpose                                                          |
 | -------------- | ---------------------------------------------------------------- |
@@ -188,6 +189,34 @@ const buffer = await res.arrayBuffer();
 `getContent` returns the raw `Response` so callers can consume `.arrayBuffer()`, `.blob()`, or `.body` as a stream — the `Content-Type` is provider-dependent (`video/mp4`, `image/jpeg`, etc.). Pass `'thumbnail'` or `'spritesheet'` as the second argument to fetch those variants instead.
 
 `create` does **not** retry on 5xx — POST video jobs are non-idempotent. Auth retry (401 → fresh token) still applies.
+
+## `createVoiceClient` — list voices
+
+Wraps `GET /v1/voices`. Same auth, retry, and error normalization as the other clients. `provider` is required; `"elevenlabs"` is the only Gateway provider today, but any future provider id can be passed as a string.
+
+```ts
+import { createVoiceClient } from '@macpaw/ai-sdk';
+
+const voices = createVoiceClient({
+  env: 'production',
+  getAuthToken: async () => (await getSetappSession()).accessToken,
+});
+
+const first = await voices.list({ provider: 'elevenlabs' });
+for (const voice of first.voices) {
+  console.log(voice.voice_id);
+}
+
+if (first.has_more) {
+  const next = await voices.list({
+    provider: 'elevenlabs',
+    next_page_token: first.next_page_token,
+  });
+  console.log(next.voices.length);
+}
+```
+
+Each `Voice` always has `voice_id`; other fields are provider-specific and passed through as-is. `list()` is a GET, so config-level retries on **429** / **5xx** still apply. Auth retry (401 → fresh token) also applies.
 
 ## Middleware
 
