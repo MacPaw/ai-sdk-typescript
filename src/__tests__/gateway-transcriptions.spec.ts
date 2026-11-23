@@ -290,6 +290,41 @@ describe('createTranscriptionClient', () => {
       expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
     });
 
+    it('checks file / source_url before encoding any field', async () => {
+      const client = createTranscriptionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
+      const circular: Record<string, unknown> = {};
+      circular.self = circular;
+
+      await expect(
+        client.create({
+          model: 'm',
+          file: audioFile(),
+          source_url: 'https://cdn.example.com/a.mp3',
+          extra: circular,
+        } as unknown as CreateTranscriptionRequest),
+      ).rejects.toThrow(/not both/);
+    });
+
+    it('names the field when a value cannot be JSON-encoded, keeping the original error as cause', async () => {
+      const client = createTranscriptionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
+      const circular: Record<string, unknown> = {};
+      circular.self = circular;
+
+      const err = await client
+        .create({ model: 'x/future-model', file: audioFile(), webhook_metadata: circular })
+        .catch((e: unknown) => e);
+      expect(err).toBeInstanceOf(TypeError);
+      expect((err as TypeError).message).toBe(
+        'createTranscriptionClient: field `webhook_metadata` cannot be JSON-encoded.',
+      );
+      expect((err as TypeError).cause).toBeInstanceOf(TypeError);
+
+      await expect(
+        client.create({ model: 'x/future-model', file: audioFile(), options: { big: 10n } }),
+      ).rejects.toThrow('field `options` cannot be JSON-encoded');
+      expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
+    });
+
     it('treats file: null as absent and rejects other non-binary file values with a clear TypeError', async () => {
       const client = createTranscriptionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
 

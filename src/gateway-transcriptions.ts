@@ -166,7 +166,14 @@ function appendFormValue(form: FormData, key: string, value: unknown): void {
   } else if (value instanceof Date) {
     form.append(key, value.toISOString());
   } else if (typeof value === 'object') {
-    form.append(key, JSON.stringify(value));
+    let json: string;
+    try {
+      json = JSON.stringify(value);
+    } catch (err) {
+      // e.g. a circular structure or a nested bigint — say which field it was.
+      throw new TypeError(`createTranscriptionClient: field \`${key}\` cannot be JSON-encoded.`, { cause: err });
+    }
+    form.append(key, json);
   } else {
     form.append(key, String(value));
   }
@@ -174,18 +181,10 @@ function appendFormValue(form: FormData, key: string, value: unknown): void {
 
 function buildTranscriptionFormData(request: CreateTranscriptionRequest): FormData {
   const { file, filename, ...fields } = request;
-  const form = new FormData();
-
-  for (const [key, value] of Object.entries(fields)) {
-    if (Array.isArray(value)) {
-      for (const item of value) appendFormValue(form, key, item);
-    } else {
-      appendFormValue(form, key, value);
-    }
-  }
 
   // Enforce the Gateway's "exactly one audio source" rule at runtime too, so untyped
-  // (JS / config-driven) callers fail fast instead of getting a 400.
+  // (JS / config-driven) callers fail fast instead of getting a 400. Checked before any
+  // field is encoded so an invalid request does no extra work.
   // `null` is treated like an absent value, the same as every other field.
   const hasFile = file !== undefined && file !== null;
   const hasSourceUrl = fields.source_url !== undefined && fields.source_url !== null;
@@ -195,6 +194,15 @@ function buildTranscriptionFormData(request: CreateTranscriptionRequest): FormDa
         ? 'createTranscriptionClient: send either `file` or `source_url`, not both.'
         : 'createTranscriptionClient: `file` or `source_url` is required.',
     );
+  }
+
+  const form = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    if (Array.isArray(value)) {
+      for (const item of value) appendFormValue(form, key, item);
+    } else {
+      appendFormValue(form, key, value);
+    }
   }
 
   if (hasFile) {
@@ -281,6 +289,20 @@ export function createTranscriptionClient(options: GatewayTranscriptionClientOpt
     allowAuthRetry: true,
   };
 
+  // Overloads mirror `TranscriptionClient['create']`, so returning `{ create }` without a
+  // cast lets the compiler check the implementation against the public contract.
+  function create(
+    request: CreateTranscriptionRequest & { stream: true },
+    requestOptions?: TranscriptionRequestOptions,
+  ): Promise<Response>;
+  function create<T = TranscriptionResponse | string>(
+    request: CreateTranscriptionRequest & { stream?: false },
+    requestOptions?: TranscriptionRequestOptions,
+  ): Promise<T>;
+  function create(
+    request: CreateTranscriptionRequest,
+    requestOptions?: TranscriptionRequestOptions,
+  ): Promise<TranscriptionResponse | string | Response>;
   async function create(
     request: CreateTranscriptionRequest,
     requestOptions?: TranscriptionRequestOptions,
@@ -315,5 +337,5 @@ export function createTranscriptionClient(options: GatewayTranscriptionClientOpt
     }
   }
 
-  return { create } as TranscriptionClient;
+  return { create };
 }
