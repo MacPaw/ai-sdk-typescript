@@ -163,6 +163,32 @@ describe('parseErrorResponse', () => {
     ).toThrow(CreditsError);
   });
 
+  it('maps REQUEST_TIMEOUT (408) to ErrorCode.Timeout', () => {
+    try {
+      parseErrorResponse(408, {
+        statusCode: 408,
+        message: 'Request body was not received in time',
+        code: 'REQUEST_TIMEOUT',
+      });
+      expect.unreachable();
+    } catch (err) {
+      expect(err).toBeInstanceOf(AIGatewayError);
+      expect((err as AIGatewayError).code).toBe(ErrorCode.Timeout);
+      expect((err as AIGatewayError).statusCode).toBe(408);
+    }
+  });
+
+  it('maps PAYLOAD_TOO_LARGE (413) to ErrorCode.BadRequest', () => {
+    try {
+      parseErrorResponse(413, { statusCode: 413, message: 'Request body too large', code: 'PAYLOAD_TOO_LARGE' });
+      expect.unreachable();
+    } catch (err) {
+      expect(err).toBeInstanceOf(AIGatewayError);
+      expect((err as AIGatewayError).code).toBe(ErrorCode.BadRequest);
+      expect((err as AIGatewayError).statusCode).toBe(413);
+    }
+  });
+
   it('throws GatewayValidationError for gateway body with VALIDATION', () => {
     expect(() =>
       parseErrorResponse(422, { statusCode: 422, message: 'Validation failed', code: 'VALIDATION' }),

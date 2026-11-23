@@ -4,7 +4,18 @@
 
 ## Unreleased
 
+### Added
+
+- `createTranscriptionClient` for `POST /v2/audio/transcriptions` (speech-to-text, OpenAI and ElevenLabs). Only the Gateway contract (`model`, `file` / `source_url`, `language`, `stream`) is typed; provider fields are forwarded under their native names. Per-call `AbortSignal`, and a 10-minute default timeout (`DEFAULT_TRANSCRIPTION_TIMEOUT_MS`).
+- `GatewayApiCode.RequestTimeout` (`REQUEST_TIMEOUT`, **408**) and `GatewayApiCode.PayloadTooLarge` (`PAYLOAD_TOO_LARGE`, **413**). Code that handles every `GatewayApiCode` exhaustively (a `switch` with no default, or a `Record<GatewayApiCode, …>`) must add the two new members.
+
+### Deprecated
+
+- `POST /v1/audio/transcriptions` — via the provider's `transcription()` model or `createGatewayFetch` — in favour of `createTranscriptionClient`.
+
 ### Changed
+
+- `REQUEST_TIMEOUT` responses now normalize to `ErrorCode.Timeout` (previously the `BadRequest` fallback); `PAYLOAD_TOO_LARGE` stays `ErrorCode.BadRequest`.
 
 - Flat `src/` architecture — no `src/api/` or `src/client/` subdirectories.
 - `createGatewayFetch` replaces the old low-level client as the escape-hatch for custom HTTP calls.

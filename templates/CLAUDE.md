@@ -4,7 +4,7 @@ Use this guidance when integrating MacPaw AI Gateway into this project.
 
 ## Rules
 
-- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createCreditBalanceClient`, errors, and `GatewayProviderSettings`.
+- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createCreditBalanceClient`, errors, and `GatewayProviderSettings`.
 - Use `@macpaw/ai-sdk/nestjs` for `AIGatewayModule`, `@InjectAIGateway()`, and `AIGatewayExceptionFilter`.
 - Keep generation primitives on upstream `ai` / `@ai-sdk/*`.
 - Install `@ai-sdk/openai` when using `createAIGatewayProvider` or `createGatewayProvider`; those paths depend on the OpenAI-compatible provider package.
@@ -27,6 +27,7 @@ Use this guidance when integrating MacPaw AI Gateway into this project.
 - Video generation (create job, poll, fetch content): use `createVideoClient`.
 - Voice listing (paginated `GET /v1/voices`): use `createVoiceClient`.
 - Speech generation (streaming text-to-speech, `POST /v1/audio/speech`): use `createSpeechClient`.
+- Audio transcription (speech-to-text, `POST /v2/audio/transcriptions`): use `createTranscriptionClient`. Do not use the deprecated `/v1/audio/transcriptions` route or the provider `transcription()` model.
 - Credit balance queries (active balances, totals): use `createCreditBalanceClient`.
 
 ## Minimal examples
@@ -68,6 +69,15 @@ const speech = createSpeechClient({
 });
 const response = await speech.create({ model: 'openai/gpt-4o-mini-tts', input: 'Hello', voice: 'alloy' });
 // response.body is a stream (SSE by default) — never a single buffered audio file.
+```
+
+```ts
+// Audio transcription (multipart; exactly one of `file` or `source_url`)
+const transcriptions = createTranscriptionClient({
+  env: 'production',
+  getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
+});
+const result = await transcriptions.create({ model: 'openai/gpt-4o-transcribe', file: audioFile, language: 'en' });
 ```
 
 ```ts
