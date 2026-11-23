@@ -1,3 +1,4 @@
+import { File as NodeFile } from 'node:buffer';
 import { describe, it, expect, expectTypeOf, vi, beforeEach, afterEach } from 'vitest';
 import { createTranscriptionClient } from '../gateway-transcriptions';
 import { DEFAULT_TRANSCRIPTION_TIMEOUT_MS } from '../gateway-transcriptions';
@@ -15,8 +16,11 @@ function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 }
 
+// Node 18 has no global `File` (added in Node 20); `node:buffer` exports it from 18.13.
+const FileCtor: typeof File = (globalThis as { File?: typeof File }).File ?? (NodeFile as unknown as typeof File);
+
 function audioFile(name = 'meeting.mp3'): File {
-  return new File([new Uint8Array([1, 2, 3])], name, { type: 'audio/mpeg' });
+  return new FileCtor([new Uint8Array([1, 2, 3])], name, { type: 'audio/mpeg' });
 }
 
 function lastForm(): FormData {
@@ -192,7 +196,7 @@ describe('createTranscriptionClient', () => {
 
     it('forwards Blob values in extra fields as file parts, not "{}"', async () => {
       const client = createTranscriptionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
-      const reference = new File([new Uint8Array([9, 9])], 'speaker.wav', { type: 'audio/wav' });
+      const reference = new FileCtor([new Uint8Array([9, 9])], 'speaker.wav', { type: 'audio/wav' });
 
       await client.create({
         model: 'x/future-model',
