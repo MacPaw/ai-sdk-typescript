@@ -273,6 +273,23 @@ describe('createTranscriptionClient', () => {
       expect(part.name).toBe('audio');
     });
 
+    it('rejects both or neither of file / source_url at runtime, before any request', async () => {
+      const client = createTranscriptionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
+      const untyped = (request: Record<string, unknown>) =>
+        client.create(request as unknown as CreateTranscriptionRequest);
+
+      await expect(
+        untyped({ model: 'elevenlabs/scribe_v2', file: audioFile(), source_url: 'https://cdn.example.com/a.mp3' }),
+      ).rejects.toThrow(new TypeError('createTranscriptionClient: send either `file` or `source_url`, not both.'));
+      await expect(untyped({ model: 'elevenlabs/scribe_v2' })).rejects.toThrow(
+        new TypeError('createTranscriptionClient: `file` or `source_url` is required.'),
+      );
+      await expect(untyped({ model: 'elevenlabs/scribe_v2', file: null, source_url: null })).rejects.toThrow(
+        /`file` or `source_url` is required/,
+      );
+      expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
+    });
+
     it('treats file: null as absent and rejects other non-binary file values with a clear TypeError', async () => {
       const client = createTranscriptionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
 
@@ -399,7 +416,7 @@ describe('createTranscriptionClient', () => {
       const result = await client.create({ model: 'elevenlabs/scribe_v2', file: audioFile(), use_multi_channel: true });
 
       expect(result).toEqual(body);
-      if (typeof result === 'string') throw new Error('expected JSON');
+      if (typeof result !== 'object' || result === null || Array.isArray(result)) throw new Error('expected object');
       expect(result.transcripts).toHaveLength(1);
     });
 
@@ -467,8 +484,19 @@ describe('createTranscriptionClient', () => {
       const client = createTranscriptionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
 
       await expect(client.create({ model: 'openai/gpt-4o-transcribe', file: audioFile() })).rejects.toThrow(
-        /Failed to parse transcription response/,
+        'Failed to parse transcription response as JSON (HTTP 200, content-type: application/json)',
       );
+    });
+
+    it('returns non-object JSON (e.g. an array) unchanged', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(
+        jsonResponse([{ text: 'a' }, { text: 'b' }]),
+      );
+      const client = createTranscriptionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
+
+      const result = await client.create({ model: 'x/future-model', file: audioFile() });
+
+      expect(result).toEqual([{ text: 'a' }, { text: 'b' }]);
     });
   });
 

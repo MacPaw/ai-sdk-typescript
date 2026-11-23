@@ -82,11 +82,12 @@ export interface TranscriptionUrlSource {
 export type CreateTranscriptionRequest = TranscriptionRequestBase & (TranscriptionFileSource | TranscriptionUrlSource);
 
 /**
- * The provider's JSON response, unchanged. Its shape depends on the provider, the
- * model and the provider-specific options — pass your own type to `create<T>()`
- * to narrow it.
+ * The provider's JSON response, unchanged — any JSON value, since the SDK does not
+ * assume a provider's shape (today's providers return objects). Its shape depends on
+ * the provider, the model and the provider-specific options — narrow it, or pass your
+ * own type to `create<T>()`.
  */
-export type TranscriptionResponse = Record<string, unknown>;
+export type TranscriptionResponse = Record<string, unknown> | unknown[] | string | number | boolean | null;
 
 /**
  * Options for `createTranscriptionClient`.
@@ -183,8 +184,20 @@ function buildTranscriptionFormData(request: CreateTranscriptionRequest): FormDa
     }
   }
 
-  // `null` is treated like an absent file, the same as every other field.
-  if (file !== undefined && file !== null) {
+  // Enforce the Gateway's "exactly one audio source" rule at runtime too, so untyped
+  // (JS / config-driven) callers fail fast instead of getting a 400.
+  // `null` is treated like an absent value, the same as every other field.
+  const hasFile = file !== undefined && file !== null;
+  const hasSourceUrl = fields.source_url !== undefined && fields.source_url !== null;
+  if (hasFile === hasSourceUrl) {
+    throw new TypeError(
+      hasFile
+        ? 'createTranscriptionClient: send either `file` or `source_url`, not both.'
+        : 'createTranscriptionClient: `file` or `source_url` is required.',
+    );
+  }
+
+  if (hasFile) {
     const blob = toBlob(file);
     if (!blob) {
       throw new TypeError(
@@ -292,7 +305,8 @@ export function createTranscriptionClient(options: GatewayTranscriptionClientOpt
       return await response.json();
     } catch (err) {
       throw new AIGatewayError(
-        'Failed to parse transcription response as JSON',
+        `Failed to parse transcription response as JSON (HTTP ${response.status}, ` +
+          `content-type: ${response.headers.get('content-type') ?? 'none'})`,
         ErrorCode.InternalServerError,
         response.status,
         {},

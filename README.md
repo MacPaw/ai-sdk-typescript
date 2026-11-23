@@ -248,7 +248,7 @@ const response = await speech.create({
 
 ## `createTranscriptionClient` — speech-to-text
 
-Wraps `POST /v2/audio/transcriptions` (multipart). The SDK types only the Gateway's own contract: `model` (`provider/model`), exactly one of `file` (a `Blob` / `File`, `ArrayBuffer`, typed array or Node `Buffer`) or `source_url` (enforced by the request type), `language`, and `stream`. Everything else is provider-specific — which fields apply and which response shape comes back are decided by the model's provider (today `openai` and `elevenlabs`) and validated by the Gateway — so those fields are forwarded **as sent, under their native names**, and the provider's response is returned unchanged. A new provider or parameter needs no SDK update.
+Wraps `POST /v2/audio/transcriptions` (multipart). The SDK types only the Gateway's own contract: `model` (`provider/model`), exactly one of `file` (a `Blob` / `File`, `ArrayBuffer`, typed array or Node `Buffer`) or `source_url` (enforced by the request type, and at runtime with a `TypeError` for untyped callers), `language`, and `stream`. Everything else is provider-specific — which fields apply and which response shape comes back are decided by the model's provider (today `openai` and `elevenlabs`) and validated by the Gateway — so those fields are forwarded **as sent, under their native names**, and the provider's response is returned unchanged. A new provider or parameter needs no SDK update.
 
 ```ts
 import { createTranscriptionClient } from '@macpaw/ai-sdk';
@@ -287,7 +287,7 @@ const srt = await transcriptions.create<string>({ model: 'openai/whisper-1', fil
 const stream = await transcriptions.create({ model: 'openai/gpt-4o-mini-transcribe', file, stream: true });
 ```
 
-- Return value: parsed JSON (the provider's response), the body as a `string` for `text/plain`, or the raw `Response` for a `text/event-stream` response. Typed as `Response` for `stream: true`, `TranscriptionResponse | string` by default (narrow it, or pass `T` such as `create<string>()` / `create<{ text: string }>()`), and `TranscriptionResponse | string | Response` when `stream` is a runtime `boolean`.
+- Return value: parsed JSON (the provider's response), the body as a `string` for `text/plain`, or the raw `Response` for a `text/event-stream` response. `TranscriptionResponse` is any JSON value, since the SDK does not assume a provider's shape. Typed as `Response` for `stream: true`, `TranscriptionResponse | string` by default (narrow it, or pass `T` such as `create<string>()` / `create<{ text: string }>()`), and `TranscriptionResponse | string | Response` when `stream` is a runtime `boolean`.
 - Form encoding: arrays become repeated parts under the exact key you give (use `'include[]'`, `'timestamp_granularities[]'` etc. where the provider expects the suffix), `Blob` / `File` and binary values (`ArrayBuffer`, typed arrays, `Buffer`) are sent as file parts, `Date` as an ISO string, other objects are JSON-encoded, other values stringified, `undefined` / `null` skipped.
 - For a plain `Blob` or raw bytes, pass `filename` (e.g. `'clip.m4a'`) — providers may detect the format from the extension. Any other `file` value is rejected with a `TypeError` before the request is sent.
 - A `Content-Type` set in the client's `headers` is ignored for this request so `fetch` can set the multipart boundary.
