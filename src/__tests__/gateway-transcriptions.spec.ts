@@ -177,6 +177,23 @@ describe('createTranscriptionClient', () => {
       expect(form.get('timestamps_granularity')).toBe('word');
     });
 
+    it('skips null / undefined array items like null / undefined fields', async () => {
+      const client = createTranscriptionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
+
+      await client.create({
+        model: 'elevenlabs/scribe_v2',
+        file: audioFile(),
+        keyterms: ['MacPaw', null, undefined, 'CleanMyMac'],
+        'include[]': [null],
+        prompt: null,
+      });
+
+      const form = lastForm();
+      expect(form.getAll('keyterms')).toEqual(['MacPaw', 'CleanMyMac']);
+      expect(form.has('include[]')).toBe(false);
+      expect(form.has('prompt')).toBe(false);
+    });
+
     it('JSON-encodes an object chunking_strategy, skips undefined, and passes through unknown fields', async () => {
       const client = createTranscriptionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
 

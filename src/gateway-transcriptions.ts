@@ -153,6 +153,9 @@ function toBlob(value: unknown): Blob | undefined {
 }
 
 function appendFormValue(form: FormData, key: string, value: unknown): void {
+  // `undefined` / `null` are skipped everywhere — as a field value and as an array item —
+  // rather than sent as the strings "undefined" / "null".
+  if (value === undefined || value === null) return;
   // Binary values are sent as file parts; JSON-encoding them would yield "{}" or a byte-index object.
   const blob = toBlob(value);
   if (blob) {
@@ -173,7 +176,6 @@ function buildTranscriptionFormData(request: CreateTranscriptionRequest): FormDa
   const form = new FormData();
 
   for (const [key, value] of Object.entries(fields)) {
-    if (value === undefined || value === null) continue;
     if (Array.isArray(value)) {
       for (const item of value) appendFormValue(form, key, item);
     } else {
