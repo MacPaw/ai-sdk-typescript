@@ -4,7 +4,7 @@ Apply these rules when integrating MacPaw AI Gateway.
 
 ## Use the correct package surface
 
-- `@macpaw/ai-sdk`: `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createCreditBalanceClient`, errors, `GatewayProviderSettings`.
+- `@macpaw/ai-sdk`: `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createWebSearchClient`, `createCreditBalanceClient`, errors, `GatewayProviderSettings`.
 - `@macpaw/ai-sdk/provider`: compatibility alias only.
 - `@macpaw/ai-sdk/nestjs`: NestJS module and decorators.
 - Install `@ai-sdk/openai` when using `createAIGatewayProvider` or `createGatewayProvider`.
@@ -20,6 +20,7 @@ Apply these rules when integrating MacPaw AI Gateway.
 - Voice listing: use `createVoiceClient`.
 - Speech generation (text-to-speech, streaming only): use `createSpeechClient`.
 - Audio transcription (speech-to-text, OpenAI / ElevenLabs): use `createTranscriptionClient`. `/v1/audio/transcriptions` and the provider `transcription()` model are deprecated.
+- Web search (Exa, Brave): use `createWebSearchClient`.
 - Credit balance queries: use `createCreditBalanceClient`.
 - Existing `openai` / `@ai-sdk/openai` / `@anthropic-ai/sdk` usage: treat as migration.
 
@@ -79,6 +80,15 @@ const transcriptions = createTranscriptionClient({
   getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
 });
 const result = await transcriptions.create({ model: 'openai/gpt-4o-transcribe', file: audioFile, language: 'en' });
+```
+
+```ts
+// Web search (provider options under their native names; response is the provider's JSON, unchanged)
+const websearch = createWebSearchClient({
+  env: 'production',
+  getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
+});
+const result = await websearch.search({ model: 'exa/exa', query: 'launch agents on macOS', limit: 5 });
 ```
 
 ```ts

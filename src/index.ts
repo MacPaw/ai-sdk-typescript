@@ -107,3 +107,14 @@ export type {
   TranscriptionUrlSource,
   TranscriptionResponse,
 } from './gateway-transcriptions';
+
+// Web search client — POST /v1/websearch
+export { createWebSearchClient, DEFAULT_WEBSEARCH_TIMEOUT_MS } from './gateway-websearch';
+export type {
+  GatewayWebSearchClientOptions,
+  WebSearchClient,
+  WebSearchRequestOptions,
+  WebSearchRequest,
+  WebSearchLocation,
+  WebSearchResponse,
+} from './gateway-websearch';

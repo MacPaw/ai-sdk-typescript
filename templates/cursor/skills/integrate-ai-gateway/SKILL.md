@@ -1,6 +1,6 @@
 ---
 name: integrate-ai-gateway
-description: Integrate applications with AI Gateway using @macpaw/ai-sdk. Use for NestJS, Next.js, Vercel AI SDK, raw fetch migrations, video generation, voice listing, text-to-speech, speech-to-text, credit balance queries, MacPaw AI, Setapp AI, createAIGatewayProvider, createGatewayFetch, createVideoClient, createVoiceClient, createSpeechClient, createTranscriptionClient, createCreditBalanceClient, and AI Gateway auth/error wiring.
+description: Integrate applications with AI Gateway using @macpaw/ai-sdk. Use for NestJS, Next.js, Vercel AI SDK, raw fetch migrations, video generation, voice listing, text-to-speech, speech-to-text, web search, credit balance queries, MacPaw AI, Setapp AI, createAIGatewayProvider, createGatewayFetch, createVideoClient, createVoiceClient, createSpeechClient, createTranscriptionClient, createWebSearchClient, createCreditBalanceClient, and AI Gateway auth/error wiring.
 ---
 
 # AI Gateway Integration (@macpaw/ai-sdk)
@@ -11,7 +11,7 @@ Detect the app shape, choose one integration path, apply the smallest correct pa
 
 ## Package surface
 
-- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createCreditBalanceClient`, `GATEWAY_PROVIDERS`, errors, and `GatewayProviderSettings`.
+- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createWebSearchClient`, `createCreditBalanceClient`, `GATEWAY_PROVIDERS`, errors, and `GatewayProviderSettings`.
 - Use `@macpaw/ai-sdk/provider` only as a compatibility alias.
 - Use `@macpaw/ai-sdk/nestjs` for `AIGatewayModule`, `@InjectAIGateway()`, and `AIGatewayExceptionFilter`.
 - Do not use `createAIGatewayClient`, `@macpaw/ai-sdk/client`, `runtime`, `types`, or `testing`; they do not exist.
@@ -34,6 +34,7 @@ Detect the app shape, choose one integration path, apply the smallest correct pa
 - Voice listing (paginated `GET /v1/voices`) -> use `createVoiceClient`.
 - Speech generation (streaming text-to-speech, `POST /v1/audio/speech`) -> use `createSpeechClient`.
 - Audio transcription (speech-to-text, `POST /v2/audio/transcriptions`) -> use `createTranscriptionClient`. Do not use the deprecated `/v1/audio/transcriptions` route or the provider `transcription()` model.
+- Web search (Exa or Brave, `POST /v1/websearch`) -> use `createWebSearchClient`.
 - Credit balance queries (active balances, totals) -> use `createCreditBalanceClient`.
 - Existing `openai`, `@ai-sdk/openai`, or `@anthropic-ai/sdk` usage -> treat as migration, not greenfield.
 
@@ -102,6 +103,15 @@ const transcriptions = createTranscriptionClient({
   getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
 });
 const result = await transcriptions.create({ model: 'openai/gpt-4o-transcribe', file: audioFile, language: 'en' });
+```
+
+```ts
+// Web search (provider options under their native names; response is the provider's JSON, unchanged)
+const websearch = createWebSearchClient({
+  env: 'production',
+  getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
+});
+const result = await websearch.search({ model: 'exa/exa', query: 'launch agents on macOS', limit: 5 });
 ```
 
 ```ts

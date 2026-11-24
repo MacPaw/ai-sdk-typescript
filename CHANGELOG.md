@@ -7,6 +7,7 @@
 ### Added
 
 - `createTranscriptionClient` for `POST /v2/audio/transcriptions` (speech-to-text, OpenAI and ElevenLabs). Only the Gateway contract (`model`, `file` / `source_url`, `language`, `stream`) is typed; provider fields are forwarded under their native names. Per-call `AbortSignal`, and a 10-minute default timeout (`DEFAULT_TRANSCRIPTION_TIMEOUT_MS`).
+- `createWebSearchClient` for `POST /v1/websearch` (web search, Exa and Brave). Only the Gateway contract (`model`, `query`, `limit`, `include_domains` / `exclude_domains`, `country`, `location`) is typed; `provider_options` and any other field are forwarded as sent, and the provider's JSON response is returned unchanged. Per-call `AbortSignal`, a 2-minute default timeout (`DEFAULT_WEBSEARCH_TIMEOUT_MS`), and no config-level retries (billed).
 - `GatewayApiCode.RequestTimeout` (`REQUEST_TIMEOUT`, **408**) and `GatewayApiCode.PayloadTooLarge` (`PAYLOAD_TOO_LARGE`, **413**). Code that handles every `GatewayApiCode` exhaustively (a `switch` with no default, or a `Record<GatewayApiCode, …>`) must add the two new members.
 
 ### Deprecated

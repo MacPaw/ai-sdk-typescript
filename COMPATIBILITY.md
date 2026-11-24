@@ -6,7 +6,7 @@ The SDK uses:
 
 - an OpenAI-compatible **provider** (`createAIGatewayProvider` / `createGatewayProvider`) for Vercel `ai` generation APIs
 - **`createGatewayFetch`** for arbitrary / multipart paths
-- typed clients **`createVideoClient`**, **`createVoiceClient`**, **`createSpeechClient`**, and **`createTranscriptionClient`** for the video, voices, speech, and transcription Gateway routes
+- typed clients **`createVideoClient`**, **`createVoiceClient`**, **`createSpeechClient`**, **`createTranscriptionClient`**, and **`createWebSearchClient`** for the video, voices, speech, transcription, and web search Gateway routes
 
 ## Paths
 
@@ -27,12 +27,15 @@ Gateway routes are versioned under `/ai/v1/...` or `/ai/v2/...` (from the host r
 | Voices list          | `/ai/v1/voices`                    | `/v1/voices`                    | `createVoiceClient.list`           |
 | Audio speech create  | `/ai/v1/audio/speech`              | `/v1/audio/speech`              | `createSpeechClient.create`        |
 | Audio transcriptions | `/ai/v2/audio/transcriptions`      | `/v2/audio/transcriptions`      | `createTranscriptionClient.create` |
+| Web search           | `/ai/v1/websearch`                 | `/v1/websearch`                 | `createWebSearchClient.search`     |
 
 `createVoiceClient.list()` sends `provider` (required) and optional `next_page_token` as query params.
 
 `createSpeechClient.create()` requires `model`, `input`, and `voice`; the response is always streaming (SSE, or the provider's own raw stream when `raw_provider_response: true`), so `create()` returns the raw `Response` rather than parsed JSON.
 
 `createTranscriptionClient.create()` sends `multipart/form-data` with `model` and exactly one of `file` / `source_url`; only the Gateway-level fields (`model`, audio source, `language`, `stream`) are typed, and provider-specific fields are forwarded as sent under their native names. It returns parsed JSON (provider response, unchanged), a string for `text/plain` responses, or the raw `Response` for any `text/event-stream` response (always the case for `stream: true`). It accepts a per-call `signal`, ignores a configured `Content-Type` header (the multipart boundary must come from `fetch`), and defaults its timeout to 10 minutes (`DEFAULT_TRANSCRIPTION_TIMEOUT_MS`).
+
+`createWebSearchClient.search()` sends JSON with `model` and `query`; only the Gateway-level fields (`model`, `query`, `limit`, `include_domains`, `exclude_domains`, `country`, `location`) are typed, and `provider_options` plus any other field are forwarded as sent under their native names. It returns the provider's parsed JSON response, unchanged. It accepts a per-call `signal`, never retries on 429 / 5xx, and defaults its timeout to 2 minutes (`DEFAULT_WEBSEARCH_TIMEOUT_MS`).
 
 `/v1/audio/transcriptions` (provider `transcription()` model / `createGatewayFetch`) is **deprecated** in favour of `/v2/audio/transcriptions` via `createTranscriptionClient`.
 
@@ -52,7 +55,7 @@ Gateway expects `Authorization: Bearer <token>`. The SDK sets it from `getAuthTo
 1. Gateway JSON: `statusCode`, `message`, `timestamp`, `code`, `path`, optional `errors[]`
 2. OpenAI proxy shape: `{ error: { message, type, code } }`
 
-Codes map to `ErrorCode` and typed errors (`AuthError`, `CreditsError`, …). `PAYMENT_REQUIRED` (used on **402** by the audio speech and transcription endpoints) and `INSUFFICIENT_CREDITS` both normalize to `CreditsError` / `ErrorCode.InsufficientCredits`. `REQUEST_TIMEOUT` (**408**) normalizes to `ErrorCode.Timeout`; `PAYLOAD_TOO_LARGE` (**413**) to `ErrorCode.BadRequest`.
+Codes map to `ErrorCode` and typed errors (`AuthError`, `CreditsError`, …). `PAYMENT_REQUIRED` (used on **402** by the audio speech, transcription, and web search endpoints) and `INSUFFICIENT_CREDITS` both normalize to `CreditsError` / `ErrorCode.InsufficientCredits`. `REQUEST_TIMEOUT` (**408**) normalizes to `ErrorCode.Timeout`; `PAYLOAD_TOO_LARGE` (**413**) to `ErrorCode.BadRequest`.
 
 ## Multipart and streaming
 
@@ -69,8 +72,9 @@ Codes map to `ErrorCode` and typed errors (`AuthError`, `CreditsError`, …). `P
 | Voice listing (paginated)                                  | `createVoiceClient`                                 |
 | Speech generation (streaming text-to-speech)               | `createSpeechClient`                                |
 | Audio transcription (speech-to-text, multipart)            | `createTranscriptionClient`                         |
+| Web search (Exa, Brave)                                    | `createWebSearchClient`                             |
 | Same gateway, same auth/retry/middleware                   | All use `GatewayProviderSettings` semantics         |
 
 ---
 
-**Conclusion:** Wire format, base URL, auth, and error shapes stay aligned with AI Gateway. The SDK surface is provider + fetch bridge + typed video/voices/speech/transcription clients + NestJS helpers.
+**Conclusion:** Wire format, base URL, auth, and error shapes stay aligned with AI Gateway. The SDK surface is provider + fetch bridge + typed video/voices/speech/transcription/web search clients + NestJS helpers.
