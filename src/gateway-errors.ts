@@ -22,6 +22,8 @@ export const GatewayApiCode = {
   InternalServerError: 'INTERNAL_SERVER_ERROR',
   ServiceUnavailable: 'SERVICE_UNAVAILABLE',
   Timeout: 'TIMEOUT',
+  RequestTimeout: 'REQUEST_TIMEOUT',
+  PayloadTooLarge: 'PAYLOAD_TOO_LARGE',
   NotFound: 'NOT_FOUND',
   Conflict: 'CONFLICT',
 } as const;
@@ -203,7 +205,10 @@ function mapGatewayApiCodeToNormalized(code: string, statusCode: number): ErrorC
     case GatewayApiCode.ServiceUnavailable:
       return ErrorCode.ServiceUnavailable;
     case GatewayApiCode.Timeout:
+    case GatewayApiCode.RequestTimeout:
       return ErrorCode.Timeout;
+    case GatewayApiCode.PayloadTooLarge:
+      return ErrorCode.BadRequest;
     case GatewayApiCode.NotFound:
       return ErrorCode.NotFound;
     case GatewayApiCode.Conflict:
