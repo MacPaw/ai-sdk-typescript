@@ -341,7 +341,7 @@ const brave = await websearch.search({
 Wraps `POST /v1/decisions` (JSON). Asks a decision model (an entry of `GET /v1/model/info` with `output_modality: decisions`) typed questions about a `state` and returns typed answers with probabilities instead of generated text. The Gateway contract is typed — `model`, `state` (text, a JSON object, or text and `image_url` parts), `questions` (at least one, keyed by name), `assets`, `session_id`, `user` — and any other field is forwarded as sent.
 
 ```ts
-import { createDecisionClient } from '@macpaw/ai-sdk';
+import { createDecisionClient, isChoiceAnswer, isNoulAnswer } from '@macpaw/ai-sdk';
 
 const decisions = createDecisionClient({
   env: 'production',
@@ -364,8 +364,9 @@ const { answers } = await decisions.create({
   },
 });
 
-answers.safe_to_run.noul; // 0.91 — probability of yes
-answers.risk.choice; // 'medium'
+// An answer may be missing; the guards check it and narrow its type
+if (isNoulAnswer(answers.safe_to_run)) answers.safe_to_run.noul; // 0.91 — probability of yes
+if (isChoiceAnswer(answers.risk)) answers.risk.choice; // 'medium'
 ```
 
 | Question `type` | `criteria`                  | Answer fields                                              |
@@ -374,9 +375,11 @@ answers.risk.choice; // 'medium'
 | `choice`        | option name → guidance      | `choice`, `probabilities` per option, `confidence`         |
 | `score`         | ordered array, lowest first | `score`, `probabilities` per level, `legend`, `confidence` |
 
-- A question the model declines comes back as an answer of `type: 'refusal'`; the other answers are still returned.
+- A question the model declines comes back as an answer of `type: 'refusal'` (`isRefusalAnswer()`); the other answers are still returned. `isNoulAnswer()`, `isChoiceAnswer()` and `isScoreAnswer()` narrow the rest; they also check the value, so a malformed answer matches none of them — detect refusals with `isRefusalAnswer()`, not a catch-all `else`.
+- A request that isn't an object, an empty `state` or no `questions` throws a `TypeError` before the request is sent; a 200 body without an `answers` object throws `AIGatewayError`.
 - Images go in `assets` (`{ type: 'image', format, data_base64 }`) and are referenced by key; every asset must be referenced at least once.
 - `create()` disables config-level retries (billed). Auth retry (401 → fresh token) still applies. Pass `{ signal }` as the second argument to cancel a call.
+- Timeout defaults to `DEFAULT_DECISIONS_TIMEOUT_MS` (2 minutes) because image assets can be large and an aborted request is still billed; set `timeout` on the client to change it.
 - Errors: **400** → `AIGatewayError` with `metadata.errors`; **402** → `CreditsError`; **403** → `ModelNotAllowedError`.
 
 ## `createCreditBalanceClient` — AI credit balances

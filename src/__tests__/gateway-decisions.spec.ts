@@ -1,6 +1,20 @@
 import { describe, it, expect, expectTypeOf, vi, beforeEach, afterEach } from 'vitest';
-import { createDecisionClient } from '../gateway-decisions';
-import type { CreateDecisionRequest, DecisionRequestOptions, DecisionResponse } from '../gateway-decisions';
+import {
+  createDecisionClient,
+  DEFAULT_DECISIONS_TIMEOUT_MS,
+  isChoiceAnswer,
+  isNoulAnswer,
+  isRefusalAnswer,
+  isScoreAnswer,
+} from '../gateway-decisions';
+import type {
+  CreateDecisionRequest,
+  DecisionAnswer,
+  DecisionChoiceAnswer,
+  DecisionNoulAnswer,
+  DecisionRequestOptions,
+  DecisionResponse,
+} from '../gateway-decisions';
 import { AuthError, CreditsError, ModelNotAllowedError, AIGatewayError, RateLimitError } from '../gateway-errors';
 import { DEFAULT_BASE_URLS } from '../gateway-config';
 
@@ -143,6 +157,66 @@ describe('createDecisionClient', () => {
       expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 
+    it.each([undefined, null, [], 'text'])('rejects a request that is %j before calling fetch', async (request) => {
+      const client = createDecisionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
+
+      const err = await client.create(request as unknown as CreateDecisionRequest).catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(TypeError);
+      expect((err as Error).message).toBe('createDecisionClient: request must be an object.');
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['an empty string state', { state: '' }, '`state` must not be empty'],
+      ['a null state', { state: null }, '`state` must not be empty'],
+      ['a missing state', { state: undefined }, '`state` must not be empty'],
+      ['empty questions', { questions: {} }, '`questions` must have at least one question'],
+      ['missing questions', { questions: undefined }, '`questions` must have at least one question'],
+      ['array questions', { questions: [] }, '`questions` must have at least one question'],
+    ])('rejects %s before calling fetch', async (_label, patch, message) => {
+      const client = createDecisionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
+
+      const err = await client
+        .create({ ...REQUEST, ...patch } as unknown as CreateDecisionRequest)
+        .catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(TypeError);
+      expect((err as Error).message).toContain(message);
+      expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
+
+    it('defaults the timeout to DEFAULT_DECISIONS_TIMEOUT_MS and honors an explicit timeout', async () => {
+      expect(DEFAULT_DECISIONS_TIMEOUT_MS).toBe(120_000);
+      vi.useFakeTimers();
+      try {
+        const hang = (_url: string, init: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init.signal?.addEventListener('abort', () => reject(init.signal?.reason), { once: true });
+          });
+        globalThis.fetch = vi.fn().mockImplementation(hang);
+
+        const byDefault = createDecisionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
+        let settled = false;
+        const pending = byDefault.create(REQUEST).finally(() => {
+          settled = true;
+        });
+        pending.catch(() => {});
+        await vi.advanceTimersByTimeAsync(60_000);
+        expect(settled).toBe(false);
+        await vi.advanceTimersByTimeAsync(DEFAULT_DECISIONS_TIMEOUT_MS - 60_000);
+        await expect(pending).rejects.toThrow(/timed out after 120000ms/);
+
+        const custom = createDecisionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token', timeout: 1_000 });
+        const quick = custom.create(REQUEST);
+        quick.catch(() => {});
+        await vi.advanceTimersByTimeAsync(1_000);
+        await expect(quick).rejects.toThrow(/timed out after 1000ms/);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('passes the per-call AbortSignal to fetch and rejects when it is aborted', async () => {
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementationOnce(
         (_url: string, init: RequestInit) =>
@@ -170,8 +244,8 @@ describe('createDecisionClient', () => {
       const result = await client.create(REQUEST);
 
       expect(result).toEqual(RESPONSE);
-      expect(result.answers.safe_to_run.noul).toBe(0.91);
-      expect(result.answers.risk.choice).toBe('medium');
+      expect(result.answers.safe_to_run?.noul).toBe(0.91);
+      expect(result.answers.risk?.choice).toBe('medium');
       expect(result.usage.output_tokens).toBe(0);
     });
 
@@ -186,8 +260,23 @@ describe('createDecisionClient', () => {
 
       const result = await client.create(REQUEST);
 
-      expect(result.answers.safe_to_run.type).toBe('refusal');
-      expect(result.answers.risk.choice).toBe('medium');
+      expect(isRefusalAnswer(result.answers.safe_to_run)).toBe(true);
+      expect(result.answers.risk?.choice).toBe('medium');
+    });
+
+    it.each([
+      ['null', null],
+      ['an array', []],
+      ['an object without answers', { id: 'x', model: 'm', usage: {} }],
+      ['answers that are not an object', { ...RESPONSE, answers: [] }],
+    ])('throws AIGatewayError when the 200 body is %s', async (_label, body) => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(jsonResponse(body));
+      const client = createDecisionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
+
+      const err = await client.create(REQUEST).catch((e: unknown) => e);
+
+      expect(err).toBeInstanceOf(AIGatewayError);
+      expect((err as AIGatewayError).message).toMatch(/Unexpected decisions response/);
     });
 
     it('throws AIGatewayError when a 200 response is not JSON', async () => {
@@ -253,7 +342,7 @@ describe('createDecisionClient', () => {
       );
       const client = createDecisionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
 
-      const err = await client.create({ ...REQUEST, questions: {} }).catch((e: unknown) => e);
+      const err = await client.create(REQUEST).catch((e: unknown) => e);
 
       expect(err).toBeInstanceOf(AIGatewayError);
       expect((err as AIGatewayError).statusCode).toBe(400);
@@ -334,6 +423,30 @@ describe('createDecisionClient', () => {
     });
   });
 
+  // ─── answer guards ────────────────────────────────────────────────────────
+
+  describe('answer guards', () => {
+    it('match by type and require the type value', () => {
+      expect(isNoulAnswer({ type: 'noul', noul: 0.91 })).toBe(true);
+      expect(isNoulAnswer({ type: 'noul' })).toBe(false);
+      expect(isNoulAnswer({ type: 'noul', noul: null } as unknown as DecisionAnswer)).toBe(false);
+      expect(isRefusalAnswer({ type: 'noul' })).toBe(false);
+      expect(isChoiceAnswer({ type: 'choice', choice: 'medium' })).toBe(true);
+      expect(isChoiceAnswer({ type: 'noul', noul: 1 })).toBe(false);
+      expect(isScoreAnswer({ type: 'score', score: 2.3, legend: { '0': 'low' } })).toBe(true);
+      expect(isScoreAnswer({ type: 'score', score: '2' } as unknown as DecisionAnswer)).toBe(false);
+      expect(isRefusalAnswer({ type: 'refusal' })).toBe(true);
+      expect(isRefusalAnswer({ type: 'choice', choice: 'x' })).toBe(false);
+    });
+
+    it('return false for a missing answer', () => {
+      expect(isNoulAnswer(undefined)).toBe(false);
+      expect(isChoiceAnswer(undefined)).toBe(false);
+      expect(isScoreAnswer(undefined)).toBe(false);
+      expect(isRefusalAnswer(undefined)).toBe(false);
+    });
+  });
+
   // ─── type surface ─────────────────────────────────────────────────────────
 
   describe('types', () => {
@@ -345,6 +458,15 @@ describe('createDecisionClient', () => {
       expectTypeOf(result).resolves.toEqualTypeOf<DecisionResponse>();
       expectTypeOf<Parameters<typeof client.create>[1]>().toEqualTypeOf<DecisionRequestOptions | undefined>();
       await result;
+    });
+
+    it('types answers as possibly missing and narrows them with the guards', () => {
+      expectTypeOf<DecisionResponse['answers'][string]>().toEqualTypeOf<DecisionAnswer | undefined>();
+
+      const answer = { type: 'noul', noul: 0.4 } as DecisionAnswer | undefined;
+      if (isNoulAnswer(answer)) expectTypeOf(answer).toEqualTypeOf<DecisionNoulAnswer>();
+      if (isChoiceAnswer(answer)) expectTypeOf(answer.choice).toBeString();
+      expectTypeOf<DecisionChoiceAnswer['choice']>().toBeString();
     });
 
     it('requires model, state and questions, types the Gateway fields and leaves the rest open', () => {
@@ -363,7 +485,15 @@ describe('createDecisionClient', () => {
       const open: CreateDecisionRequest = {
         model: 'any/model',
         state: 's',
-        questions: { q: { type: 'new_type', extra: true } },
+        questions: {
+          q: { type: 'new_type', extra: true },
+          rank: { type: 'rank', criteria: 'Order by relevance' },
+          threshold: { type: 'threshold', criteria: 0.5 },
+        },
+        assets: {
+          remote: { type: 'image_url', url: 'https://cdn.example.com/screen.png' },
+          clip: { type: 'audio', format: 'mp3', data_base64: 'SUQz' },
+        },
         new_gateway_field: true,
       };
       expect([noState, noQuestions, badQuestion, badSession, open]).toHaveLength(5);

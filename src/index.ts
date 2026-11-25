@@ -120,7 +120,14 @@ export type {
 } from './gateway-websearch';
 
 // Decisions client — POST /v1/decisions
-export { createDecisionClient } from './gateway-decisions';
+export {
+  createDecisionClient,
+  DEFAULT_DECISIONS_TIMEOUT_MS,
+  isNoulAnswer,
+  isChoiceAnswer,
+  isScoreAnswer,
+  isRefusalAnswer,
+} from './gateway-decisions';
 export type {
   GatewayDecisionClientOptions,
   DecisionClient,
@@ -132,5 +139,9 @@ export type {
   DecisionResponse,
   DecisionAnswer,
   DecisionAnswerType,
+  DecisionNoulAnswer,
+  DecisionChoiceAnswer,
+  DecisionScoreAnswer,
+  DecisionRefusalAnswer,
   DecisionUsage,
 } from './gateway-decisions';

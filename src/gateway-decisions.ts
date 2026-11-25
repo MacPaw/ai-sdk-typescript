@@ -24,17 +24,20 @@ export interface DecisionQuestion {
    * `noul`: `{ true, false }`. `choice`: option name → guidance.
    * `score`: an ordered array, lowest first.
    */
-  criteria?: Record<string, unknown> | unknown[];
+  criteria?: unknown;
   /** Any other field, forwarded as sent. */
   [key: string]: unknown;
 }
 
-/** An image referenced by key from `state`, `instructions` or `criteria`. */
+/** An asset referenced by key from `state`, `instructions` or `criteria`. */
 export interface DecisionAsset {
+  /** e.g. `image`. */
   type: 'image' | (string & {});
-  format: 'png' | 'jpg' | 'jpeg' | (string & {});
-  /** Base64 data without a `data:` prefix. */
-  data_base64: string;
+  /** Required for images: `png`, `jpg` or `jpeg`. */
+  format?: 'png' | 'jpg' | 'jpeg' | (string & {});
+  /** Required for images: base64 data without a `data:` prefix. */
+  data_base64?: string;
+  /** Any other field, forwarded as sent. */
   [key: string]: unknown;
 }
 
@@ -74,6 +77,53 @@ export interface DecisionAnswer {
   [key: string]: unknown;
 }
 
+/** A `noul` answer. Narrow with `isNoulAnswer()`. */
+export interface DecisionNoulAnswer extends DecisionAnswer {
+  type: 'noul';
+  noul: number;
+}
+
+/** A `choice` answer. Narrow with `isChoiceAnswer()`. */
+export interface DecisionChoiceAnswer extends DecisionAnswer {
+  type: 'choice';
+  choice: string;
+}
+
+/** A `score` answer. Narrow with `isScoreAnswer()`. */
+export interface DecisionScoreAnswer extends DecisionAnswer {
+  type: 'score';
+  score: number;
+}
+
+/** A declined question. Narrow with `isRefusalAnswer()`. */
+export interface DecisionRefusalAnswer extends DecisionAnswer {
+  type: 'refusal';
+}
+
+// The type guards below also check the answer's value, so a malformed answer of a
+// known type (e.g. `{ type: 'noul' }`) matches none of them. Use `isRefusalAnswer()`
+// to detect refusals rather than a catch-all `else`.
+
+/** `true` for a `noul` answer with a numeric `noul`. */
+export function isNoulAnswer(answer: DecisionAnswer | undefined): answer is DecisionNoulAnswer {
+  return answer?.type === 'noul' && typeof answer.noul === 'number';
+}
+
+/** `true` for a `choice` answer with a string `choice`. */
+export function isChoiceAnswer(answer: DecisionAnswer | undefined): answer is DecisionChoiceAnswer {
+  return answer?.type === 'choice' && typeof answer.choice === 'string';
+}
+
+/** `true` for a `score` answer with a numeric `score`. */
+export function isScoreAnswer(answer: DecisionAnswer | undefined): answer is DecisionScoreAnswer {
+  return answer?.type === 'score' && typeof answer.score === 'number';
+}
+
+/** `true` when the model declined the question. */
+export function isRefusalAnswer(answer: DecisionAnswer | undefined): answer is DecisionRefusalAnswer {
+  return answer?.type === 'refusal';
+}
+
 export interface DecisionUsage {
   input_tokens: number;
   output_tokens: number;
@@ -87,7 +137,8 @@ export interface DecisionResponse {
   /** Versioned id of the model that answered. */
   model: string;
   provider?: string;
-  answers: Record<string, DecisionAnswer>;
+  /** Keyed by question name; a key may be missing, so check before use. */
+  answers: Record<string, DecisionAnswer | undefined>;
   annotations?: Record<string, unknown>[];
   usage: DecisionUsage;
   [key: string]: unknown;
@@ -102,10 +153,33 @@ export interface DecisionRequestOptions {
   signal?: AbortSignal;
 }
 
+/** Default timeout (2 minutes): image assets can be large, and an aborted request is still billed. */
+export const DEFAULT_DECISIONS_TIMEOUT_MS = 120_000;
+
 /** Public interface returned by `createDecisionClient`. */
 export interface DecisionClient {
   /** Ask the model the questions; resolves to its answers. */
   create(request: CreateDecisionRequest, options?: DecisionRequestOptions): Promise<DecisionResponse>;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Fail fast on requests the Gateway always rejects, including from untyped callers. */
+function assertValidRequest(request: CreateDecisionRequest): void {
+  if (!isPlainObject(request)) {
+    throw new TypeError('createDecisionClient: request must be an object.');
+  }
+  const { state, questions } = request;
+  if (state === undefined || state === null || state === '') {
+    throw new TypeError('createDecisionClient: `state` must not be empty.');
+  }
+  if (!isPlainObject(questions) || Object.keys(questions).length === 0) {
+    throw new TypeError('createDecisionClient: `questions` must have at least one question.');
+  }
 }
 
 // ─── Factory ──────────────────────────────────────────────────────────────────
@@ -121,12 +195,17 @@ export interface DecisionClient {
  *   state: { tool: 'shell', command: 'rm -rf ~/Library/Caches/com.example.app' },
  *   questions: { safe_to_run: { type: 'noul', criteria: { true: 'Only removes caches.', false: 'Deletes user data.' } } },
  * });
+ * if (isNoulAnswer(answers.safe_to_run)) console.log(answers.safe_to_run.noul);
  * ```
  */
 export function createDecisionClient(options: GatewayDecisionClientOptions): DecisionClient {
   const resolvedBaseURL = resolveGatewayBaseURL(options.baseURL, options.env, 'createDecisionClient');
   const base = resolvedBaseURL.replace(/\/$/, '');
-  const resolvedConfig = resolveConfig({ ...options, baseURL: resolvedBaseURL });
+  const resolvedConfig = resolveConfig({
+    ...options,
+    baseURL: resolvedBaseURL,
+    timeout: options.timeout ?? DEFAULT_DECISIONS_TIMEOUT_MS,
+  });
   // No retries: each request is billed. Auth retry on 401 still applies.
   const noRetryConfig = { ...resolvedConfig, retry: false as const };
 
@@ -138,6 +217,8 @@ export function createDecisionClient(options: GatewayDecisionClientOptions): Dec
 
   return {
     async create(request: CreateDecisionRequest, requestOptions?: DecisionRequestOptions): Promise<DecisionResponse> {
+      assertValidRequest(request);
+
       let body: string;
       try {
         body = JSON.stringify(request);
@@ -157,8 +238,9 @@ export function createDecisionClient(options: GatewayDecisionClientOptions): Dec
         pipelineOptions,
       );
 
+      let parsed: unknown;
       try {
-        return (await response.json()) as DecisionResponse;
+        parsed = await response.json();
       } catch (err) {
         throw new AIGatewayError(
           `Failed to parse decisions response as JSON (HTTP ${response.status}, ` +
@@ -169,6 +251,16 @@ export function createDecisionClient(options: GatewayDecisionClientOptions): Dec
           { cause: err },
         );
       }
+
+      if (!isPlainObject(parsed) || !isPlainObject(parsed.answers)) {
+        throw new AIGatewayError(
+          `Unexpected decisions response: expected an object with \`answers\` (HTTP ${response.status})`,
+          ErrorCode.InternalServerError,
+          response.status,
+          {},
+        );
+      }
+      return parsed as DecisionResponse;
     },
   };
 }

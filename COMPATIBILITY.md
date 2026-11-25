@@ -38,7 +38,7 @@ Gateway routes are versioned under `/ai/v1/...` or `/ai/v2/...` (from the host r
 
 `createWebSearchClient.search()` sends JSON with `model` and `query`; only the Gateway-level fields (`model`, `query`, `limit`, `include_domains`, `exclude_domains`, `country`, `location`) are typed, and `provider_options` plus any other field are forwarded as sent under their native names. It returns the provider's parsed JSON response, unchanged. It accepts a per-call `signal`, never retries on 429 / 5xx, and defaults its timeout to 2 minutes (`DEFAULT_WEBSEARCH_TIMEOUT_MS`).
 
-`createDecisionClient.create()` sends JSON with `model`, `state` and `questions` (at least one); `assets`, `session_id` and `user` are typed too, and any other field is forwarded as sent. It returns the parsed `DecisionResponse` (`answers` keyed by question name, `usage`). It accepts a per-call `signal` and never retries on 429 / 5xx.
+`createDecisionClient.create()` sends JSON with `model`, `state` and `questions` (at least one); `assets`, `session_id` and `user` are typed too, and any other field is forwarded as sent. It rejects an empty `state` or no `questions` locally, and returns the parsed `DecisionResponse` (`answers` keyed by question name, `usage`), throwing `AIGatewayError` if the body has no `answers` object. It accepts a per-call `signal`, never retries on 429 / 5xx, and defaults its timeout to 2 minutes (`DEFAULT_DECISIONS_TIMEOUT_MS`).
 
 `/v1/audio/transcriptions` (provider `transcription()` model / `createGatewayFetch`) is **deprecated** in favour of `/v2/audio/transcriptions` via `createTranscriptionClient`.
 
