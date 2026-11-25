@@ -4,7 +4,7 @@ Use this guidance when integrating MacPaw AI Gateway into this project.
 
 ## Rules
 
-- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createWebSearchClient`, `createCreditBalanceClient`, errors, and `GatewayProviderSettings`.
+- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createWebSearchClient`, `createDecisionClient`, `createCreditBalanceClient`, errors, and `GatewayProviderSettings`.
 - Use `@macpaw/ai-sdk/nestjs` for `AIGatewayModule`, `@InjectAIGateway()`, and `AIGatewayExceptionFilter`.
 - Keep generation primitives on upstream `ai` / `@ai-sdk/*`.
 - Install `@ai-sdk/openai` when using `createAIGatewayProvider` or `createGatewayProvider`; those paths depend on the OpenAI-compatible provider package.
@@ -29,6 +29,7 @@ Use this guidance when integrating MacPaw AI Gateway into this project.
 - Speech generation (streaming text-to-speech, `POST /v1/audio/speech`): use `createSpeechClient`.
 - Audio transcription (speech-to-text, `POST /v2/audio/transcriptions`): use `createTranscriptionClient`. Do not use the deprecated `/v1/audio/transcriptions` route or the provider `transcription()` model.
 - Web search (Exa or Brave, `POST /v1/websearch`): use `createWebSearchClient`.
+- Decisions (typed questions → typed answers, `POST /v1/decisions`): use `createDecisionClient`.
 - Credit balance queries (active balances, totals): use `createCreditBalanceClient`.
 
 ## Minimal examples
@@ -88,6 +89,19 @@ const websearch = createWebSearchClient({
   getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
 });
 const result = await websearch.search({ model: 'exa/exa', query: 'launch agents on macOS', limit: 5 });
+```
+
+```ts
+// Decisions (typed questions about a state → typed answers with probabilities)
+const decisions = createDecisionClient({
+  env: 'production',
+  getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
+});
+const { answers } = await decisions.create({
+  model: 'typesafe/jev-1.13',
+  state: 'rm -rf ~/Library/Caches/com.example.app',
+  questions: { safe_to_run: { type: 'noul', criteria: { true: 'Only removes caches.', false: 'Deletes user data.' } } },
+});
 ```
 
 ```ts

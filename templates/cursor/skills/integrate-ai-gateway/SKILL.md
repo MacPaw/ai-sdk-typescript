@@ -1,6 +1,6 @@
 ---
 name: integrate-ai-gateway
-description: Integrate applications with AI Gateway using @macpaw/ai-sdk. Use for NestJS, Next.js, Vercel AI SDK, raw fetch migrations, video generation, voice listing, text-to-speech, speech-to-text, web search, credit balance queries, MacPaw AI, Setapp AI, createAIGatewayProvider, createGatewayFetch, createVideoClient, createVoiceClient, createSpeechClient, createTranscriptionClient, createWebSearchClient, createCreditBalanceClient, and AI Gateway auth/error wiring.
+description: Integrate applications with AI Gateway using @macpaw/ai-sdk. Use for NestJS, Next.js, Vercel AI SDK, raw fetch migrations, video generation, voice listing, text-to-speech, speech-to-text, web search, decisions, credit balance queries, MacPaw AI, Setapp AI, createAIGatewayProvider, createGatewayFetch, createVideoClient, createVoiceClient, createSpeechClient, createTranscriptionClient, createWebSearchClient, createDecisionClient, createCreditBalanceClient, and AI Gateway auth/error wiring.
 ---
 
 # AI Gateway Integration (@macpaw/ai-sdk)
@@ -11,7 +11,7 @@ Detect the app shape, choose one integration path, apply the smallest correct pa
 
 ## Package surface
 
-- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createWebSearchClient`, `createCreditBalanceClient`, `GATEWAY_PROVIDERS`, errors, and `GatewayProviderSettings`.
+- Use `@macpaw/ai-sdk` for `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createWebSearchClient`, `createDecisionClient`, `createCreditBalanceClient`, `GATEWAY_PROVIDERS`, errors, and `GatewayProviderSettings`.
 - Use `@macpaw/ai-sdk/provider` only as a compatibility alias.
 - Use `@macpaw/ai-sdk/nestjs` for `AIGatewayModule`, `@InjectAIGateway()`, and `AIGatewayExceptionFilter`.
 - Do not use `createAIGatewayClient`, `@macpaw/ai-sdk/client`, `runtime`, `types`, or `testing`; they do not exist.
@@ -35,6 +35,7 @@ Detect the app shape, choose one integration path, apply the smallest correct pa
 - Speech generation (streaming text-to-speech, `POST /v1/audio/speech`) -> use `createSpeechClient`.
 - Audio transcription (speech-to-text, `POST /v2/audio/transcriptions`) -> use `createTranscriptionClient`. Do not use the deprecated `/v1/audio/transcriptions` route or the provider `transcription()` model.
 - Web search (Exa or Brave, `POST /v1/websearch`) -> use `createWebSearchClient`.
+- Decisions (typed questions → typed answers, `POST /v1/decisions`) -> use `createDecisionClient`.
 - Credit balance queries (active balances, totals) -> use `createCreditBalanceClient`.
 - Existing `openai`, `@ai-sdk/openai`, or `@anthropic-ai/sdk` usage -> treat as migration, not greenfield.
 
@@ -112,6 +113,19 @@ const websearch = createWebSearchClient({
   getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
 });
 const result = await websearch.search({ model: 'exa/exa', query: 'launch agents on macOS', limit: 5 });
+```
+
+```ts
+// Decisions (typed questions about a state → typed answers with probabilities)
+const decisions = createDecisionClient({
+  env: 'production',
+  getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
+});
+const { answers } = await decisions.create({
+  model: 'typesafe/jev-1.13',
+  state: 'rm -rf ~/Library/Caches/com.example.app',
+  questions: { safe_to_run: { type: 'noul', criteria: { true: 'Only removes caches.', false: 'Deletes user data.' } } },
+});
 ```
 
 ```ts

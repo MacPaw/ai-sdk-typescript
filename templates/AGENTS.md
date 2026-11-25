@@ -4,7 +4,7 @@ Apply these rules when integrating MacPaw AI Gateway.
 
 ## Use the correct package surface
 
-- `@macpaw/ai-sdk`: `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createWebSearchClient`, `createCreditBalanceClient`, errors, `GatewayProviderSettings`.
+- `@macpaw/ai-sdk`: `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createWebSearchClient`, `createDecisionClient`, `createCreditBalanceClient`, errors, `GatewayProviderSettings`.
 - `@macpaw/ai-sdk/provider`: compatibility alias only.
 - `@macpaw/ai-sdk/nestjs`: NestJS module and decorators.
 - Install `@ai-sdk/openai` when using `createAIGatewayProvider` or `createGatewayProvider`.
@@ -21,6 +21,7 @@ Apply these rules when integrating MacPaw AI Gateway.
 - Speech generation (text-to-speech, streaming only): use `createSpeechClient`.
 - Audio transcription (speech-to-text, OpenAI / ElevenLabs): use `createTranscriptionClient`. `/v1/audio/transcriptions` and the provider `transcription()` model are deprecated.
 - Web search (Exa, Brave): use `createWebSearchClient`.
+- Decisions (typed questions → typed answers): use `createDecisionClient`.
 - Credit balance queries: use `createCreditBalanceClient`.
 - Existing `openai` / `@ai-sdk/openai` / `@anthropic-ai/sdk` usage: treat as migration.
 
@@ -89,6 +90,19 @@ const websearch = createWebSearchClient({
   getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
 });
 const result = await websearch.search({ model: 'exa/exa', query: 'launch agents on macOS', limit: 5 });
+```
+
+```ts
+// Decisions (typed questions about a state → typed answers with probabilities)
+const decisions = createDecisionClient({
+  env: 'production',
+  getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
+});
+const { answers } = await decisions.create({
+  model: 'typesafe/jev-1.13',
+  state: 'rm -rf ~/Library/Caches/com.example.app',
+  questions: { safe_to_run: { type: 'noul', criteria: { true: 'Only removes caches.', false: 'Deletes user data.' } } },
+});
 ```
 
 ```ts

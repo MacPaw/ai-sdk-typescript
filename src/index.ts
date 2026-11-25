@@ -118,3 +118,19 @@ export type {
   WebSearchLocation,
   WebSearchResponse,
 } from './gateway-websearch';
+
+// Decisions client — POST /v1/decisions
+export { createDecisionClient } from './gateway-decisions';
+export type {
+  GatewayDecisionClientOptions,
+  DecisionClient,
+  DecisionRequestOptions,
+  CreateDecisionRequest,
+  DecisionQuestion,
+  DecisionQuestionType,
+  DecisionAsset,
+  DecisionResponse,
+  DecisionAnswer,
+  DecisionAnswerType,
+  DecisionUsage,
+} from './gateway-decisions';
