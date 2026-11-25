@@ -175,7 +175,7 @@ function assertValidRequest(request: CreateDecisionRequest): void {
   }
   const { state, questions } = request;
   if (state === undefined || state === null || state === '') {
-    throw new TypeError('createDecisionClient: `state` must not be empty.');
+    throw new TypeError('createDecisionClient: `state` must not be null, undefined or an empty string.');
   }
   if (!isPlainObject(questions) || Object.keys(questions).length === 0) {
     throw new TypeError('createDecisionClient: `questions` must have at least one question.');

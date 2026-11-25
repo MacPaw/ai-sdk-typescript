@@ -168,9 +168,9 @@ describe('createDecisionClient', () => {
     });
 
     it.each([
-      ['an empty string state', { state: '' }, '`state` must not be empty'],
-      ['a null state', { state: null }, '`state` must not be empty'],
-      ['a missing state', { state: undefined }, '`state` must not be empty'],
+      ['an empty string state', { state: '' }, '`state` must not be null, undefined or an empty string'],
+      ['a null state', { state: null }, '`state` must not be null, undefined or an empty string'],
+      ['a missing state', { state: undefined }, '`state` must not be null, undefined or an empty string'],
       ['empty questions', { questions: {} }, '`questions` must have at least one question'],
       ['missing questions', { questions: undefined }, '`questions` must have at least one question'],
       ['array questions', { questions: [] }, '`questions` must have at least one question'],
@@ -184,6 +184,18 @@ describe('createDecisionClient', () => {
       expect(err).toBeInstanceOf(TypeError);
       expect((err as Error).message).toContain(message);
       expect(globalThis.fetch).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['whitespace', '  '],
+      ['an empty array', []],
+      ['an empty object', {}],
+    ])('leaves %s state to the Gateway and sends it', async (_label, state) => {
+      const client = createDecisionClient({ baseURL: BASE_URL, getAuthToken: async () => 'token' });
+
+      await client.create({ ...REQUEST, state });
+
+      expect(JSON.parse(lastCall()[1].body as string).state).toEqual(state);
     });
 
     it('defaults the timeout to DEFAULT_DECISIONS_TIMEOUT_MS and honors an explicit timeout', async () => {
