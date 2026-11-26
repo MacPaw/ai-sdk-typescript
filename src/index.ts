@@ -93,3 +93,17 @@ export type {
   SpeechAudioDeltaEvent,
   SpeechAudioDoneEvent,
 } from './gateway-speech';
+
+// Audio transcription (speech-to-text) client — POST /v2/audio/transcriptions
+export { createTranscriptionClient, DEFAULT_TRANSCRIPTION_TIMEOUT_MS } from './gateway-transcriptions';
+export type {
+  GatewayTranscriptionClientOptions,
+  TranscriptionClient,
+  TranscriptionRequestOptions,
+  TranscriptionAudioInput,
+  CreateTranscriptionRequest,
+  TranscriptionRequestBase,
+  TranscriptionFileSource,
+  TranscriptionUrlSource,
+  TranscriptionResponse,
+} from './gateway-transcriptions';

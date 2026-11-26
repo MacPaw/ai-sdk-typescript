@@ -6,17 +6,17 @@
 [![npm version](https://img.shields.io/npm/v/%40macpaw%2Fai-sdk)](https://www.npmjs.com/package/@macpaw/ai-sdk)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-Thin **Vercel AI SDK** extension for **MacPaw AI Gateway**: OpenAI-compatible providers (`createAIGatewayProvider`, `createGatewayProvider`), a **`createGatewayFetch`** bridge for any HTTP client, **`createVideoClient`** / **`createVoiceClient`** / **`createSpeechClient`** for video generation, voice listing, and text-to-speech, a **`createCreditBalanceClient`** for querying AI credit balances, shared **auth / retry / middleware / errors**, and optional **NestJS** wiring.
+Thin **Vercel AI SDK** extension for **MacPaw AI Gateway**: OpenAI-compatible providers (`createAIGatewayProvider`, `createGatewayProvider`), a **`createGatewayFetch`** bridge for any HTTP client, **`createVideoClient`** / **`createVoiceClient`** / **`createSpeechClient`** / **`createTranscriptionClient`** for video generation, voice listing, text-to-speech, and speech-to-text, a **`createCreditBalanceClient`** for querying AI credit balances, shared **auth / retry / middleware / errors**, and optional **NestJS** wiring.
 
 Core generation APIs stay on upstream **`ai`** and **`@ai-sdk/*`**. This package only adds Gateway-specific construction and the fetch pipeline.
 
 ## Package entry points
 
-| Import                    | Use for                                                                                                                                                            |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@macpaw/ai-sdk`          | **Canonical** — providers, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createCreditBalanceClient`, errors, config types |
-| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets)                                                                                                      |
-| `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`                                                                                                |
+| Import                    | Use for                                                                                                                                                                                         |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@macpaw/ai-sdk`          | **Canonical** — providers, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createCreditBalanceClient`, errors, config types |
+| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets)                                                                                                                                   |
+| `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`                                                                                                                             |
 
 Upstream **`ai`**, **`@ai-sdk/openai`**, **`@ai-sdk/react`** (or **`ai/react`**) remain the home for Vercel primitives and React hooks.
 
@@ -71,12 +71,13 @@ for await (const delta of result.textStream) {
 - **Video generation** — `createVideoClient` wraps the Gateway video endpoints (create job, poll status, fetch content)
 - **Voices** — `createVoiceClient` lists voices from Gateway providers (paginated `GET /v1/voices`)
 - **Speech (text-to-speech)** — `createSpeechClient` generates streaming speech audio (`POST /v1/audio/speech`)
+- **Transcription (speech-to-text)** — `createTranscriptionClient` transcribes audio with OpenAI or ElevenLabs models (`POST /v2/audio/transcriptions`)
 - **Credit balances** — `createCreditBalanceClient` fetches active AI credit balances for the authenticated user
 - **Tree-shakeable** — ESM + CJS
 
 ## Configuration (`GatewayProviderSettings`)
 
-Used by `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createCreditBalanceClient`, and Nest `AIGatewayModule`.
+Used by `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createCreditBalanceClient`, and Nest `AIGatewayModule`.
 
 | Field          | Purpose                                                          |
 | -------------- | ---------------------------------------------------------------- |
@@ -244,6 +245,57 @@ const response = await speech.create({
 ```
 
 `create()` disables config-level retries (POST is non-idempotent — retrying on 5xx risks duplicate provider-side generation and credit charges). Auth retry (401 → fresh token) still applies. Set `raw_provider_response: true` to receive the selected provider's own stream unmodified (for ElevenLabs, its native JSON stream including alignment data the normalized events cannot carry).
+
+## `createTranscriptionClient` — speech-to-text
+
+Wraps `POST /v2/audio/transcriptions` (multipart). The SDK types only the Gateway's own contract: `model` (`provider/model`), exactly one of `file` (a `Blob` / `File`, `ArrayBuffer`, typed array or Node `Buffer`) or `source_url` (enforced by the request type, and at runtime with a `TypeError` for untyped callers), `language`, and `stream`. Everything else is provider-specific — which fields apply and which response shape comes back are decided by the model's provider (today `openai` and `elevenlabs`) and validated by the Gateway — so those fields are forwarded **as sent, under their native names**, and the provider's response is returned unchanged. A new provider or parameter needs no SDK update.
+
+```ts
+import { createTranscriptionClient } from '@macpaw/ai-sdk';
+
+const transcriptions = createTranscriptionClient({
+  env: 'production',
+  getAuthToken: async () => (await getSetappSession()).accessToken,
+});
+
+// JSON response — name the shape you expect with the type argument
+const result = await transcriptions.create<{ text: string }>({
+  model: 'openai/gpt-4o-transcribe',
+  file: new File([audioBytes], 'meeting.mp3', { type: 'audio/mpeg' }),
+  language: 'en',
+});
+
+// Provider-specific fields use the provider's own names (see its native API docs)
+const transcript = await transcriptions.create({
+  model: 'elevenlabs/scribe_v2',
+  source_url: 'https://cdn.example.com/audio/meeting.mp3',
+  diarize: true,
+  keyterms: ['MacPaw', 'CleanMyMac'],
+});
+
+const verbose = await transcriptions.create({
+  model: 'openai/whisper-1',
+  file,
+  response_format: 'verbose_json',
+  'timestamp_granularities[]': ['word', 'segment'],
+});
+
+// text/plain responses (e.g. OpenAI srt / vtt / text) come back as a string
+const srt = await transcriptions.create<string>({ model: 'openai/whisper-1', file, response_format: 'srt' });
+
+// stream: true — raw Response with a `text/event-stream` body
+const stream = await transcriptions.create({ model: 'openai/gpt-4o-mini-transcribe', file, stream: true });
+```
+
+- Return value: parsed JSON (the provider's response), the body as a `string` for `text/plain`, or the raw `Response` for a `text/event-stream` response. `TranscriptionResponse` is any JSON value, since the SDK does not assume a provider's shape. Typed as `Response` for `stream: true`, `TranscriptionResponse | string` by default (narrow it, or pass `T` such as `create<string>()` / `create<{ text: string }>()`), and `TranscriptionResponse | string | Response` when `stream` is a runtime `boolean`.
+- Form encoding: arrays become repeated parts under the exact key you give (use `'include[]'`, `'timestamp_granularities[]'` etc. where the provider expects the suffix), `Blob` / `File` and binary values (`ArrayBuffer`, typed arrays, `Buffer`) are sent as file parts, `Date` as an ISO string, other objects are JSON-encoded, other values stringified, `undefined` / `null` skipped.
+- For a plain `Blob` or raw bytes, pass `filename` (e.g. `'clip.m4a'`) — providers may detect the format from the extension. Any other `file` value is rejected with a `TypeError` before the request is sent.
+- A `Content-Type` set in the client's `headers` is ignored for this request so `fetch` can set the multipart boundary.
+- `create()` disables config-level retries (non-idempotent, billed). Auth retry (401 → fresh token) still applies.
+- Timeout defaults to `DEFAULT_TRANSCRIPTION_TIMEOUT_MS` (10 minutes, not the SDK-wide 60 s) because uploads can reach 512 MB; set `timeout` on the client to change it. Pass `{ signal }` as the second argument to cancel a call: `transcriptions.create(request, { signal: controller.signal })`.
+- Unsupported combinations (e.g. `stream` or `source_url` on a provider that lacks them) are rejected by the Gateway with **400** → `AIGatewayError` with `metadata.errors`.
+
+> **Deprecated:** `POST /v1/audio/transcriptions` — reached through the provider's `transcription()` model (e.g. `experimental_transcribe({ model: gateway.transcription('openai/whisper-1') })`) or `createGatewayFetch('/v1/audio/transcriptions')` — is deprecated. Use `createTranscriptionClient` instead.
 
 ## `createCreditBalanceClient` — AI credit balances
 

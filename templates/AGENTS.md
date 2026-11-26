@@ -4,7 +4,7 @@ Apply these rules when integrating MacPaw AI Gateway.
 
 ## Use the correct package surface
 
-- `@macpaw/ai-sdk`: `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createCreditBalanceClient`, errors, `GatewayProviderSettings`.
+- `@macpaw/ai-sdk`: `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createCreditBalanceClient`, errors, `GatewayProviderSettings`.
 - `@macpaw/ai-sdk/provider`: compatibility alias only.
 - `@macpaw/ai-sdk/nestjs`: NestJS module and decorators.
 - Install `@ai-sdk/openai` when using `createAIGatewayProvider` or `createGatewayProvider`.
@@ -19,6 +19,7 @@ Apply these rules when integrating MacPaw AI Gateway.
 - Video generation: use `createVideoClient`.
 - Voice listing: use `createVoiceClient`.
 - Speech generation (text-to-speech, streaming only): use `createSpeechClient`.
+- Audio transcription (speech-to-text, OpenAI / ElevenLabs): use `createTranscriptionClient`. `/v1/audio/transcriptions` and the provider `transcription()` model are deprecated.
 - Credit balance queries: use `createCreditBalanceClient`.
 - Existing `openai` / `@ai-sdk/openai` / `@anthropic-ai/sdk` usage: treat as migration.
 
@@ -69,6 +70,15 @@ const speech = createSpeechClient({
 });
 const response = await speech.create({ model: 'openai/gpt-4o-mini-tts', input: 'Hello', voice: 'alloy' });
 // response.body is a stream (SSE by default) — never a single buffered audio file.
+```
+
+```ts
+// Audio transcription (multipart; exactly one of `file` or `source_url`)
+const transcriptions = createTranscriptionClient({
+  env: 'production',
+  getAuthToken: async () => process.env.AI_GATEWAY_TOKEN ?? null,
+});
+const result = await transcriptions.create({ model: 'openai/gpt-4o-transcribe', file: audioFile, language: 'en' });
 ```
 
 ```ts
