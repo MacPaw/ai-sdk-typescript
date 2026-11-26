@@ -101,7 +101,7 @@
   },
   "devDependencies": {
     "@ai-sdk/openai": "4.0.101",
-    "@ai-sdk/provider": "4.0.3",
+    "@ai-sdk/provider": "4.0.39",
     "@eslint/js": "^10.0.1",
     "@nestjs/common": "^12.6.0",
     "@semantic-release/changelog": "^7.0.0",
