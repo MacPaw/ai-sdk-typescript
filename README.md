@@ -6,17 +6,17 @@
 [![npm version](https://img.shields.io/npm/v/%40macpaw%2Fai-sdk)](https://www.npmjs.com/package/@macpaw/ai-sdk)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-Thin **Vercel AI SDK** extension for **MacPaw AI Gateway**: OpenAI-compatible providers (`createAIGatewayProvider`, `createGatewayProvider`), a **`createGatewayFetch`** bridge for any HTTP client, **`createVideoClient`** / **`createVoiceClient`** / **`createSpeechClient`** / **`createTranscriptionClient`** for video generation, voice listing, text-to-speech, and speech-to-text, a **`createCreditBalanceClient`** for querying AI credit balances, shared **auth / retry / middleware / errors**, and optional **NestJS** wiring.
+Thin **Vercel AI SDK** extension for **MacPaw AI Gateway**: OpenAI-compatible providers (`createAIGatewayProvider`, `createGatewayProvider`), a **`createGatewayFetch`** bridge for any HTTP client, **`createVideoClient`** / **`createVoiceClient`** / **`createSpeechClient`** / **`createTranscriptionClient`** / **`createWebSearchClient`** / **`createDecisionClient`** for video generation, voice listing, text-to-speech, speech-to-text, web search, and decisions, a **`createCreditBalanceClient`** for querying AI credit balances, shared **auth / retry / middleware / errors**, and optional **NestJS** wiring.
 
 Core generation APIs stay on upstream **`ai`** and **`@ai-sdk/*`**. This package only adds Gateway-specific construction and the fetch pipeline.
 
 ## Package entry points
 
-| Import                    | Use for                                                                                                                                                                                         |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@macpaw/ai-sdk`          | **Canonical** — providers, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createCreditBalanceClient`, errors, config types |
-| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets)                                                                                                                                   |
-| `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`                                                                                                                             |
+| Import                    | Use for                                                                                                                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@macpaw/ai-sdk`          | **Canonical** — providers, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createWebSearchClient`, `createDecisionClient`, `createCreditBalanceClient`, errors, config types |
+| `@macpaw/ai-sdk/provider` | **Alias** of the root entry (same `dist`; for older snippets)                                                                                                                                                                                    |
+| `@macpaw/ai-sdk/nestjs`   | `AIGatewayModule`, `@InjectAIGateway()`, `AIGatewayExceptionFilter`                                                                                                                                                                              |
 
 Upstream **`ai`**, **`@ai-sdk/openai`**, **`@ai-sdk/react`** (or **`ai/react`**) remain the home for Vercel primitives and React hooks.
 
@@ -72,12 +72,14 @@ for await (const delta of result.textStream) {
 - **Voices** — `createVoiceClient` lists voices from Gateway providers (paginated `GET /v1/voices`)
 - **Speech (text-to-speech)** — `createSpeechClient` generates streaming speech audio (`POST /v1/audio/speech`)
 - **Transcription (speech-to-text)** — `createTranscriptionClient` transcribes audio with OpenAI or ElevenLabs models (`POST /v2/audio/transcriptions`)
+- **Web search** — `createWebSearchClient` searches the web with Exa or Brave models (`POST /v1/websearch`)
+- **Decisions** — `createDecisionClient` asks decision models typed questions and returns typed answers (`POST /v1/decisions`)
 - **Credit balances** — `createCreditBalanceClient` fetches active AI credit balances for the authenticated user
 - **Tree-shakeable** — ESM + CJS
 
 ## Configuration (`GatewayProviderSettings`)
 
-Used by `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createCreditBalanceClient`, and Nest `AIGatewayModule`.
+Used by `createAIGatewayProvider`, `createGatewayProvider`, `createGatewayFetch`, `createVideoClient`, `createVoiceClient`, `createSpeechClient`, `createTranscriptionClient`, `createWebSearchClient`, `createDecisionClient`, `createCreditBalanceClient`, and Nest `AIGatewayModule`.
 
 | Field          | Purpose                                                          |
 | -------------- | ---------------------------------------------------------------- |
@@ -296,6 +298,89 @@ const stream = await transcriptions.create({ model: 'openai/gpt-4o-mini-transcri
 - Unsupported combinations (e.g. `stream` or `source_url` on a provider that lacks them) are rejected by the Gateway with **400** → `AIGatewayError` with `metadata.errors`.
 
 > **Deprecated:** `POST /v1/audio/transcriptions` — reached through the provider's `transcription()` model (e.g. `experimental_transcribe({ model: gateway.transcription('openai/whisper-1') })`) or `createGatewayFetch('/v1/audio/transcriptions')` — is deprecated. Use `createTranscriptionClient` instead.
+
+## `createWebSearchClient` — web search
+
+Wraps `POST /v1/websearch` (JSON). The SDK types only the Gateway's own contract: `model` (`provider/model`) and `query` (required), plus the common fields the Gateway maps onto every provider — `limit`, `include_domains`, `exclude_domains`, `country`, and `location` (`latitude` / `longitude`). Everything else is provider-specific — which options apply and which response shape comes back are decided by the model's provider (today `exa` and `brave`) and validated by the Gateway — so `provider_options` (and any other field) are forwarded **as sent, under their native names**, and the provider's response is returned unchanged. A new provider or parameter needs no SDK update.
+
+```ts
+import { createWebSearchClient } from '@macpaw/ai-sdk';
+
+const websearch = createWebSearchClient({
+  env: 'production',
+  getAuthToken: async () => (await getSetappSession()).accessToken,
+});
+
+// Name the response shape you expect with the type argument
+const exa = await websearch.search<{ results: { url: string; title?: string | null }[] }>({
+  model: 'exa/exa',
+  query: 'launch agents on macOS',
+  limit: 5,
+  include_domains: ['developer.apple.com'],
+  // Provider options use the provider's own names (see its native API docs)
+  provider_options: { type: 'auto', category: 'news', contents: { highlights: true } },
+});
+
+const brave = await websearch.search({
+  model: 'brave/brave',
+  query: 'launch agents on macOS',
+  country: 'US',
+  location: { latitude: 37.7749, longitude: -122.4194 },
+  provider_options: { freshness: 'pw', result_filter: ['web', 'news'], 'x-loc-city': 'San Francisco' },
+});
+```
+
+- Return value: the provider's parsed JSON response. `WebSearchResponse` is any JSON value, since the SDK does not assume a provider's shape — narrow it, or pass `T` (e.g. `search<{ results: { url: string }[] }>()`). Top-level field names outside the typed ones are not checked by the compiler, so use the Gateway's names exactly.
+- How the common fields map onto a provider (e.g. `limit` → Exa `numResults` / Brave `count`, domain filters → Brave `site:` operators) is the Gateway's job. Fields a model doesn't accept, or parameters the provider rejects, come back as **400** → `AIGatewayError` with the reason in `message` / `metadata.errors`.
+- `search()` disables config-level retries (each search is billed). Auth retry (401 → fresh token) still applies. Pass `{ signal }` as the second argument to cancel a call: `websearch.search(request, { signal: controller.signal })`.
+- Timeout defaults to `DEFAULT_WEBSEARCH_TIMEOUT_MS` (2 minutes, not the SDK-wide 60 s) because deep searches can be slow and an aborted search is still billed; set `timeout` on the client to change it.
+- **402** → `CreditsError`; **403** (model not allowed) → `ModelNotAllowedError`.
+
+## `createDecisionClient` — decisions
+
+Wraps `POST /v1/decisions` (JSON). Asks a decision model (an entry of `GET /v1/model/info` with `output_modality: decisions`) typed questions about a `state` and returns typed answers with probabilities instead of generated text. The Gateway contract is typed — `model`, `state` (text, a JSON object, or text and `image_url` parts), `questions` (at least one, keyed by name), `assets`, `session_id`, `user` — and any other field is forwarded as sent.
+
+```ts
+import { createDecisionClient, isChoiceAnswer, isNoulAnswer } from '@macpaw/ai-sdk';
+
+const decisions = createDecisionClient({
+  env: 'production',
+  getAuthToken: async () => (await getSetappSession()).accessToken,
+});
+
+const { answers } = await decisions.create({
+  model: 'typesafe/jev-1.13',
+  state: { tool: 'shell', command: 'rm -rf ~/Library/Caches/com.example.app' },
+  questions: {
+    safe_to_run: {
+      type: 'noul',
+      instructions: 'Is it safe to run this command without asking the user?',
+      criteria: { true: 'Only removes files the app can recreate.', false: 'Deletes user data.' },
+    },
+    risk: {
+      type: 'choice',
+      criteria: { low: 'Easily undone.', medium: 'Changes app files.', high: 'Deletes user data.' },
+    },
+  },
+});
+
+// An answer may be missing; the guards check it and narrow its type
+if (isNoulAnswer(answers.safe_to_run)) answers.safe_to_run.noul; // 0.91 — probability of yes
+if (isChoiceAnswer(answers.risk)) answers.risk.choice; // 'medium'
+```
+
+| Question `type` | `criteria`                  | Answer fields                                              |
+| --------------- | --------------------------- | ---------------------------------------------------------- |
+| `noul`          | `{ true, false }`           | `noul` (probability of yes, 0–1)                           |
+| `choice`        | option name → guidance      | `choice`, `probabilities` per option, `confidence`         |
+| `score`         | ordered array, lowest first | `score`, `probabilities` per level, `legend`, `confidence` |
+
+- A question the model declines comes back as an answer of `type: 'refusal'` (`isRefusalAnswer()`); the other answers are still returned. `isNoulAnswer()`, `isChoiceAnswer()` and `isScoreAnswer()` narrow the rest; they also check the value, so a malformed answer matches none of them — detect refusals with `isRefusalAnswer()`, not a catch-all `else`.
+- A request that isn't an object, an empty `state` or no `questions` throws a `TypeError` before the request is sent; a 200 body without an `answers` object throws `AIGatewayError`.
+- Images go in `assets` (`{ type: 'image', format, data_base64 }`) and are referenced by key; every asset must be referenced at least once.
+- `create()` disables config-level retries (billed). Auth retry (401 → fresh token) still applies. Pass `{ signal }` as the second argument to cancel a call.
+- Timeout defaults to `DEFAULT_DECISIONS_TIMEOUT_MS` (2 minutes) because image assets can be large and an aborted request is still billed; set `timeout` on the client to change it.
+- Errors: **400** → `AIGatewayError` with `metadata.errors`; **402** → `CreditsError`; **403** → `ModelNotAllowedError`.
 
 ## `createCreditBalanceClient` — AI credit balances
 
