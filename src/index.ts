@@ -93,3 +93,55 @@ export type {
   SpeechAudioDeltaEvent,
   SpeechAudioDoneEvent,
 } from './gateway-speech';
+
+// Audio transcription (speech-to-text) client — POST /v2/audio/transcriptions
+export { createTranscriptionClient, DEFAULT_TRANSCRIPTION_TIMEOUT_MS } from './gateway-transcriptions';
+export type {
+  GatewayTranscriptionClientOptions,
+  TranscriptionClient,
+  TranscriptionRequestOptions,
+  TranscriptionAudioInput,
+  CreateTranscriptionRequest,
+  TranscriptionRequestBase,
+  TranscriptionFileSource,
+  TranscriptionUrlSource,
+  TranscriptionResponse,
+} from './gateway-transcriptions';
+
+// Web search client — POST /v1/websearch
+export { createWebSearchClient, DEFAULT_WEBSEARCH_TIMEOUT_MS } from './gateway-websearch';
+export type {
+  GatewayWebSearchClientOptions,
+  WebSearchClient,
+  WebSearchRequestOptions,
+  WebSearchRequest,
+  WebSearchLocation,
+  WebSearchResponse,
+} from './gateway-websearch';
+
+// Decisions client — POST /v1/decisions
+export {
+  createDecisionClient,
+  DEFAULT_DECISIONS_TIMEOUT_MS,
+  isNoulAnswer,
+  isChoiceAnswer,
+  isScoreAnswer,
+  isRefusalAnswer,
+} from './gateway-decisions';
+export type {
+  GatewayDecisionClientOptions,
+  DecisionClient,
+  DecisionRequestOptions,
+  CreateDecisionRequest,
+  DecisionQuestion,
+  DecisionQuestionType,
+  DecisionAsset,
+  DecisionResponse,
+  DecisionAnswer,
+  DecisionAnswerType,
+  DecisionNoulAnswer,
+  DecisionChoiceAnswer,
+  DecisionScoreAnswer,
+  DecisionRefusalAnswer,
+  DecisionUsage,
+} from './gateway-decisions';
